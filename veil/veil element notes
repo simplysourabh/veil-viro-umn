@@ -1,0 +1,17 @@
+generate hello:
+
+no inputs 1 output : each interface will have a different VID so this takes VID as input parameter.
+
+in the main click script for the VEIL switch, we need to have a generatehello element for each interface
+
+send a hello packet every 20 secs. TBD : find optimal hello interval
+
+have to use queues for the main Classifier element so we don't miss any packets. all nodes generating hello at the same time during simulation could cause loss of hello packets? introduce random delay?
+
+------------------------------------------------------------------------------
+processhello:
+
+chk ethernet type for VEIL and if VEIL type is HELLO then insert/update VID (which is in the source MAC address field of the packet into the neighbour table)
+
+------------------------------------------------------------------------------
+
