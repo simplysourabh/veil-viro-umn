@@ -25,9 +25,8 @@ class VEILGenerateHello : public Element {
 
 	private:
 		Timer myTimer;
-		//VID myVid;
+		VID myVid;
 		//EtherAddress myMac;
-		EtherAddress myVid;
 		//VEILGenerateVid *genVid;
 		//VEILHostTable *hosts;
 
