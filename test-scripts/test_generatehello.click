@@ -1,3 +1,5 @@
+require(veil);
+
 /*
 AddressInfo(me0 eth0:eth);
 //AddressInfo(me1 eth0:ip);
@@ -16,6 +18,25 @@ hello :: VEILGenerateHello(me0, genVid, hostTable)
 	-> Discard;
 */
 
-VEILGenerateHello(00:00:c0:ae:67:ef)
+VEILGenerateHello(0000c0ae67ef)
         -> Print(MAXLENGTH 50)
         -> Discard;
+
+/*
+//error conditions test
+VEILGenerateHello(00:00c0ae67ef)
+        -> Print(MAXLENGTH 50)
+        -> Discard;
+
+VEILGenerateHello(z000c0ae67ef)
+        -> Print(MAXLENGTH 50)
+        -> Discard;
+
+VEILGenerateHello(0000c0ae)
+        -> Print(MAXLENGTH 50)
+        -> Discard;
+*/
+
+
+
+
