@@ -7,7 +7,7 @@
 #include <clicknet/ether.h>
 #include <clicknet/udp.h>
 
-#include "vid.hh"
+#include <click/vid.hh>
 
 CLICK_DECLS
 
@@ -23,6 +23,10 @@ CLICK_DECLS
 // Intervals are in ms
 #define VEIL_HELLO_INTERVAL		20000
 #define VEIL_PUBLISH_INTERVAL		20000
+/* value greater than hello/publish interval so entries don't expire just    
+ * when hello/publish pkts need to be resent. risking temp invalid routes. 
+ */ 
+#define VEIL_TBL_ENTRY_EXPIRY		21000
 
 struct veil_header {
 	uint16_t packetType;
