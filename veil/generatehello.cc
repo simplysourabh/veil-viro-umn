@@ -1,7 +1,7 @@
 #include <click/config.h>
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include <clicknet/ip.h>
+//#include <clicknet/ip.h>
 #include "click_veil.hh"
 #include "generatehello.hh"
  
@@ -16,11 +16,11 @@ VEILGenerateHello::configure (
 	Vector<String> &conf,
 	ErrorHandler *errh)
 {
-	bool exists = false;
+	//bool exists = false;
 	int res = -1;
 
 	res = cp_va_kparse(conf, this, errh,
-                "MYVID", cpkP+cpkM, cpEtherAddress, &myVid,
+                "MYVID", cpkP+cpkM, cpVid, &myVid,
 /*		
 "VEILGENERATEVID", cpkP+cpkM, cpElementCast, "VEILGenerateVid", &genVid,
                 "HOSTTABLE", cpkM+cpkP, cpElementCast, "VEILHostTable", &hosts,
