@@ -6,12 +6,34 @@ in the main click script for the VEIL switch, we need to have a generatehello el
 
 send a hello packet every 20 secs. TBD : find optimal hello interval
 
-have to use queues for the main Classifier element so we don't miss any packets. all nodes generating hello at the same time during simulation could cause loss of hello packets? introduce random delay?
+have to use queues for the main Classifier element so we don't miss any packets. all nodes generating hello at the same time during simulation could cause loss of hello packets? introduce random delay? 
 
 ------------------------------------------------------------------------------
 processhello:
 
-chk ethernet type for VEIL and if VEIL type is HELLO then insert/update VID (which is in the source MAC address field of the packet into the neighbour table)
-
+chk ethernet type for VEIL and if VEIL type is HELLO then insert/update VID (which is in the source MAC address field of the packet into the neighbour table). We also keep track of which interface the packet was received from. Since we will have one neighbor table per switch which in turn could have several interfaces, this is necessary. The routing element can then figure out which interface a pkt destined to one of our neighbors should go out thru. We need to know the interface's address or dev name. Seemed like a good idea now to use dev name.
 ------------------------------------------------------------------------------
+neighbortable:
+
+do we want to be able to statically and dynamically manipulate entries from the Click script?
+
+Ordinarily the contents of this element will only be modified when a HELLO pkt is received by the processhello element or when an entry expires and needs to be purged from the table. Need to choose an appropriate duration for expiry.
+
+if we made the 'neighbors' variable static, we'd be cramping design but this would be useful if we wanted to save space and pass only a pointer to vid in the Timer constructor call. We would not need the TimerData structure in that case.
+
+reads and writes to all table data structures should be synchronized/made atomic.
+------------------------------------------------------------------------------
+cpVid:
+
+to introduce a data type of our own, the following are the files and functions to look at:
+
+confparse
+element.cc    -- overloaded version of add_data_handlers. if we ever need read write handlers for elements that use VID, define some in this file
+lib/error.cc  -- XXX_ptr_error_hook
+		 static_initialize
+------------------------------------------------------------------------------
+
+
+
+
 
