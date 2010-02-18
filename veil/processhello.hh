@@ -4,7 +4,6 @@
 #include <click/timer.hh>
 #include <click/hashmap.hh>
 #include "neighbortable.hh"
-//#include "hosttable.hh"
 
 CLICK_DECLS
 
@@ -15,16 +14,14 @@ class VEILProcessHello : public Element {
 
 		const char* class_name() const { return "VEILProcessHello"; }
 		const char* port_count() const { return PORTS_1_1; }
-		//const char* processing() const { return PUSH; }
-		const char* processing() const { return AGNOSTIC; }
+		const char* processing() const { return PUSH; }
 
 		int configure(Vector<String>&, ErrorHandler*);
-	 	//virtual void push (int, Packet*);
-		Packet* simple_action(Packet*);
+		Packet* smaction(Packet*);
+	 	virtual void push (int, Packet*);		
 
 	private:
 		VEILNeighborTable *neighbor_table;
-		//VEILHostTable hosts;		
                 /* which interface is this element connected to
 		 * if we have multiple interfaces on a dev
 	         * and hence multiple VEILProcessHello's
