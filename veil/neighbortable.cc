@@ -24,7 +24,6 @@ VEILNeighborTable::updateEntry (
 	NeighborTableEntry entry;
 
 	if((iter = neighbors.find(*nvid)) != neighbors.end()){
-		//TODO: did this give us the correct entry?
 		entry = (NeighborTableEntry) neighbors.get(*nvid);
 		entry.expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
 	} else {
@@ -41,7 +40,6 @@ VEILNeighborTable::updateEntry (
 void
 VEILNeighborTable::expire(Timer *t, void *data) 	
 {
-	//TODO: does erase free memory allocated for key and value?	
 	TimerData *td = (TimerData *) data;
 	VID* nvid = (VID *) td->vid;
 	td->neighbors->erase(*nvid);
