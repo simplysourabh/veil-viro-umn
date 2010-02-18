@@ -1,5 +1,6 @@
 #include <click/string.hh>
 #include <click/glue.hh>
+#include <click/straccum.hh>
 
 #ifndef VEIL_VID_HH
 #define VEIL_VID_HH
@@ -54,13 +55,43 @@ class VID {
 			return _data;
 		}
 
+		inline String vid_string()
+		{
+			char vid[VID_LEN*2+1];
+			snprintf(vid, (int)sizeof(vid), "%02x%02x%02x%02x%02x%02x", _data[0], _data[1], _data[2], _data[3], _data[4], _data[5]);
+			vid[VID_LEN*2] = '\0';
+			return String(vid);
+		}
+
 		//TODO: change.
 		inline size_t hashcode() const 
 		{ 
 			return (_data[5] | ((size_t) _data[4] << 8) | ((size_t) _data[3] << 16) | ((size_t) _data[2] << 24) | ((size_t) _data[1] << 31))
 				^ ((size_t) _data[0] << 9);
 		}
-
+		
+		inline int logical_distance(VID *v)
+		{
+			const uint8_t *vid = v->sdata();		 
+			int dist = 0, count = 0;
+			for(int i = 0; i < VID_LEN ; i++)
+			{
+				if(_data[i] == vid[i])
+					dist += 8;
+				else{
+					uint8_t res = _data[i] ^ vid[i];
+					//count leading 0's in xor result
+					while(res)
+					{
+						count++;
+						res = res >> 1;
+					}
+					dist += 8-count;
+					break;
+				}
+			}
+			return dist;
+		}
 };
 
 inline bool
