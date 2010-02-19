@@ -6,8 +6,11 @@
 #define VEIL_VID_HH
 
 #define VID_LEN 6
+#define HOST_LEN 2
  
 CLICK_DECLS
+
+//TODO: move functions to cc
 
 class VID {
 	private:
@@ -26,7 +29,7 @@ class VID {
 
 		explicit VID(const unsigned char *data) 
 		{
-			memcpy(_data, data, 6);
+			memcpy(_data, data, VID_LEN);
 		}
 
 		static VID make_broadcast() 
@@ -73,11 +76,11 @@ class VID {
 		inline int logical_distance(VID *v)
 		{
 			const uint8_t *vid = v->sdata();		 
-			int dist = 0, count = 0;
+			int lprefix = 0, count = 0;
 			for(int i = 0; i < VID_LEN ; i++)
 			{
 				if(_data[i] == vid[i])
-					dist += 8;
+					lprefix += 8;
 				else{
 					uint8_t res = _data[i] ^ vid[i];
 					//count leading 0's in xor result
@@ -86,12 +89,26 @@ class VID {
 						count++;
 						res = res >> 1;
 					}
-					dist += 8-count;
+					lprefix += 8-count;
 					break;
 				}
 			}
-			return dist;
+			return VID_LEN*8 - lprefix;
 		}
+
+		static VID generate_host_vid(VID* svid, EtherAddress* host)
+		{
+			int len = VID_LEN - HOST_LEN;			
+			unsigned char hvid[VID_LEN];
+			//first 4B of host VID = first 4B of switch VID
+			memcpy(hvid, svid, len);
+			//TODO:find a cleaner way to do this
+			//generate last 2B of host VID based on host MAC
+			unsigned char* ethaddr = host->data();
+			hvid[4] = (ethaddr[0] << 2) | (ethaddr[1] >> 3) | ethaddr[2];
+			hvid[5] = (ethaddr[3] >> 1) | (ethaddr[4] << 2) | (ethaddr[5] << 4);	
+			return VID(static_cast <const unsigned char*>(hvid));				
+		}  
 };
 
 inline bool
