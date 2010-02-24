@@ -174,11 +174,11 @@ VEILProcessARP::smaction(Packet* p){
 		IPAddress src = IPAddress(ea->arp_spa);
 		IPAddress dst = IPAddress(ea->arp_tpa);
 
-		//ARP request: lookup host (and mapping table?). if found send reply. else route pkt to dst.		
+		//ARP request: lookup mapping table. if found send reply. else route pkt to dst.		
 		//TODO: is eth-src the vid found in host_table for both eth- header and arp-header? 		 
 		if(vhdr->packetType == VEIL_ARP_REQ){
 			VID *ipvid = new VID();
-			if(host_table->lookupIP(&dst, ipvid))
+			if(map->lookupIP(&dst, ipvid))
 			{
 				WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(veil_header) + sizeof(click_ether_arp));
     					if (q == 0) {
