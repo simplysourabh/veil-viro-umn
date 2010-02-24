@@ -13,28 +13,36 @@ VEILNeighborTable::~VEILNeighborTable () {}
 
 void
 VEILNeighborTable::updateEntry (
-	VID *nvid, String interface)
+	VID *nvid, VID *myvid)
 {
-	NeighborTable::iterator iter;
-	
 	TimerData *tdata = new TimerData();
 	tdata->vid = nvid;
 	tdata->neighbors = &neighbors;
 	
 	NeighborTableEntry entry;
 
-	if((iter = neighbors.find(*nvid)) != neighbors.end()){
-		entry = (NeighborTableEntry) neighbors.get(*nvid);
-		entry.expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
+	memcpy(&entry.myVid, myvid->data(), 6);
+	Timer *expiry = new Timer(&VEILNeighborTable::expire, tdata);
+	expiry->initialize(this);
+	expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
+	entry.expiry  = expiry;
+	neighbors.set(*nvid, entry);
+}
+
+bool
+VEILNeighborTable::lookupEntry(VID* nvid, VID* myvid)
+{
+	bool found = false;
+	if (neighbors.find(*nvid) == neighbors.end()) {
+		found = false;
+		myvid = NULL;
 	} else {
-		entry.interface = interface;
-	
-		Timer *expiry = new Timer(&VEILNeighborTable::expire, tdata);
-		expiry->initialize(this);
-		expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
-		entry.expiry  = expiry;
-		neighbors.set(*nvid, entry);
+		NeighborTableEntry nte = neighbors.get(*nvid);
+		VID myVid = nte.myVid;
+		memcpy(myvid, &myVid, 6);
+		found = true;
 	}
+	return found;
 }
 
 void
@@ -58,9 +66,10 @@ VEILNeighborTable::read_handler(Element *e, void *thunk)
 	for(iter = neighbors.begin(); iter; ++iter){
 		String vid = static_cast<VID>(iter.key()).vid_string();		
 		NeighborTableEntry nte = iter.value();
+		String myvid = static_cast<VID>(nte.myVid).vid_string();		
 		Timer *t = nte.expiry;
 
-		sa << vid << ' ' << nte.interface << ' ' << t->expiry() << '\n';
+		sa << vid << ' ' << myvid << ' ' << t->expiry() << '\n';
 	}
 	
 	return sa.take_string();	  
