@@ -16,11 +16,9 @@ class VEILNeighborTable : public Element {
 
 		const char* class_name() const { return "VEILNeighborTable"; }
 		const char* port_count() const { return PORTS_0_0; }
-		//const char* processing() const { return AGNOSTIC; }
 	
-		//int configure(Vector<String>&, ErrorHandler*);
-		void updateEntry(VID*, String);
-		//void printNeighborTable();
+		void updateEntry(VID*, VID*);
+		bool lookupEntry(VID*, VID*);
 		static void expire(Timer*, void*);
 		static String read_handler(Element*, void*);
 		void add_handlers();	
@@ -29,10 +27,9 @@ class VEILNeighborTable : public Element {
 		//each entry will keep track of neighbor's VID and VID of 
                 //the interface the neighbor is connected to
 		struct NeighborTableEntry {
-			//VID myVid;
-			String interface;
+			VID myVid;
+			//String interface;
 			Timer *expiry;
-			//bool valid;
 		};
 
 		typedef HashTable<VID, NeighborTableEntry> NeighborTable;
