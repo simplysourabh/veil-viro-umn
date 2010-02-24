@@ -28,9 +28,8 @@ class VEILProcessHello : public Element {
 		 * the routing element can use this info
 		 * to send pkts to neighbors out the right interface
 		 */	
-		 String interface;
-		//if we need VIDs instead
-		//VID myVid;
+		 //String interface;
+		VID myVid;
 			
 };
 
