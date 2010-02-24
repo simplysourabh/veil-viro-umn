@@ -17,7 +17,7 @@ VEILProcessHello::configure (
 	ErrorHandler *errh)
 {
 	return cp_va_kparse(conf, this, errh,
-		"INTERFACE", cpkM+cpkP, cpString, &interface,
+		"MYVID", cpkM+cpkP, cpVid, &myVid,
 		"NEIGHBORTABLE", cpkM+cpkP, cpElementCast, "VEILNeighborTable", &neighbor_table,
 		cpEnd);
 }
@@ -44,7 +44,7 @@ VEILProcessHello::smaction(Packet* p)
 	}
 	
 	VID nVid = VID((const unsigned char*)e->ether_shost);
-	neighbor_table->updateEntry(&nVid, interface);
+	neighbor_table->updateEntry(&nVid, &myVid);
 
 	return p;	
 }
@@ -52,9 +52,9 @@ VEILProcessHello::smaction(Packet* p)
 void 
 VEILProcessHello::push(int, Packet* p)
 {
-	smaction(p);
+	Packet *q = smaction(p);
 	//discard in the script
-	output(0).push(p);
+	output(0).push(q);
 }
 
 CLICK_ENDDECLS
