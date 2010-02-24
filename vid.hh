@@ -1,6 +1,7 @@
 #include <click/string.hh>
 #include <click/glue.hh>
 #include <click/straccum.hh>
+#include <click/etheraddress.hh>
 
 #ifndef VEIL_VID_HH
 #define VEIL_VID_HH
@@ -96,7 +97,7 @@ class VID {
 			return VID_LEN*8 - lprefix;
 		}
 
-		static VID generate_host_vid(VID* svid, EtherAddress* host)
+		static void generate_host_vid(VID* svid, EtherAddress* host, VID* hostvid)
 		{
 			int len = VID_LEN - HOST_LEN;			
 			unsigned char hvid[VID_LEN];
@@ -107,7 +108,7 @@ class VID {
 			unsigned char* ethaddr = host->data();
 			hvid[4] = (ethaddr[0] << 2) | (ethaddr[1] >> 3) | ethaddr[2];
 			hvid[5] = (ethaddr[3] >> 1) | (ethaddr[4] << 2) | (ethaddr[5] << 4);	
-			return VID(static_cast <const unsigned char*>(hvid));				
+			memcpy(hostvid, hvid, 6);		
 		}  
 };
 
