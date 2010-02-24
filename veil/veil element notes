@@ -32,7 +32,16 @@ element.cc    -- overloaded version of add_data_handlers. if we ever need read w
 lib/error.cc  -- XXX_ptr_error_hook
 		 static_initialize
 ------------------------------------------------------------------------------
+hello pkt format:
+ethernet header --- veil packet type (2B)
 
+ARP pkt format:
+ethernet header --- veil packet type (2B) --- ordinary ARP packet
+------------------------------------------------------------------------------
+processarp :
+
+Output of this element needs to go thru the routing element. Input for this element comes from the top level Classifier in the Click script which doesn't know anything about access nodes. Therefore, the way we decide whether an ARP request packet was actually destined for us is to lookup the host table and see if we have the required VID. If we don't, the routing element will have to fwd the request pkt to the correct access switch. We use the reroute annotation to keep track of such packets.
+------------------------------------------------------------------------------
 
 
 
