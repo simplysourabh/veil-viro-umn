@@ -110,6 +110,28 @@ class VID {
 			hvid[5] = (ethaddr[3] >> 1) | (ethaddr[4] << 2) | (ethaddr[5] << 4);	
 			memcpy(hostvid, hvid, 6);		
 		}  
+
+		void calculate_rdv_point(int k, VID *rvid){
+			int copy_bits = VID_LEN*8 - k + 1;
+			int count = 0;
+			unsigned char vid[VID_LEN];
+
+			memset(vid, 0, sizeof(vid));			
+			
+			while(copy_bits > 8){
+				vid[count] = _data[count];
+				count++;
+				copy_bits -= 8;	
+			}
+			if(copy_bits > 0){
+				uint8_t t = _data[count] >> (8 - copy_bits);
+				t = t << (8 - copy_bits);
+				vid[count] = t;
+			}
+			
+			memcpy(rvid, vid, 6);
+		}		
+		
 };
 
 inline bool
