@@ -48,7 +48,6 @@ VEILHostTable::lookupVID (
 	bool found = false;	
 	if (hosts.find(*vid) == hosts.end()) {
 		found = false;
-		mac = NULL;
 	} else {
 		/*
 		struct hostTableEntry hte;
@@ -71,7 +70,6 @@ VEILHostTable::lookupMAC (
 	bool found = false;
 	if (rhosts.find(*mac) == rhosts.end()) {
 		found = false;
-		vid = NULL;
 	} else {
 		VID myvid = rhosts.get(*mac);
 		memcpy(vid, myvid.data(), 6);
@@ -89,7 +87,6 @@ VEILHostTable::lookupIP (
 	bool found = false;
 	if (iphosts.find(*ip) == iphosts.end()) {
 		found = false;
-		vid = NULL;
 	} else {
 		VID myvid = iphosts.get(*ip);
 		memcpy(vid, myvid.data(), 6);
