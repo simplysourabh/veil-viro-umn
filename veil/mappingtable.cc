@@ -33,7 +33,6 @@ VEILMappingTable::lookupIP (IPAddress *ip, VID *ipvid, VID* myvid)
 	bool found = false;
 	if (ipmap.find(*ip) == ipmap.end()) {
 		found = false;
-		myvid = NULL;
 	} else {
 		MappingTableEntry mte = ipmap.get(*ip);		
 		VID ipVid = mte.ipVid;
