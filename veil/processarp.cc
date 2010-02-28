@@ -22,9 +22,9 @@ VEILProcessARP::configure (
 {
 	return cp_va_kparse(conf, this, errh,
 		"MYVID", cpkP+cpkM, cpVid, &myVid,
-		//"VEILGENERATEVID", cpkP+cpkM, cpElementCast, "VEILGenerateVid", &genVid,
 		"HOSTTABLE", cpkM+cpkP, cpElementCast, "VEILHostTable", &host_table,
 		"MAPPINGTABLE", cpkM+cpkP, cpElementCast, "VEILMappingTable", &map,
+		"INTERFACETABLE", cpkM+cpkP, cpElementCast, "VEILInterfaceTable", &interfaces,
 		cpEnd);
 }
 
@@ -36,11 +36,7 @@ VEILProcessARP::smaction(Packet* p){
 	if(ntohs(eth->ether_type) == ETHERTYPE_ARP){
 		VID *hvid= new VID();
 
-		//TODO: are both ARP-dest-mac and eth-dest-mac ffffff for 
-		//gratuitous ARP?
 		EtherAddress edest = EtherAddress(eth->ether_dhost);
-		//TODO: are we supposed to be looking at src in ARP?
-		//are eth-src and ARP-src always the same?
 		EtherAddress esrc = EtherAddress(eth->ether_shost);
 
 		const click_ether_arp *ap = (const click_ether_arp *) p->network_header();
@@ -62,10 +58,48 @@ VEILProcessARP::smaction(Packet* p){
 		/* host sent an ARP requesting MAC of another host 
 		 * connected to the same switch. 
 		 * checking if 'dst' is in host_table works for 
-		 * both requests and replies. ignore them all.
+		 * both requests and replies. ignore replies
+		 * and requests coming from hosts connected to 
+		 * the switch thru the same interface say thru a hub
 		 */
 		if(host_table->lookupIP(&dst, hvid))
 		{
+			if(ntohs(ap->ea_hdr.ar_op) == ARPOP_REQUEST){
+				unsigned char dest_int[6];
+				memset(dest_int, 0, sizeof(dest_int));
+				memcpy(dest_int, hvid, 4);
+				//if both hosts are not connect thru
+				//the same switch interface, send reply
+				//src host's vid has the same first 4B as 
+				//myVid
+				if(VID(static_cast<const unsigned char*>(dest_int)) != myVid) {
+					//send ARP reply
+					WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
+    					if (q == 0) {
+        					click_chatter("in processarp: cannot make packet!");		
+						return 0;
+ 					}
+					click_ether *e = (click_ether *) q->data();
+					q->set_ether_header(e);
+					memcpy(e->ether_dhost, &esrc, 6);
+					memcpy(e->ether_shost, hvid, 6);
+					e->ether_type = htons(ETHERTYPE_ARP);
+					click_ether_arp *ea = (click_ether_arp *) (e + 1);
+    					ea->ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
+					ea->ea_hdr.ar_pro = htons(ETHERTYPE_IP);
+					ea->ea_hdr.ar_hln = 6;
+					ea->ea_hdr.ar_pln = 4;
+					ea->ea_hdr.ar_op = htons(ARPOP_REPLY);
+					memcpy(ea->arp_sha, hvid, 6);
+					memcpy(ea->arp_spa, &dst, 4);
+    					memcpy(ea->arp_tha, &esrc, 6);
+					memcpy(ea->arp_tpa, &src, 4);
+					
+					delete hvid;
+					p->kill();
+					return q;
+				}
+			}
 			delete hvid;			
 			p->kill();
 			return NULL;
@@ -91,6 +125,8 @@ VEILProcessARP::smaction(Packet* p){
 				q->set_ether_header(e);
 				memcpy(e->ether_dhost, &esrc, 6);
 				memcpy(e->ether_shost, ipvid, 6);
+				e->ether_type = htons(ETHERTYPE_ARP);
+
 				click_ether_arp *ea = (click_ether_arp *) (e + 1);
     				ea->ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
 				ea->ea_hdr.ar_pro = htons(ETHERTYPE_IP);
@@ -117,7 +153,7 @@ VEILProcessARP::smaction(Packet* p){
 			 */
 			else{		
 				//find host VID in host table
-				//TODO: what happens if host VID is not found? should we add it to host_table? 
+				//TODO: do we always find host VID at this stage?
 				//TODO: is tpa 0 because we don't know it? 
                                 if(host_table->lookupIP(&src, hvid))
                                 {
@@ -147,6 +183,8 @@ VEILProcessARP::smaction(Packet* p){
 					memcpy(ea->arp_spa, &src, 4);
     					memset(ea->arp_tha, 0, 6);
 					memcpy(ea->arp_tpa, &dst, 4);
+			
+					SET_REROUTE_ANNO(p, 'r');
 
 					delete hvid;
 					delete ipvid;
@@ -159,10 +197,11 @@ VEILProcessARP::smaction(Packet* p){
 		}		
 
 		//all other packets should not have come here
-		//TODO: handle error. for now just return p.
+		//TODO: handle error. for now kill p.
 		//TODO: any other use cases?
 		delete hvid;
-		return p;
+		p->kill();
+		return NULL;
 	}
 
 	//packet came from another switch
@@ -174,15 +213,17 @@ VEILProcessARP::smaction(Packet* p){
 		IPAddress src = IPAddress(ea->arp_spa);
 		IPAddress dst = IPAddress(ea->arp_tpa);
 
-		//ARP request: lookup mapping table. if found send reply. else route pkt to dst.		
+		//ARP request: lookup mapping and host table. if found send reply. else route pkt to dst.		
 		//TODO: is eth-src the vid found in host_table for both eth- header and arp-header? 		 
 		if(vhdr->packetType == VEIL_ARP_REQ){
 			VID *ipvid = new VID();
-			if(map->lookupIP(&dst, ipvid))
+			VID *mvid = new VID();
+			if(map->lookupIP(&dst, ipvid, mvid) || host_table->lookupIP(&dst, ipvid))
 			{
 				WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(veil_header) + sizeof(click_ether_arp));
     					if (q == 0) {
         					click_chatter("in processarp: cannot make packet!");
+						delete mvid;
 						delete ipvid;
         					return 0;
     					} 						click_ether *e = (click_ether *) q->data();
@@ -203,70 +244,97 @@ VEILProcessARP::smaction(Packet* p){
     					memcpy(ea->arp_tha, &svid, 6);
 					memcpy(ea->arp_tpa, &src, 4);
 
+					delete mvid;
 					delete ipvid;
 					p->kill();
 					return q;	
 			}
 			else {
-				/* we're not the access switch
+				//check if the packet was destined to 
+				//one of our interfaces
+				unsigned char temp[VID_LEN];
+				memset(temp, 0, 6);
+				memcpy(temp, &dvid, 4);
+
+				VID interfacevid = VID(static_cast<unsigned char*>(temp));
+				int interface;
+				if(interfaces->lookupEntry(&interfacevid, &interface))
+				{
+					//error. no mapping found
+					//drop packet for now
+					//TODO: handle error
+					delete mvid;
+					delete ipvid;
+					p->kill();
+					return NULL;
+				}
+
+				/* we're not the access switch or destination
 				 * set this annotation to tell the 
 				 * routing element it needs to 
 				 * find the best access switch
 				 */
 				SET_REROUTE_ANNO(p, 'r');
+				delete mvid;
 				delete ipvid;
 				return p;			
 			}
 		}
 
-		//ARP reply: destined to some host. update
-		//mapping table. send ARP reply to host	
+		//ARP reply: if destined to our host. update
+		//mapping table and send ARP reply to host	
 		if(vhdr->packetType == VEIL_ARP_RPLY){
 			map->updateEntry(&src, &svid, &myVid);
 			EtherAddress *dest = new EtherAddress();
-			host_table->lookupVID(&dvid, dest);
+			if(host_table->lookupVID(&dvid, dest)){
 			
-			WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
-    			if (q == 0) {
-			        click_chatter("in arp responder: cannot make packet!");
+				WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
+	    			if (q == 0) {
+				        click_chatter("in arp responder: cannot make packet!");
+					delete dest;
+				        return 0;
+    				}
+
+    				click_ether *e = (click_ether *) q->data();
+				q->set_ether_header(e);
+				memcpy(e->ether_dhost, dest->data(), 6);
+				memcpy(e->ether_shost, &svid, 6);
+				e->ether_type = htons(ETHERTYPE_ARP);
+	
+				click_ether_arp *ea = (click_ether_arp *) (e + 1);
+				ea->ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
+
+				ea->ea_hdr.ar_pro = htons(ETHERTYPE_IP);
+				ea->ea_hdr.ar_hln = 6;
+				ea->ea_hdr.ar_pln = 4;
+				ea->ea_hdr.ar_op = htons(ARPOP_REPLY);
+				memcpy(ea->arp_sha, &svid, 6);
+				memcpy(ea->arp_spa, &src, 4);
+				memcpy(ea->arp_tha, dest->data(), 6);
+				memcpy(ea->arp_tpa, &dst, 4);
+			
 				delete dest;
-			        return 0;
-    			}
-
-    			click_ether *e = (click_ether *) q->data();
-			q->set_ether_header(e);
-			memcpy(e->ether_dhost, dest->data(), 6);
-			memcpy(e->ether_shost, &svid, 6);
-			e->ether_type = htons(ETHERTYPE_ARP);
-
-			click_ether_arp *ea = (click_ether_arp *) (e + 1);
-			ea->ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
-
-			ea->ea_hdr.ar_pro = htons(ETHERTYPE_IP);
-			ea->ea_hdr.ar_hln = 6;
-			ea->ea_hdr.ar_pln = 4;
-			ea->ea_hdr.ar_op = htons(ARPOP_REPLY);
-			memcpy(ea->arp_sha, &svid, 6);
-			memcpy(ea->arp_spa, &src, 4);
-			memcpy(ea->arp_tha, dest->data(), 6);
-			memcpy(ea->arp_tpa, &dst, 4);
-			
-			delete dest;
-			p->kill();
-			return q;			
+				p->kill();
+				return q;
+			} else {
+				//packet was not destined to us, fwd it
+				return p;
+			}
 		}	
 		
-		//all other packets should not have come here
-		//TODO: handle error. for now just return p.
+		//pkt is ETHERTYPE VEIL but not VEIL REQ or VEIL RPLY
+		//TODO: handle error. for now kill p
 		//TODO: any other use cases?
-		return p;			
+		p->kill();
+		return NULL;			
 	}
 
-	//all other packets should not have come here
-	//TODO: handle error. for now just return p.
-	return p;
+	//packet is neither ETHERTYPE ARP nor ETHERTYPE VEIL
+	//TODO: handle error. for now kill p.
+	p->kill();
+	return NULL;
 }
-
+ 
 void
 VEILProcessARP::push (
 	int port,
