@@ -5,6 +5,7 @@
 #include <click/hashmap.hh>
 #include "hosttable.hh"
 #include "mappingtable.hh"
+#include "interfacetable.hh"
 
 CLICK_DECLS
 
@@ -23,13 +24,11 @@ class VEILProcessARP: public Element {
 	 	virtual void push (int, Packet*);
 
 	private:
-		//EtherAddress myMac;
 		VID myVid;
 
 		VEILHostTable *host_table;
 		VEILMappingTable *map;
-		//VEILAccessNode accessNode;
-		//VEILGenerateVid *genVid;
+		VEILInterfaceTable *interfaces;
 			
 };
 
