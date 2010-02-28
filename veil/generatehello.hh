@@ -3,8 +3,6 @@
 #include <click/element.hh>
 #include <click/timer.hh>
 #include "click_veil.hh"
-//#include "veil_hosttable.hh"
-//#include "veil_generatevid.hh"
  
 CLICK_DECLS
  
@@ -26,9 +24,6 @@ class VEILGenerateHello : public Element {
 	private:
 		Timer myTimer;
 		VID myVid;
-		//EtherAddress myMac;
-		//VEILGenerateVid *genVid;
-		//VEILHostTable *hosts;
 
 };
  
