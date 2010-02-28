@@ -1,6 +1,6 @@
 #include <click/config.h>
 #include <click/confparse.hh>
-#include<click/straccum.hh>
+#include <click/straccum.hh>
 #include "neighbortable.hh"
 
 //TODO: make reads and writes atomic
@@ -35,7 +35,6 @@ VEILNeighborTable::lookupEntry(VID* nvid, VID* myvid)
 	bool found = false;
 	if (neighbors.find(*nvid) == neighbors.end()) {
 		found = false;
-		myvid = NULL;
 	} else {
 		NeighborTableEntry nte = neighbors.get(*nvid);
 		VID myVid = nte.myVid;
