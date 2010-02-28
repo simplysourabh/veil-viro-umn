@@ -40,9 +40,31 @@ ethernet header --- veil packet type (2B) --- ordinary ARP packet
 ------------------------------------------------------------------------------
 processarp :
 
-Output of this element needs to go thru the routing element. Input for this element comes from the top level Classifier in the Click script which doesn't know anything about access nodes. Therefore, the way we decide whether an ARP request packet was actually destined for us is to lookup the host table and see if we have the required VID. If we don't, the routing element will have to fwd the request pkt to the correct access switch. We use the reroute annotation to keep track of such packets.
-------------------------------------------------------------------------------
+Output of this element needs to go thru the routing element. Input for this element comes from the top level Classifier in the Click script.
 
+Any packets that we receive that are of type ETHERTYPE_ARP SHOULD have come to us from one of the hosts connected to us directly. So we don't have to check if any of them were destined for us. There are 3 cases:
+
+1. gratuitous ARP request/ reply
+	we don't distinguish between the two types of packets and merely add an entry in VEILHostTable after generating a host vid.
+
+2. the destination IP address belongs to one of the hosts connected to us
+	we need not worry about ARP replies. if an arp request came from a host which was connected to the switch at the same interface as the destination host, we can ignore the packet. if the dest and src hosts are connected to the switch through different interfaces, then we send and ARP reply with the *host VID* of the destination.
+
+3. next we check the packet type to see if it was ARP_REQUEST
+	we only get to this stage if the packet is destined to some host not directly connected to us. we look up the mapping table to see if we can send an ARP reply ourselves. otherwise we construct a VEIL ARP request and set the destination to the access switch for that destination host's IP address. We also set a REROUTE annotation to indicate to RoutePacket that it needs to find the correct destination to send the packet to.
+
+Next we check if packet type in the ethernet header is ETHERTYPE_VEIL. This means that it came from another switch. There are 2 cases:
+
+1. packet is of type VEIL ARP request. 
+	At this stage the packet might or might not be destined for us. Some other switch might have forwarded the packet to us because it thought we were the access switch. So we check if we have an entry corresponding to that request in our mapping or host table (if by some chance we are our own access switch). If found, send a VEIL ARP reply. If not found, we check if the packet was destined to *any* of the switch's interfaces. If yes, we ignore the packet else we set a REROUTE annotation.
+
+2. packet is of type VEIL ARP reply.
+	Check if the destination is one of the hosts in the host table. If yes, construct an ETHER ARP reply and send to host else send the packet to RoutePacket for forwarding to the correct destination. It's forward and not reroute because VEIL ARP replies are unicast so no need to set REROUTE.
+------------------------------------------------------------------------------
+publishaccessinfo:
+
+There is a single instance of PublishAccessInfo per switch. src-vid  is the vid of the switch interface to which the host is connected i.e., first 4B of host-vid.  dst-vid is the access switch whose vid is calculated by hashing IPAddress of host. Since IP addresses and hence their hashes are unique, we publish each host's info to a different access switch.
+------------------------------------------------------------------------------
 
 
 
