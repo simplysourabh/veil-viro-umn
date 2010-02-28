@@ -13,12 +13,11 @@ class VEILProcessHello : public Element {
 		~VEILProcessHello();
 
 		const char* class_name() const { return "VEILProcessHello"; }
-		const char* port_count() const { return PORTS_1_1; }
-		const char* processing() const { return PUSH; }
+		const char* port_count() const { return PORTS_1_0; }
+		const char* processing() const { return AGNOSTIC; }
 
 		int configure(Vector<String>&, ErrorHandler*);
-		Packet* smaction(Packet*);
-	 	virtual void push (int, Packet*);		
+		Packet* simple_action(Packet*);		
 
 	private:
 		VEILNeighborTable *neighbor_table;
