@@ -18,6 +18,7 @@ VEILInterfaceTable::configure(Vector<String> &conf, ErrorHandler *errh)
 	for(int i = 0; i < conf.size(); i++){
 		if(cp_vid(conf[i], interface)){
 			interfaces.set(*interface, i);
+			rinterfaces.set(i, *interface);
 		} else {
 			errh->error("error in processing argument in VEILInterfaceTable");
 			r = -EINVAL;	
@@ -30,7 +31,7 @@ VEILInterfaceTable::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 bool
-VEILInterfaceTable::lookupEntry(VID* ivid, int* i)
+VEILInterfaceTable::lookupVidEntry(VID* ivid, int* i)
 {
 	bool found = false;
 	if (!(interfaces.find(*ivid) == interfaces.end())) {
@@ -39,6 +40,19 @@ VEILInterfaceTable::lookupEntry(VID* ivid, int* i)
 	}
 	return found;
 }
+
+bool
+VEILInterfaceTable::lookupIntEntry(int i, VID* ivid)
+{
+	bool found = false;
+	if (!(rinterfaces.find(i) == rinterfaces.end())) {
+		VID vid = rinterfaces.get(i);
+		memcpy(ivid, &vid, VID_LEN);
+		found = true;
+	}
+	return found;
+}
+
 
 String
 VEILInterfaceTable::read_handler(Element *e, void *thunk)
