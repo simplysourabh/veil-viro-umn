@@ -21,7 +21,6 @@ VEILProcessARP::configure (
 	ErrorHandler *errh)
 {
 	return cp_va_kparse(conf, this, errh,
-		"MYVID", cpkP+cpkM, cpVid, &myVid,
 		"HOSTTABLE", cpkM+cpkP, cpElementCast, "VEILHostTable", &host_table,
 		"MAPPINGTABLE", cpkM+cpkP, cpElementCast, "VEILMappingTable", &map,
 		"INTERFACETABLE", cpkM+cpkP, cpElementCast, "VEILInterfaceTable", &interfaces,
@@ -30,6 +29,10 @@ VEILProcessARP::configure (
 
 Packet* 
 VEILProcessARP::smaction(Packet* p){
+	int myport = PORT_ANNO(p);
+	VID myVid;
+	interfaces->lookupIntEntry(myport, &myVid);
+
 	const click_ether *eth = (const click_ether *) p->mac_header();
 
 	//ARP pkt came from a host
@@ -108,16 +111,16 @@ VEILProcessARP::smaction(Packet* p){
 		//host sent an ARP request 
 		if(ntohs(ap->ea_hdr.ar_op) == ARPOP_REQUEST){
 			VID *ipvid = new VID();
-			VID *myvid = new VID();
+			VID *interfacevid = new VID();
 			//found MAC in mapping table
 		        //construct ARP reply
-			if(map->lookupIP(&dst, ipvid, myvid)){
+			if(map->lookupIP(&dst, ipvid, interfacevid)){
 				WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
     				if (q == 0) {
         				click_chatter("in processarp: cannot make packet!");
 					delete hvid;
 					delete ipvid;
-					delete myvid;
+					delete interfacevid;
 
         				return 0;
     				}
@@ -140,7 +143,7 @@ VEILProcessARP::smaction(Packet* p){
 				
 				delete hvid;
 				delete ipvid;
-				delete myvid;
+				delete interfacevid;
 
 				p->kill();
 				return q;
@@ -162,7 +165,7 @@ VEILProcessARP::smaction(Packet* p){
         					click_chatter("in processarp: cannot make packet!");
 						delete hvid;
 						delete ipvid;
-						delete myvid;
+						delete interfacevid;
         	
 						return 0;
     					} 						click_ether *e = (click_ether *) q->data();
@@ -188,7 +191,7 @@ VEILProcessARP::smaction(Packet* p){
 
 					delete hvid;
 					delete ipvid;
-					delete myvid;
+					delete interfacevid;
 
 					p->kill();
 					return q;
@@ -258,7 +261,7 @@ VEILProcessARP::smaction(Packet* p){
 
 				VID interfacevid = VID(static_cast<unsigned char*>(temp));
 				int interface;
-				if(interfaces->lookupEntry(&interfacevid, &interface))
+				if(interfaces->lookupVidEntry(&interfacevid, &interface))
 				{
 					//error. no mapping found
 					//drop packet for now
