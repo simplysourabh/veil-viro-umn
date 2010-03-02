@@ -10,6 +10,11 @@ CLICK_DECLS
 
 class VEILInterfaceTable : public Element {
 	public:
+		//could've been a vector but is a hash if we decide to 
+		//store more info in the future	
+		typedef HashTable<VID, int> InterfaceTable;
+		typedef HashTable<int, VID> ReverseInterfaceTable;
+		
 		VEILInterfaceTable();
 		~VEILInterfaceTable();
 
@@ -17,16 +22,22 @@ class VEILInterfaceTable : public Element {
 		const char* port_count() const { return PORTS_0_0; }
 		
 		int configure(Vector<String> &, ErrorHandler*);
-		bool lookupEntry(VID*, int*);
+		bool lookupVidEntry(VID*, int*);
+		bool lookupIntEntry(int, VID*);
+		int numInterfaces(){
+			return interfaces.size();
+		}
 		static String read_handler(Element*, void*);
-		void add_handlers();	
+		void add_handlers();
 	
-	private:
-		//could've been a vector but is a hash if we decide to 
-		//store more info in the future	
-		typedef HashTable<VID, int> InterfaceTable;
-		
-		InterfaceTable interfaces;		
+		inline const InterfaceTable* get_interfacetable_handle(){
+			return &interfaces;
+		}
+
+	private:		
+		InterfaceTable interfaces;
+		ReverseInterfaceTable rinterfaces;
+			
 };
 
 CLICK_ENDDECLS
