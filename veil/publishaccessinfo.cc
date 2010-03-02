@@ -36,8 +36,8 @@ VEILPublishAccessInfo::run_timer (
 {
 	assert(timer == &myTimer);
 
-	const HostIPTable *hipt = hosts->get_host_iptable_handle();
-	HostIPTable::const_iterator iter;	
+	const VEILHostTable::HostIPTable *hipt = hosts->get_host_iptable_handle();
+	VEILHostTable::HostIPTable::const_iterator iter;	
 
 	//hash of IP yields a unique value so we need to generate one pkt/host
 	for(iter = hipt->begin(); iter; ++iter){
