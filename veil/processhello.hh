@@ -3,6 +3,8 @@
 #include <click/element.hh>
 #include <click/timer.hh>
 #include <click/hashmap.hh>
+#include "utilities.hh"
+#include "interfacetable.hh"
 #include "neighbortable.hh"
 
 CLICK_DECLS
@@ -20,15 +22,8 @@ class VEILProcessHello : public Element {
 		Packet* simple_action(Packet*);		
 
 	private:
-		VEILNeighborTable *neighbor_table;
-                /* which interface is this element connected to
-		 * if we have multiple interfaces on a dev
-	         * and hence multiple VEILProcessHello's
-		 * the routing element can use this info
-		 * to send pkts to neighbors out the right interface
-		 */	
-		 //String interface;
-		VID myVid;
+		VEILNeighborTable *neighbor_table;		
+		VEILInterfaceTable *interfaces;
 			
 };
 
