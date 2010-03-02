@@ -28,7 +28,7 @@ VEILMappingTable::updateEntry (IPAddress *ip, VID *ipvid, VID *myvid)
 }
 
 bool
-VEILMappingTable::lookupIP (IPAddress *ip, VID *ipvid, VID* myvid)
+VEILMappingTable::lookupIP(IPAddress *ip, VID *ipvid, VID* myvid)
 {
 	bool found = false;
 	if (ipmap.find(*ip) == ipmap.end()) {
