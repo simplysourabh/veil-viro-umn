@@ -14,7 +14,7 @@ class VEILProcessARP: public Element {
 		VEILProcessARP();
 		~VEILProcessARP();
 
-		const char* class_name() const { return "VEILProcessARPRequest"; }
+		const char* class_name() const { return "VEILProcessARP"; }
 		const char* port_count() const { return PORTS_1_1; } 
 		//const char* processing() const { return PUSH; }
 		const char* processing() const { return "a/h"; }
@@ -24,7 +24,6 @@ class VEILProcessARP: public Element {
 	 	virtual void push (int, Packet*);
 
 	private:
-		VID myVid;
 
 		VEILHostTable *host_table;
 		VEILMappingTable *map;
