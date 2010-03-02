@@ -11,19 +11,6 @@ CLICK_DECLS
 
 class VEILNeighborTable : public Element {
 	public:
-		VEILNeighborTable();
-		~VEILNeighborTable();
-
-		const char* class_name() const { return "VEILNeighborTable"; }
-		const char* port_count() const { return PORTS_0_0; }
-	
-		void updateEntry(VID*, VID*);
-		bool lookupEntry(VID*, VID*);
-		static void expire(Timer*, void*);
-		static String read_handler(Element*, void*);
-		void add_handlers();	
-	
-	private:
 		//each entry will keep track of neighbor's VID and VID of 
                 //the interface the neighbor is connected to
 		struct NeighborTableEntry {
@@ -33,13 +20,32 @@ class VEILNeighborTable : public Element {
 		};
 
 		typedef HashTable<VID, NeighborTableEntry> NeighborTable;
-		
-		NeighborTable neighbors;
 
 		struct TimerData {
 			NeighborTable *neighbors;
 			VID *vid;
-		};					
+		};
+
+		VEILNeighborTable();
+		~VEILNeighborTable();
+
+		const char* class_name() const { return "VEILNeighborTable"; }
+		const char* port_count() const { return PORTS_0_0; }
+	
+		void updateEntry(VID*, VID*);
+		bool lookupEntry(VID*, VID*);
+
+		inline const NeighborTable* get_neighbortable_handle(){
+			return &neighbors;
+		}		
+
+		static void expire(Timer*, void*);
+		static String read_handler(Element*, void*);
+		void add_handlers();
+
+	private:		
+		NeighborTable neighbors;
+						
 };
 
 CLICK_ENDDECLS
