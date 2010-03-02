@@ -12,7 +12,7 @@
 CLICK_DECLS
 
 //temporary solution to identify VEIL pkts
-#define ETHERTYPE_VEIL          0x1234
+#define ETHERTYPE_VEIL          0x9876
 
 #define VEIL_HELLO 		0x01	
 #define VEIL_RDV_PUBLISH	0x02	
@@ -22,6 +22,7 @@ CLICK_DECLS
 #define VEIL_ARP_RPLY		0x06
 #define VEIL_PUBLISH		0x07
 #define VEIL_QUERY		0x08
+#define VEIL_IP                 0x09
 
 // Intervals are in ms
 #define VEIL_HELLO_INTERVAL		20000
@@ -41,6 +42,11 @@ struct veil_header {
 struct access_info{
 	IPAddress ip;
 	VID vid;
+};
+
+struct rdv_reply{
+	int k;
+	int gatewayvid;
 };
 
 CLICK_ENDDECLS
