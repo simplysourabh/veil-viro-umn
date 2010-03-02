@@ -20,8 +20,8 @@ VEILProcessHello::configure (
 	ErrorHandler *errh)
 {
 	return cp_va_kparse(conf, this, errh,
-		"MYVID", cpkM+cpkP, cpVid, &myVid,
 		"NEIGHBORTABLE", cpkM+cpkP, cpElementCast, "VEILNeighborTable", &neighbor_table,
+		"INTERFACETABLE", cpkM+cpkP, cpElementCast, "VEILInterfaceTable", &interfaces,
 		cpEnd);
 }
 
@@ -29,6 +29,10 @@ Packet*
 VEILProcessHello::simple_action(Packet* p)
 {
 	assert(p);
+
+	int myport = PORT_ANNO(p);
+	VID myVid;
+	interfaces->lookupIntEntry(myport, &myVid);		
 
 	click_ether *e = (click_ether*) p->data();
 
