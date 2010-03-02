@@ -130,8 +130,23 @@ class VID {
 			}
 			
 			memcpy(rvid, vid, 6);
-		}		
-		
+		}	
+
+		//flips bit in place
+		void flip_bit(int k){
+			unsigned char tvid[VID_LEN];
+			memcpy(tvid, _data, VID_LEN);
+			
+			for(int i = VID_LEN - 1; i >= 0; i--){
+			        if(k > 8)
+                			k -= 8;
+        		        else {
+        			        tvid[i] = tvid[i] ^ (1<< (k-1));
+			                break;
+			        }
+			}
+			memcpy(_data, tvid, VID_LEN);
+		}
 };
 
 inline bool
