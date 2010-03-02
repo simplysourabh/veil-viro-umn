@@ -37,6 +37,12 @@ ethernet header --- veil packet type (2B)
 
 ARP pkt format:
 ethernet header --- veil packet type (2B) --- ordinary ARP packet
+
+publish access info pkt:
+ethernet header --- veil packet type (2B) --- struct access_info
+
+rdv publish:
+ethernet header --- veil packet type (2B) --- VID
 ------------------------------------------------------------------------------
 processarp :
 
@@ -65,6 +71,9 @@ publishaccessinfo:
 
 There is a single instance of PublishAccessInfo per switch. src-vid  is the vid of the switch interface to which the host is connected i.e., first 4B of host-vid.  dst-vid is the access switch whose vid is calculated by hashing IPAddress of host. Since IP addresses and hence their hashes are unique, we publish each host's info to a different access switch.
 ------------------------------------------------------------------------------
+buildroutetable:
+We have to clear the route table to reconstruct it but if we did that, packets might get lost in the process. If we don't clear the table but overwrite entries as we are doing now, we might have to perform additional checks at each stage to ensure correctness. For eg, if we want to send a RDV_PUBLISH, we have to check that nexthop = our neighbor. Another solution is to implement live_reconfigure for the route table to avoid packet loss and additional checks while reconstructing.
 
+Since there is one route table per interface and routing decisions are made after looking at all possibilities, it makes sense to associate neighbors with only the interfaces they are connected to in an effort to find as many routes as possible.
 
 
