@@ -18,14 +18,13 @@ struct hostTableEntry {
 
 //we don't need to keep track of which interface the host is connected
 //to here because interface VID can be derived from host VID
-
-//typedef HashTable<VID, struct hostTableEntry> HostTable;
-typedef HashTable<VID, EtherAddress> HostTable;
-typedef HashTable<EtherAddress, VID> ReverseHostTable;
-typedef HashTable<IPAddress, VID> HostIPTable;
-
 class VEILHostTable : public Element {
 	public:
+
+		typedef HashTable<VID, EtherAddress> HostTable;
+		typedef HashTable<EtherAddress, VID> ReverseHostTable;
+		typedef HashTable<IPAddress, VID> HostIPTable;
+
 		VEILHostTable();
 		~VEILHostTable();
 
