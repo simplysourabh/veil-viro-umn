@@ -21,8 +21,7 @@ CLICK_DECLS
 #define VEIL_ARP_REQ		0x05	
 #define VEIL_ARP_RPLY		0x06
 #define VEIL_PUBLISH		0x07
-#define VEIL_QUERY		0x08
-#define VEIL_IP                 0x09
+#define VEIL_IP                 0x08
 
 // Intervals are in ms
 #define VEIL_HELLO_INTERVAL		20000
