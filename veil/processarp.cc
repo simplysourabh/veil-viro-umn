@@ -152,7 +152,8 @@ VEILProcessARP::smaction(Packet* p){
 			/* required MAC was not in the mapping table
 			 * construct an ARP request dst'd to access switch. 
                          * When we rcv a reply to this req in the future, 
-			 * we need to know which host wanted it. Hence 				 * src_eth = host_vid and not switch vid
+			 * we need to know which host wanted it. Hence
+			 * src_eth = host_vid and not switch vid
 			 */
 			else{		
 				//find host VID in host table
@@ -168,12 +169,14 @@ VEILProcessARP::smaction(Packet* p){
 						delete interfacevid;
         	
 						return 0;
-    					} 						click_ether *e = (click_ether *) q->data();
+    					}
+					click_ether *e = (click_ether *) q->data();
 					q->set_ether_header(e);
 					//calculate access switch VID
 					VID accvid = calculate_access_switch(&dst);					
 					memcpy(e->ether_dhost, &accvid, 6);
-					memcpy(e->ether_shost, hvid, 6); 						e->ether_type = htons(ETHERTYPE_VEIL);
+					memcpy(e->ether_shost, hvid, 6);
+					e->ether_type = htons(ETHERTYPE_VEIL);
 					veil_header *vhdr = (veil_header*) (e+1);
 					vhdr->packetType = htons(VEIL_ARP_REQ);
 					click_ether_arp *ea = (click_ether_arp *) (vhdr + 1);
@@ -187,7 +190,7 @@ VEILProcessARP::smaction(Packet* p){
     					memset(ea->arp_tha, 0, 6);
 					memcpy(ea->arp_tpa, &dst, 4);
 			
-					SET_REROUTE_ANNO(p, 'r');
+					SET_REROUTE_ANNO(q, 'r');
 
 					delete hvid;
 					delete ipvid;
@@ -229,11 +232,13 @@ VEILProcessARP::smaction(Packet* p){
 						delete mvid;
 						delete ipvid;
         					return 0;
-    					} 						click_ether *e = (click_ether *) q->data();
+    					}
+					click_ether *e = (click_ether *) q->data();
 					q->set_ether_header(e);
 					
 					memcpy(e->ether_dhost, &svid, 6);
-					memcpy(e->ether_shost, ipvid, 6); 						e->ether_type = htons(ETHERTYPE_VEIL);
+					memcpy(e->ether_shost, ipvid, 6);
+					e->ether_type = htons(ETHERTYPE_VEIL);
 					veil_header *vhdr = (veil_header*) (e+1);
 					vhdr->packetType = htons(VEIL_ARP_RPLY);
 					click_ether_arp *ea = (click_ether_arp *) (vhdr + 1);
