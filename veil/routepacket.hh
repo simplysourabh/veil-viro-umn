@@ -15,7 +15,7 @@ class VEILRoutePacket: public Element {
 		VEILRoutePacket();
 		~VEILRoutePacket();
 
-		const char* class_name() const { return "VEILRoutePacketRequest"; }
+		const char* class_name() const { return "VEILRoutePacket"; }
 		const char* port_count() const { return "1/-"; } 
 		const char* processing() const { return PUSH; }
 
