@@ -16,7 +16,7 @@ class VEILBuildRouteTable: public Element {
 		VEILBuildRouteTable();
 		~VEILBuildRouteTable();
 
-		const char* class_name() const { return "VEILBuildRouteTableRequest"; }
+		const char* class_name() const { return "VEILBuildRouteTable"; }
 		const char* port_count() const { return PORTS_0_1; } 
 		const char* processing() const { return "a/h"; }
 
