@@ -47,7 +47,7 @@ VEILRouteTable::updateEntry (
 }
 
 bool
-VEILRouteTable::lookupEntry(int b, VID* i, VID *nh, VID *g)
+VEILRouteTable::getRoute(VID* dst, int b, VID* i, VID *nh, VID *g)
 {
 	bool found = false;
 	
@@ -58,11 +58,27 @@ VEILRouteTable::lookupEntry(int b, VID* i, VID *nh, VID *g)
 	OuterRouteTable::iterator iter;
 	for (iter = routes.begin(); iter; ++iter){
 		InnerRouteTable rt = iter.value();
-		if (rt.find(b) != rt.end()) {	
+		VID interface = iter.key();
+		if (rt.find(b) != rt.end() && dst->logical_distance(&interface) < b) {	
 			InnerRouteTableEntry irte = rt.get(b);
 			memcpy(i, &iter.key(), 6);
 			memcpy(nh, &irte.nextHop, 6);
 			memcpy(g, &irte.gateway, 6);
+			found = true;
+		}
+	}
+	return found;
+}
+
+bool
+VEILRouteTable::getBucket(int b, VID* i, VID *nh)
+{
+	bool found = false;
+	if (routes.find(*i) != routes.end()) {
+		InnerRouteTable rt = routes.get(*i);
+		if (rt.find(b) != rt.end()) {
+			InnerRouteTableEntry irte = rt.get(b);
+			memcpy(nh, &irte.nextHop, VID_LEN);
 			found = true;
 		}
 	}
