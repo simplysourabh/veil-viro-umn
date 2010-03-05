@@ -50,7 +50,7 @@ VEILNeighborTable::expire(Timer *t, void *data)
 	TimerData *td = (TimerData *) data;
 	VID* nvid = (VID *) td->vid;
 	td->neighbors->erase(*nvid);
-	click_chatter("%d entries in neighbor table", td->neighbors->size());
+	//click_chatter("%d entries in neighbor table", td->neighbors->size());
 	delete(td); 
 }
 
@@ -61,6 +61,9 @@ VEILNeighborTable::read_handler(Element *e, void *thunk)
 	VEILNeighborTable *nt = (VEILNeighborTable *) e;
 	NeighborTable::iterator iter;
 	NeighborTable neighbors = nt->neighbors;
+
+	sa << "Neighbor Table" << '\n';
+	sa << "neighborvid" << "  " << "myinterfacevid" << ' ' << "expiry" << '\n';
 	
 	for(iter = neighbors.begin(); iter; ++iter){
 		String vid = static_cast<VID>(iter.key()).vid_string();		
@@ -68,7 +71,7 @@ VEILNeighborTable::read_handler(Element *e, void *thunk)
 		String myvid = static_cast<VID>(nte.myVid).vid_string();		
 		Timer *t = nte.expiry;
 
-		sa << vid << ' ' << myvid << ' ' << t->expiry() << '\n';
+		sa << vid << ' ' << myvid << "   " << t->expiry() << '\n';
 	}
 	
 	return sa.take_string();	  
