@@ -35,7 +35,8 @@ class VEILRouteTable : public Element {
 		const char* port_count() const { return PORTS_0_0; }
 	
 		void updateEntry(VID*, int, VID*, VID*);
-		bool lookupEntry(int, VID*, VID*, VID*);
+		bool getRoute(VID*, int, VID*, VID*, VID*);
+		bool  getBucket(int, VID*, VID*);
 		static void expire(Timer*, void*);
 		static String read_handler(Element*, void*);
 		void add_handlers();	
