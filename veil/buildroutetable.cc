@@ -56,19 +56,19 @@ VEILBuildRouteTable::run_timer (
 	const VEILInterfaceTable::InterfaceTable *it = interfaces->get_interfacetable_handle();
 	VEILInterfaceTable::InterfaceTable::const_iterator iiter;
 
+	//TODO: use another constant that keeps track of # bits used in VID
 	//send out rdv publish and queries
-	for(int i = 0; i < VID_LEN*8; i++){
-		VID myinterface, nexthop, gateway, rdvpt;
+	for(int i = 0; i < (VID_LEN - HOST_LEN)*8; i++){
+		VID myinterface, nexthop, rdvpt;
 		//check for each interface
 		for(iiter = it->begin(); iiter; ++iiter){
 			myinterface = iiter.key();
 			//publish
-			if(route_table->lookupEntry(i, &myinterface, &nexthop, &gateway)){
+			if(route_table->getBucket(i, &myinterface, &nexthop)){
 				//check if nexthop = neighbor
 				VID interface;			
 				if(neighbors->lookupEntry(&nexthop, &interface)){
 					myinterface.calculate_rdv_point(i, &rdvpt);
-				
 					int packet_length = sizeof(click_ether) + sizeof(veil_header) + sizeof(VID);
 					WritablePacket *p = Packet::make(packet_length);
 
