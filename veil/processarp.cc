@@ -224,9 +224,19 @@ VEILProcessARP::smaction(Packet* p){
 		if(vhdr->packetType == VEIL_ARP_REQ){
 			VID *ipvid = new VID();
 			VID *mvid = new VID();
-			if(map->lookupIP(&dst, ipvid, mvid) || host_table->lookupIP(&dst, ipvid))
+			
+			//check if the packet was destined to 
+			//one of our interfaces
+			unsigned char temp[VID_LEN];
+			memset(temp, 0, VID_LEN);
+			memcpy(temp, &dvid, VID_LEN - HOST_LEN);
+
+			VID interfacevid = VID(static_cast<unsigned char*>(temp));
+			int interface;
+			if(interfaces->lookupVidEntry(&interfacevid, &interface))
 			{
-				WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(veil_header) + sizeof(click_ether_arp));
+				if(map->lookupIP(&dst, ipvid, mvid) || host_table->lookupIP(&dst, ipvid)){
+					WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(veil_header) + sizeof(click_ether_arp));
     					if (q == 0) {
         					click_chatter("in processarp: cannot make packet!");
 						delete mvid;
@@ -256,25 +266,6 @@ VEILProcessARP::smaction(Packet* p){
 					delete ipvid;
 					p->kill();
 					return q;	
-			}
-			else {
-				//check if the packet was destined to 
-				//one of our interfaces
-				unsigned char temp[VID_LEN];
-				memset(temp, 0, 6);
-				memcpy(temp, &dvid, 4);
-
-				VID interfacevid = VID(static_cast<unsigned char*>(temp));
-				int interface;
-				if(interfaces->lookupVidEntry(&interfacevid, &interface))
-				{
-					//error. no mapping found
-					//drop packet for now
-					//TODO: handle error
-					delete mvid;
-					delete ipvid;
-					p->kill();
-					return NULL;
 				}
 
 				/* we're not the access switch or destination
