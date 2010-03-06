@@ -62,10 +62,33 @@ VEILMappingTable::read_handler(Element *e, void *thunk)
 	return sa.take_string();	  
 }
 
+int
+VEILMappingTable::write_handler(const String &conf_in, Element *e, void*, ErrorHandler *errh)
+{
+	String s = conf_in;
+	VEILMappingTable *mt = (VEILMappingTable *) e;
+	VID vid, myvid;
+	IPAddress ip;
+	String vid_str, ip_str, myvid_str;
+
+	vid_str = cp_shift_spacevec(s);
+	if(!cp_vid(vid_str, &vid))
+		return errh->error("host VID is not in expected format");
+	ip_str = cp_shift_spacevec(s);
+	if(!cp_ip_address(ip_str, &ip))
+		return errh->error("host MAC is not in expected format");	
+	myvid_str = cp_shift_spacevec(s);
+	if(!cp_vid(myvid_str, &myvid))
+		return errh->error("host VID is not in expected format");
+	mt->updateEntry(&ip, &vid, &myvid);
+	return 0;
+}
+
 void
 VEILMappingTable::add_handlers()
 {
 	add_read_handler("table", read_handler, (void *)0);
+	add_write_handler("add_mapping", write_handler, (void *)0);
 }
 
 void
