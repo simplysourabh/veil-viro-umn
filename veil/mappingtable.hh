@@ -3,6 +3,7 @@
 
 #include <click/element.hh>
 #include <click/timer.hh>
+#include <click/error.hh>
 #include <click/hashtable.hh>
 #include "click_veil.hh"
 
@@ -24,6 +25,7 @@ class VEILMappingTable : public Element {
 		bool lookupIP(IPAddress*, VID*, VID*);		
 		static void expire(Timer*, void*);
 		static String read_handler(Element*, void*);
+		static int write_handler(const String&, Element*, void*, ErrorHandler*);
 		void add_handlers();
 
 	private:
