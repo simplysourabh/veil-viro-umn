@@ -3,6 +3,7 @@
 #include <click/error.hh>
 #include <clicknet/ip.h>
 #include <click/vid.hh>
+#include <click/straccum.hh>
 #include "utilities.hh"
 #include "click_veil.hh"
 #include "processarp.hh"
@@ -30,11 +31,12 @@ VEILProcessARP::configure (
 Packet* 
 VEILProcessARP::smaction(Packet* p){
 	int myport = PORT_ANNO(p);
+
 	VID myVid;
 	interfaces->lookupIntEntry(myport, &myVid);
 
-	const click_ether *eth = (const click_ether *) p->mac_header();
-
+	const click_ether *eth = (const click_ether *) p->data();
+		
 	//ARP pkt came from a host
 	if(ntohs(eth->ether_type) == ETHERTYPE_ARP){
 		VID *hvid= new VID();
@@ -42,14 +44,14 @@ VEILProcessARP::smaction(Packet* p){
 		EtherAddress edest = EtherAddress(eth->ether_dhost);
 		EtherAddress esrc = EtherAddress(eth->ether_shost);
 
-		const click_ether_arp *ap = (const click_ether_arp *) p->network_header();
+		const click_ether_arp *ap = (const click_ether_arp *) (eth+1);
 		IPAddress src = IPAddress(ap->arp_spa);
 		IPAddress dst = IPAddress(ap->arp_tpa);
 
 		//Gratuitous ARP request or reply
 		//update host table
 		if(edest.is_broadcast() && src == dst)   
-                {				
+                {	
 			VID::generate_host_vid(&myVid, &esrc, hvid);
 			host_table->updateEntry(hvid, &esrc);
 			host_table->updateIPEntry(&src, hvid);
@@ -340,7 +342,8 @@ VEILProcessARP::push (
 	Packet* pkt)
 {
 	Packet *p = smaction(pkt);
-	output(0).push(p);
+	if(p != NULL)
+		output(0).push(p);
 }
 
 CLICK_ENDDECLS
