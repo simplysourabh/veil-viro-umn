@@ -3,6 +3,7 @@
 
 #include <click/element.hh>
 #include <click/timer.hh>
+#include <click/error.hh>
 #include <click/hashtable.hh>
 #include "click_veil.hh"
 
@@ -29,11 +30,8 @@ class VEILHostTable : public Element {
 		~VEILHostTable();
 
 		const char* class_name() const { return "VEILHostTable"; }
-		//const char* port_count() const { return PORTS_0_1; }
 		const char* port_count() const { return PORTS_0_0; }
-		//const char* processing() const { return PUSH; }
 
-		//int configure(Vector<String>&, ErrorHandler*);
 		void updateEntry(VID*, EtherAddress*);//, uint32_t);
 		void updateIPEntry(IPAddress*, VID*);
 		bool lookupVID(VID*, EtherAddress*);
@@ -45,6 +43,7 @@ class VEILHostTable : public Element {
 		}
 
 		static String read_handler(Element*, void*);
+		static int write_handler(const String&, Element*, void*, ErrorHandler*);
 		void add_handlers();
 
 	private:
