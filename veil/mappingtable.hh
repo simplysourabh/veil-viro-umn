@@ -20,12 +20,13 @@ class VEILMappingTable : public Element {
 		const char* port_count() const { return PORTS_0_0; }
 		const char* processing() const { return PUSH; }
 
-		//int configure(Vector<String>&, ErrorHandler*);
+		int cp_mapping(String, ErrorHandler*);
+
+		int configure(Vector<String>&, ErrorHandler*);
 		void updateEntry(IPAddress*, VID*, VID*);
 		bool lookupIP(IPAddress*, VID*, VID*);		
 		static void expire(Timer*, void*);
 		static String read_handler(Element*, void*);
-		static int write_handler(const String&, Element*, void*, ErrorHandler*);
 		void add_handlers();
 
 	private:
