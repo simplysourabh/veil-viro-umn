@@ -9,14 +9,6 @@
 
 CLICK_DECLS
 
-/*
-struct hostTableEntry {
-	EtherAddress mac;
-	Timer *publish_interval;	
-	//bool valid;
-};
-*/
-
 //we don't need to keep track of which interface the host is connected
 //to here because interface VID can be derived from host VID
 class VEILHostTable : public Element {
@@ -31,8 +23,11 @@ class VEILHostTable : public Element {
 
 		const char* class_name() const { return "VEILHostTable"; }
 		const char* port_count() const { return PORTS_0_0; }
+		
+		int cp_host(String, ErrorHandler*);
 
-		void updateEntry(VID*, EtherAddress*);//, uint32_t);
+		int configure(Vector<String>&, ErrorHandler*);
+		void updateEntry(VID*, EtherAddress*);
 		void updateIPEntry(IPAddress*, VID*);
 		bool lookupVID(VID*, EtherAddress*);
 		bool lookupMAC(EtherAddress*, VID*);
@@ -43,7 +38,6 @@ class VEILHostTable : public Element {
 		}
 
 		static String read_handler(Element*, void*);
-		static int write_handler(const String&, Element*, void*, ErrorHandler*);
 		void add_handlers();
 
 	private:
@@ -51,16 +45,6 @@ class VEILHostTable : public Element {
 		ReverseHostTable rhosts;
 		HostIPTable iphosts;
 
-		//TODO:if we decide to expire extries change all hashtable value types
-		/*
-		struct TimerData {
-			VEILHostTable *hosts;
-			VID *vid;
-		};
-		static void handleExpiry(Timer*, void*);
-	 	void expire(VID&, TimerData*);
-		*/
-	
 		enum { h_table, i_table };
 };
 
