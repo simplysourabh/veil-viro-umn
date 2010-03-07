@@ -8,24 +8,41 @@ VEILHostTable::VEILHostTable () {}
 
 VEILHostTable::~VEILHostTable () {}
 
+//str is of the form: VID MAC IP
+int 
+VEILHostTable::cp_host(String s, ErrorHandler* errh)
+{
+	VID hvid;
+	EtherAddress hmac;
+	IPAddress hip;
+
+	String hvid_str = cp_shift_spacevec(s);
+	if(!cp_vid(hvid_str, &hvid))
+		return errh->error("host VID is not in expected format");
+	String hmac_str = cp_shift_spacevec(s);
+	if(!cp_ethernet_address(hmac_str, &hmac))	
+		return errh->error("host MAC is not in expected format");	
+	updateEntry(&hvid, &hmac);
+	String hip_str = cp_shift_spacevec(s);
+	if(!cp_ip_address(hip_str, &hip))
+		return errh->error("host IP is not in expected format");	
+	updateIPEntry(&hip, &hvid);
+	return 0;
+}
+
+int
+VEILHostTable::configure(Vector<String> &conf, ErrorHandler *errh)
+{
+	for (int i = 0; i < conf.size(); i++) {
+		cp_host(conf[i], errh);
+	}
+}
+
 void
 VEILHostTable::updateEntry (
 	VID *vid,
 	EtherAddress *mac)
 {
-	/*
-        struct hostTableEntry entry;
-        //todo delete this memory later
-        TimerData *tdata = new TimerData();
-	tdata->vid = vid;
-        tdata->hosts = this;
-
-        entry.mac = *mac;
-        entry.publish_interval = new Timer(&VEILHostTable::handleExpiry, tdata);
-        entry.publish_interval->initialize(this);
-        entry.publish_interval->schedule_after_msec(interval);
-        hosts.set(*vid, entry);
-	*/
 	hosts.set(*vid, *mac);
 	rhosts.set(*mac, *vid);
 }
@@ -47,12 +64,6 @@ VEILHostTable::lookupVID (
 	if (hosts.find(*vid) == hosts.end()) {
 		found = false;
 	} else {
-		/*
-		struct hostTableEntry hte;
-		hte = hosts.get(*vid);	
-		//todo error check mac ptr
-		memcpy(mac, hte.mac.data(), 6); 
-		*/
 		EtherAddress e = hosts.get(*vid);
 		memcpy(mac, e.data(), 6); 
 		found = true;
@@ -94,28 +105,6 @@ VEILHostTable::lookupIP (
 	return(found);
 }
 
-/*
-void
-VEILHostTable::handleExpiry (
-	Timer*,
-	void *data)
-{
-	TimerData *tdata = (TimerData *) data;
-	tdata->hosts->expire(*(tdata->vid), tdata);
-}
-
-void
-VEILHostTable::expire (
-	VID &vid,
-	TimerData *tdata)
-{
-	struct hostTableEntry hte;
-	hte = hosts.get(vid);
-	// Create PUBLISH packet
-	// Send it out to the AccessNode
-}
-*/
-
 String
 VEILHostTable::read_handler(Element *e, void *thunk)
 {
@@ -151,55 +140,11 @@ VEILHostTable::read_handler(Element *e, void *thunk)
 	}		  
 }
 
-//parameter is of the form: VID MAC 
-//this is not the clean way to do things
-//we should be adding a parse method in confparse and using that instead
-//TODO: move this functionality to confparse
-int
-VEILHostTable::write_handler(const String &conf_in, Element *e, void *thunk, ErrorHandler *errh)
-{
-	String s = conf_in;
-	VEILHostTable *ht = (VEILHostTable *) e;
-	VID hvid;
-	EtherAddress hmac;
-	IPAddress hip;
-	String hvid_str;
-
-	switch (reinterpret_cast<uintptr_t>(thunk)) {
-    	case h_table: 
-		{
-			hvid_str = cp_shift_spacevec(s);
-			if(!cp_vid(hvid_str, &hvid))
-				return errh->error("host VID is not in expected format");
-			String hmac_str = cp_shift_spacevec(s);
-			if(!cp_ethernet_address(hmac_str, &hmac))
-				return errh->error("host MAC is not in expected format");	
-			ht->updateEntry(&hvid, &hmac);
-			return 0;
-		}
-	case i_table:	
-		{
-			hvid_str = cp_shift_spacevec(s);
-			if(!cp_vid(hvid_str, &hvid))
-				return errh->error("host VID is not in expected format");
-			String hip_str = cp_shift_spacevec(s);
-			if(!cp_ip_address(hip_str, &hip))
-				return errh->error("host MAC is not in expected format");	
-			ht->updateIPEntry(&hip, &hvid);
-			return 0;
-		}
-	default: return -1;
-	}		  
-	
-}
-
 void
 VEILHostTable::add_handlers()
 {
 	add_read_handler("host_table", read_handler, h_table);
 	add_read_handler("ip_table", read_handler, i_table);
-	add_write_handler("add_host_mac", write_handler, (void*)h_table);
-	add_write_handler("add_host_ip", write_handler, (void*)i_table);
 }
 
 
