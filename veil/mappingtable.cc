@@ -9,6 +9,36 @@ VEILMappingTable::VEILMappingTable () {}
 
 VEILMappingTable::~VEILMappingTable () {}
 
+
+//String is of the format: some-host-(X)-VID X's-IP my-interfacevid-thru-which-mapping-was-learned
+int
+VEILMappingTable::cp_mapping(String s, ErrorHandler *errh)
+{
+	VID vid, myvid;
+	IPAddress ip;
+	String vid_str, ip_str, myvid_str;
+
+	vid_str = cp_shift_spacevec(s);
+	if(!cp_vid(vid_str, &vid))
+		return errh->error("VID is not in expected format");
+	ip_str = cp_shift_spacevec(s);
+	if(!cp_ip_address(ip_str, &ip))
+		return errh->error("IP is not in expected format");	
+	myvid_str = cp_shift_spacevec(s);
+	if(!cp_vid(myvid_str, &myvid))
+		return errh->error("interface VID is not in expected format");
+	updateEntry(&ip, &vid, &myvid);
+	return 0;
+}
+
+int
+VEILMappingTable::configure(Vector<String> &conf, ErrorHandler *errh)
+{
+	for (int i = 0; i < conf.size(); i++) {
+		cp_mapping(conf[i], errh);
+	}
+}
+
 void
 VEILMappingTable::updateEntry (IPAddress *ip, VID *ipvid, VID *myvid)
 {
@@ -51,6 +81,9 @@ VEILMappingTable::read_handler(Element *e, void *thunk)
 	VEILMappingTable *mt = (VEILMappingTable *) e;
 	IPMapTable::iterator iter;
 	IPMapTable ipmap = mt->ipmap;
+
+	sa << "\nMappingTable\n";
+	sa << "IPAddress" << "       " << "vid" << "          " << "interfacevid\n";
 	
 	for(iter = ipmap.begin(); iter; ++iter){
 		IPAddress ipa = iter.key();
@@ -62,33 +95,10 @@ VEILMappingTable::read_handler(Element *e, void *thunk)
 	return sa.take_string();	  
 }
 
-int
-VEILMappingTable::write_handler(const String &conf_in, Element *e, void*, ErrorHandler *errh)
-{
-	String s = conf_in;
-	VEILMappingTable *mt = (VEILMappingTable *) e;
-	VID vid, myvid;
-	IPAddress ip;
-	String vid_str, ip_str, myvid_str;
-
-	vid_str = cp_shift_spacevec(s);
-	if(!cp_vid(vid_str, &vid))
-		return errh->error("host VID is not in expected format");
-	ip_str = cp_shift_spacevec(s);
-	if(!cp_ip_address(ip_str, &ip))
-		return errh->error("host MAC is not in expected format");	
-	myvid_str = cp_shift_spacevec(s);
-	if(!cp_vid(myvid_str, &myvid))
-		return errh->error("host VID is not in expected format");
-	mt->updateEntry(&ip, &vid, &myvid);
-	return 0;
-}
-
 void
 VEILMappingTable::add_handlers()
 {
 	add_read_handler("table", read_handler, (void *)0);
-	add_write_handler("add_mapping", write_handler, (void *)0);
 }
 
 void
