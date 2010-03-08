@@ -14,6 +14,9 @@ class VEILInterfaceTable : public Element {
 		//store more info in the future	
 		typedef HashTable<VID, int> InterfaceTable;
 		typedef HashTable<int, VID> ReverseInterfaceTable;
+		//we need to keep track of which interfaces are connected to 
+		//other switches. needed to build the routing table
+		typedef HashTable<VID, int> SwitchInterfaceTable;
 		
 		VEILInterfaceTable();
 		~VEILInterfaceTable();
@@ -30,13 +33,15 @@ class VEILInterfaceTable : public Element {
 		static String read_handler(Element*, void*);
 		void add_handlers();
 	
-		inline const InterfaceTable* get_interfacetable_handle(){
-			return &interfaces;
+		void deleteHostInterface(VID*);
+		inline const SwitchInterfaceTable* get_switchinterfacetable_handle(){
+			return &switch_interfaces;
 		}
 
 	private:		
 		InterfaceTable interfaces;
 		ReverseInterfaceTable rinterfaces;
+		SwitchInterfaceTable switch_interfaces;
 			
 };
 
