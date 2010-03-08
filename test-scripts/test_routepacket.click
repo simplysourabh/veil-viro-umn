@@ -14,12 +14,12 @@ neighbors::VEILNeighborTable(4395c4330000 4395c5340000,
 
 router::VEILRoutePacket(hosts, routes, interfaces, neighbors);
 
-router[0] -> Print(eth0, 50) -> Discard;
-router[1] -> Print(eth1, 50) -> Discard;
-router[2] -> Print(eth2, 50) -> Discard;
-router[3] -> Print(eth3, 50) -> Discard;
-router[4] -> Print(backroute, 50) ->Discard;
-router[5] -> Print(error, 50) -> Discard;
+router[0] -> Print(eth0, 50, PRINTANNO true) -> Discard;
+router[1] -> Print(eth1, 50, PRINTANNO true) -> Discard;
+router[2] -> Print(eth2, 50, PRINTANNO true) -> Discard;
+router[3] -> Print(eth3, 50, PRINTANNO true) -> Discard;
+router[4] -> Print(backroute, 50, PRINTANNO true) ->Discard;
+router[5] -> Print(error, 50, PRINTANNO true) -> Discard;
 
 //shows bit flip for ARP query. example is probably a little unrealistic in
 //terms of what the src and dest fields are
