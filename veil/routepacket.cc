@@ -53,10 +53,19 @@ VEILRoutePacket::smaction(Packet* p){
 		reroute:
 			//figure out what k is	
 			int k = myVid.logical_distance(&dstvid);
+
+			/*
+			StringAccum sa;
+			sa << myVid.vid_string() << "      " << dstvid.vid_string();
+			click_chatter("%d %s", k, sa.data());
+			*/
 			
 			//if k is 0 then pkt is destined to us
 			//i.e., myVid = dstvid
-			if(0 == k){				
+			if(0 == k){
+				//we need to set the dest field of the pkt to myVid
+				click_ether *e = (click_ether*) p->data();
+				memcpy(e->ether_dhost, &myVid, VID_LEN);
 				return numinterfaces;
 			}			
 			
@@ -114,7 +123,6 @@ VEILRoutePacket::smaction(Packet* p){
 		//look at dest eth and find corresponding VID
 		//from host table. Find interface VID from host VID
 		//Find port # from interface VID.
-		const click_ether *eth = (const click_ether *) p->mac_header();
 		EtherAddress dst = EtherAddress(eth->ether_dhost);
 		VID dstvid;
 		hosts->lookupMAC(&dst, &dstvid);
