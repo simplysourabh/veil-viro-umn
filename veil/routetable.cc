@@ -37,7 +37,7 @@ VEILRouteTable::cp_viro_route(String s, ErrorHandler* errh){
 int
 VEILRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {	
-	int res = -1;
+	int res = 0;
 	for (int i = 0; i < conf.size(); i++) {
 		res = cp_viro_route(conf[i], errh);
 	}
