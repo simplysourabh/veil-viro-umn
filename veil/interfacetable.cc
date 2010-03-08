@@ -14,20 +14,24 @@ int
 VEILInterfaceTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 	int r = 0;
-	VID *interface = new VID();
+	VID interface;
 	for(int i = 0; i < conf.size(); i++){
-		if(cp_vid(conf[i], interface)){
-			interfaces.set(*interface, i);
-			rinterfaces.set(i, *interface);
+		if(cp_vid(conf[i], &interface)){
+			interfaces.set(interface, i);
+			switch_interfaces.set(interface, i);
+			rinterfaces.set(i, interface);
 		} else {
 			errh->error("error in processing argument in VEILInterfaceTable");
 			r = -EINVAL;	
 		}
 	}
 
-	delete interface;
-#include <click/error.hh>
 	return r;
+}
+
+void
+VEILInterfaceTable::deleteHostInterface(VID *i){	
+	switch_interfaces.erase(*i);
 }
 
 bool
