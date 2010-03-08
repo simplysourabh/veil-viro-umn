@@ -45,7 +45,7 @@ struct access_info{
 
 struct rdv_reply{
 	int k;
-	int gatewayvid;
+	VID gatewayvid;
 };
 
 CLICK_ENDDECLS
