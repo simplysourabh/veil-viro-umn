@@ -21,8 +21,8 @@ VEILProcessRDV::configure (
 	ErrorHandler *errh)
 {
 	return cp_va_kparse(conf, this, errh,
-		"ROUTETABLE", cpkM+cpkP, cpElementCast, "VEILHostTable", &routes,
-		"RENDEZVOUSTABLE", cpkM+cpkP, cpElementCast, "VEILMappingTable", &rdvs,
+		"ROUTETABLE", cpkM+cpkP, cpElementCast, "VEILRouteTable", &routes,
+		"RENDEZVOUSTABLE", cpkM+cpkP, cpElementCast, "VEILRendezvousTable", &rdvs,
 		"INTERFACETABLE", cpkM+cpkP, cpElementCast, "VEILInterfaceTable", &interfaces,
 		cpEnd);
 }
@@ -33,12 +33,12 @@ VEILProcessRDV::smaction(Packet* p){
 	VID myVid;
 	interfaces->lookupIntEntry(myport, &myVid);
 
-	const click_ether *eth = (const click_ether *) p->mac_header();
+	const click_ether *eth = (const click_ether *) p->data();
 	VID svid = VID(eth->ether_shost);
 	VID dvid = VID(eth->ether_dhost);
 	veil_header *vhdr = (veil_header*) (eth+1);
 	
-	if(vhdr->packetType == VEIL_RDV_QUERY){
+	if(ntohs(vhdr->packetType) == VEIL_RDV_QUERY){
 		//if pkt was destined for one of our interfaces, send reply
 		//reply is a unicast pkt hence routed like other pkts
 		int interfacenum;
@@ -48,7 +48,11 @@ VEILProcessRDV::smaction(Packet* p){
 			VID gateway;
 			if(rdvs->getRdvPoint(k, &svid, &gateway)){
 				//construct and send rdv reply
-				int packet_length = sizeof(click_ether) + sizeof(veil_header) + sizeof(rdv_reply);		
+				//sizeof(rdv_reply) reports a larger size
+				//to account for alignment and padding
+				//hence the split up
+				int packet_length = sizeof(click_ether) + sizeof(veil_header) + (sizeof(int) + sizeof(VID));	
+
 				WritablePacket *q = Packet::make(packet_length);
 
 	        		if (q == 0) {
@@ -87,7 +91,7 @@ VEILProcessRDV::smaction(Packet* p){
 		}
 	}
 	
-	if(vhdr->packetType == VEIL_RDV_PUBLISH){
+	if(ntohs(vhdr->packetType) == VEIL_RDV_PUBLISH){
 		int interfacenum;
 		//process pkt only if it was meant for us
 		if(interfaces->lookupVidEntry(&dvid, &interfacenum)){
@@ -101,8 +105,7 @@ VEILProcessRDV::smaction(Packet* p){
 		}
 	}
 
-	//TODO: check if this is correct
-	if(vhdr->packetType == VEIL_RDV_REPLY){
+	if(ntohs(vhdr->packetType) == VEIL_RDV_REPLY){
 		int interfacenum;
 
 		//process pkt only if it was meant for us
@@ -114,6 +117,7 @@ VEILProcessRDV::smaction(Packet* p){
 			VID i, nh, g;
 
 			int dist_to_gateway = myVid.logical_distance(&gateway);
+
 			//find nexthop to reach gateway
 			if(routes->getRoute(&gateway, dist_to_gateway, &i, &nh, &g))	
 			{
@@ -143,7 +147,8 @@ VEILProcessRDV::push (
 	Packet* pkt)
 {
 	Packet *p = smaction(pkt);
-	output(0).push(p);
+	if(p != NULL)
+		output(0).push(p);
 }
 
 CLICK_ENDDECLS
