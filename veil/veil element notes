@@ -11,13 +11,11 @@ have to use queues for the main Classifier element so we don't miss any packets.
 ------------------------------------------------------------------------------
 processhello:
 
-chk ethernet type for VEIL and if VEIL type is HELLO then insert/update VID (which is in the source MAC address field of the packet into the neighbour table). We also keep track of which interface the packet was received from. Since we will have one neighbor table per switch which in turn could have several interfaces, this is necessary. The routing element can then figure out which interface a pkt destined to one of our neighbors should go out thru. We need to know the interface's address or dev name. Seemed like a good idea now to use dev name.
+insert/update VID (which is in the source MAC address field of the packet into the neighbour table). We also keep track of which interface the packet was received from. Since we will have one neighbor table per switch which in turn could have several interfaces, this is necessary. The routing element can then figure out which interface a pkt destined to one of our neighbors should go out thru. 
 ------------------------------------------------------------------------------
 neighbortable:
 
-do we want to be able to statically and dynamically manipulate entries from the Click script?
-
-Ordinarily the contents of this element will only be modified when a HELLO pkt is received by the processhello element or when an entry expires and needs to be purged from the table. Need to choose an appropriate duration for expiry.
+The contents of this element will only be modified when a HELLO pkt is received by the processhello element or when an entry expires and needs to be purged from the table. Need to choose an appropriate duration for expiry.
 
 if we made the 'neighbors' variable static, we'd be cramping design but this would be useful if we wanted to save space and pass only a pointer to vid in the Timer constructor call. We would not need the TimerData structure in that case.
 
@@ -51,7 +49,7 @@ Output of this element needs to go thru the routing element. Input for this elem
 Any packets that we receive that are of type ETHERTYPE_ARP SHOULD have come to us from one of the hosts connected to us directly. So we don't have to check if any of them were destined for us. There are 3 cases:
 
 1. gratuitous ARP request/ reply
-	we don't distinguish between the two types of packets and merely add an entry in VEILHostTable after generating a host vid.
+	we don't distinguish between the two types of packets and merely add an entry in VEILHostTable after generating a host vid. we also keep track of which interface of the switch is connected to other switches by duplicating the interface list and deleting the entries corresponding to the interfaces on which gratuitous ARPs were received.
 
 2. the destination IP address belongs to one of the hosts connected to us
 	we need not worry about ARP replies. if an arp request came from a host which was connected to the switch at the same interface as the destination host, we can ignore the packet. if the dest and src hosts are connected to the switch through different interfaces, then we send and ARP reply with the *host VID* of the destination.
@@ -72,8 +70,17 @@ publishaccessinfo:
 There is a single instance of PublishAccessInfo per switch. src-vid  is the vid of the switch interface to which the host is connected i.e., first 4B of host-vid.  dst-vid is the access switch whose vid is calculated by hashing IPAddress of host. Since IP addresses and hence their hashes are unique, we publish each host's info to a different access switch.
 ------------------------------------------------------------------------------
 buildroutetable:
+
 We have to clear the route table to reconstruct it but if we did that, packets might get lost in the process. If we don't clear the table but overwrite entries as we are doing now, we might have to perform additional checks at each stage to ensure correctness. For eg, if we want to send a RDV_PUBLISH, we have to check that nexthop = our neighbor. Another solution is to implement live_reconfigure for the route table to avoid packet loss and additional checks while reconstructing.
 
 Since there is one route table per interface and routing decisions are made after looking at all possibilities, it makes sense to associate neighbors with only the interfaces they are connected to in an effort to find as many routes as possible.
+---------------------------------------------------------------------------------
+routepacket:
+
+ARP pkts or pkts destined to access switches apart from rendezvous request and publish pkts, might need rerouting. Such pkts are identified either using the REROUTE annotation or pkt type. During the process of finding a nexthop for such packets, we flip bits. If even after this process, we are unable to find a nexthop and k becomes 0,
+we have to back route the packet to the Classifier and also set the destination mac address to the address of the interface so the 'process' elements know this packet was meant for us.
+
+
+
 
 
