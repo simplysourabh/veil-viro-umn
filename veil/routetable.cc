@@ -1,6 +1,7 @@
 #include <click/config.h>
 #include <click/confparse.hh>
 #include <click/straccum.hh>
+#include <click/error.hh>
 #include "routetable.hh"
 
 //TODO: make reads and writes atomic
@@ -10,6 +11,38 @@ CLICK_DECLS
 VEILRouteTable::VEILRouteTable () {}
 
 VEILRouteTable::~VEILRouteTable () {}
+
+//String is of the form: interfaceVID bucket# nhVID gVID
+int
+VEILRouteTable::cp_viro_route(String s, ErrorHandler* errh){
+	VID ivid, nhvid, gvid;
+	int bucket;
+
+	String ivid_str = cp_shift_spacevec(s);
+	if(!cp_vid(ivid_str, &ivid))
+		return errh->error("interface VID is not in expected format");
+	String bucket_str = cp_shift_spacevec(s);
+	if(!cp_integer(bucket_str, &bucket))
+		return errh->error("invalid integer");
+	String nhvid_str = cp_shift_spacevec(s);
+	if(!cp_vid(nhvid_str, &nhvid))
+		return errh->error("nexthop VID is not in expected format");
+	String gvid_str = cp_shift_spacevec(s);
+	if(!cp_vid(gvid_str, &gvid))
+		return errh->error("gateway VID is not in expected format");
+	updateEntry(&ivid, bucket, &nhvid, &gvid);
+	return 0;
+}
+
+int
+VEILRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
+{	
+	int res = -1;
+	for (int i = 0; i < conf.size(); i++) {
+		res = cp_viro_route(conf[i], errh);
+	}
+	return res;
+}
 
 void
 VEILRouteTable::updateEntry (
