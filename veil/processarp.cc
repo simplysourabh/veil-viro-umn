@@ -57,6 +57,7 @@ VEILProcessARP::smaction(Packet* p){
 			VID::generate_host_vid(&myVid, &esrc, &hvid);
 			host_table->updateEntry(&hvid, &esrc);
 			host_table->updateIPEntry(&src, &hvid);
+			interfaces->deleteHostInterface(&myVid);
 			p->kill();
 			return NULL;
 		}
