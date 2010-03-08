@@ -34,6 +34,9 @@ class VEILRouteTable : public Element {
 		const char* class_name() const { return "VEILRouteTable"; }
 		const char* port_count() const { return PORTS_0_0; }
 	
+		int cp_viro_route(String, ErrorHandler*);
+
+		int configure(Vector<String>&, ErrorHandler*);
 		void updateEntry(VID*, int, VID*, VID*);
 		bool getRoute(VID*, int, VID*, VID*, VID*);
 		bool  getBucket(int, VID*, VID*);
