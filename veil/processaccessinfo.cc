@@ -38,10 +38,9 @@ VEILProcessAccessInfo::smaction(Packet* p)
 	int interface;
 	if(interfaces->lookupVidEntry(&dvid, &interface))
 	{
-		veil_header *vhdr = (veil_header*) (p->data() + sizeof(click_ether));
-		access_info *ai = (access_info*)  (p->data() + sizeof(click_ether) + sizeof(veil_header));
+		veil_header *vhdr = (veil_header*) (e+1);
+		access_info *ai = (access_info*)  (vhdr+1);
 	
-		//TODO: does this work?
 		IPAddress ip = ai->ip;	
 		VID vid = ai->vid;
 		map->updateEntry(&ip, &vid, &myVid);
@@ -59,7 +58,8 @@ void
 VEILProcessAccessInfo::push(int, Packet* p)
 {
 	Packet *q = smaction(p);
-	output(0).push(q);
+	if(q != NULL)
+		output(0).push(q);
 }
 
 CLICK_ENDDECLS
