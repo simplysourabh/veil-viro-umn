@@ -9,7 +9,7 @@
 
 CLICK_DECLS
 
-VEILBuildRouteTable::VEILBuildRouteTable () {}
+VEILBuildRouteTable::VEILBuildRouteTable () : myTimer(this)  {}
 
 VEILBuildRouteTable::~VEILBuildRouteTable () {}
 
@@ -35,8 +35,7 @@ VEILBuildRouteTable::initialize (
 }
 
 void
-VEILBuildRouteTable::run_timer (
-	Timer *timer) 
+VEILBuildRouteTable::run_timer (Timer *timer) 
 {
 	assert(timer == &myTimer);
 
@@ -58,7 +57,7 @@ VEILBuildRouteTable::run_timer (
 
 	//TODO: use another constant that keeps track of # bits used in VID
 	//send out rdv publish and queries
-	for(int i = 0; i < (VID_LEN - HOST_LEN)*8; i++){
+	for(int i = HOST_LEN*8 + 1; i <= VID_LEN*8; i++){
 		VID myinterface, nexthop, rdvpt;
 		//check for each interface
 		for(iiter = it->begin(); iiter; ++iiter){
