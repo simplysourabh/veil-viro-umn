@@ -33,9 +33,12 @@ VEILHostTable::cp_host(String s, ErrorHandler* errh)
 int
 VEILHostTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+	int res = -1;
 	for (int i = 0; i < conf.size(); i++) {
-		cp_host(conf[i], errh);
+		res = cp_host(conf[i], errh);
 	}
+	
+	return res;
 }
 
 void
