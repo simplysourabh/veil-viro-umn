@@ -39,30 +39,30 @@ VEILProcessIP::smaction(Packet* p)
 		//TODO: will we ever see pkts from one host to another
 		//which are connected to us on the same interface?
 
-		const click_ip *i = p->ip_header();
+		const click_ip *i = (click_ip*) (eth+1);
 		IPAddress srcip = IPAddress(i->ip_src);
 		IPAddress dstip = IPAddress(i->ip_dst);
 
-		//check if dst is a host connected to us
-		//if yes, replace VID with MAC
-		//dvid == vid
 		VID dvid = VID(eth->ether_dhost);
-		VID vid, mvid;
+		VID vid, mvid, svid;
 		EtherAddress dmac;
+		EtherAddress smac = EtherAddress(eth->ether_shost);
 		
+		//check if dst is a host connected to us
+		//if yes, replace destVID with MAC and src MAC with src VID
+		//dvid == vid
 		if(hosts->lookupIP(&dstip, &vid)){
+			hosts->lookupMAC(&smac, &svid);
 			hosts->lookupVID(&dvid, &dmac);
-			WritablePacket *q = p->uniqueify();
-			click_ether *e = (click_ether*) q->data();
-			memcpy(e->ether_dhost, &dmac, 6);
-			
-			p->kill();
-			return q;
+			memcpy(eth->ether_shost, &svid, VID_LEN);
+			memcpy(eth->ether_dhost, &dmac, VID_LEN);
+			return p;
 		}
 
 		//check if packet is destined to someone in
 		//our mapping table
 		//if yes, construct VEIL_IP pkt and send to routepacket
+		//replace src with vid of src host
 		if(map->lookupIP(&dstip, &vid, &mvid)){		
 			WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(veil_header) + sizeof(click_ip));
     			
@@ -73,8 +73,9 @@ VEILProcessIP::smaction(Packet* p)
 			
 			click_ether *e = (click_ether *) q->data();
 			q->set_ether_header(e);
-			//TODO: check if this works
+			hosts->lookupMAC(&smac, &svid);
 			memcpy(e, eth, sizeof(click_ether));
+			memcpy(e->ether_shost, &svid, VID_LEN);
 			e->ether_type = htons(ETHERTYPE_VEIL);
 		
 			veil_header *vheader = (veil_header *) (e+1);
@@ -88,7 +89,7 @@ VEILProcessIP::smaction(Packet* p)
 		}
 		
 		//TODO: any other conditions?
-		//TODO: handle error pkt
+		//TODO: handle error
 		p->kill();
 		return NULL;
 	}
@@ -96,7 +97,7 @@ VEILProcessIP::smaction(Packet* p)
 	//IP pkt from another switch
 	if(ntohs(eth->ether_type) == ETHERTYPE_VEIL){
 		veil_header *vhdr = (veil_header *) (eth+1);
-		if(vhdr->packetType == VEIL_IP){
+		if(ntohs(vhdr->packetType) == VEIL_IP){
 			click_ip *i = (click_ip *) (vhdr+1);
 
 			//check if destination is one of our hosts
@@ -129,14 +130,14 @@ VEILProcessIP::smaction(Packet* p)
 				return q;
 			} else {
 				return p;
-			}
-			
-			//pkt is not of type VEIL_IP
-			//TODO:handle error
-			p->kill();
-			return NULL;
+			}			
 		}
+		//pkt is not of type VEIL_IP
+		//TODO:handle error
+		p->kill();
+		return NULL;
 	}
+
 	//pkt is neither of type IP not VEIL
 	//TODO:handle error
 	p->kill();
@@ -147,7 +148,8 @@ void
 VEILProcessIP::push(int, Packet* p)
 {
 	Packet *q = smaction(p);
-	output(0).push(q);
+	if(q != NULL)
+		output(0).push(q);
 }
 
 CLICK_ENDDECLS
