@@ -35,7 +35,7 @@ VEILRoutePacket::smaction(Packet* p){
 	VID myVid;
 	interfaces->lookupIntEntry(myport, &myVid);		
 	
-	const click_ether *eth = (const click_ether *) p->mac_header();
+	const click_ether *eth = (const click_ether *) p->data();
 
 	//VEIL packets: access PUBLISH/QUERY or RDV REQ/PUB/RPLY	
 	if(ntohs(eth->ether_type) == ETHERTYPE_VEIL){
@@ -61,8 +61,10 @@ VEILRoutePacket::smaction(Packet* p){
 			}			
 			
 			//packet is meant for one of our interfaces
-			if(interfaces->lookupVidEntry(&dstvid, &port))
-				return port;			
+			if(interfaces->lookupVidEntry(&dstvid, &port)){
+				//port annotation must already be present
+				return numinterfaces;			
+			}
 			
 			//lookup neighbor table
 			if(neighbors->lookupEntry(&dstvid, &myinterface)){
@@ -72,7 +74,7 @@ VEILRoutePacket::smaction(Packet* p){
 			
 			//lookup route table for kth bucket
 			VID nexthop, gateway;
-			if(routes->lookupEntry(k, &myinterface, &nexthop, &gateway))
+			if(routes->getRoute(&dstvid, k, &myinterface, &nexthop, &gateway))
 			{
 				interfaces->lookupVidEntry(&myinterface, &port);
 				return port;
@@ -86,7 +88,7 @@ VEILRoutePacket::smaction(Packet* p){
 		
 		//packet is meant for one of our interfaces
 		if(interfaces->lookupVidEntry(&dstvid, &port))
-			return port;			
+			return numinterfaces;			
 			
 		//lookup neighbor table
 		if(neighbors->lookupEntry(&dstvid, &myinterface)){
@@ -96,7 +98,7 @@ VEILRoutePacket::smaction(Packet* p){
 			
 		//lookup route table for kth bucket
 		VID nexthop, gateway;
-		if(routes->lookupEntry(k, &myinterface, &nexthop, &gateway))
+		if(routes->getRoute(&dstvid, k, &myinterface, &nexthop, &gateway))
 		{
 			interfaces->lookupVidEntry(&myinterface, &port);
 			return port;
