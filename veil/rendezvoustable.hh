@@ -4,6 +4,7 @@
 #include <click/element.hh>
 #include <click/timer.hh>
 #include <click/hashtable.hh>
+#include <click/error.hh>
 #include <click/vid.hh>
 #include "click_veil.hh"
 
@@ -16,7 +17,10 @@ class VEILRendezvousTable : public Element {
 
 		const char* class_name() const { return "VEILRendezvousTable"; }
 		const char* port_count() const { return PORTS_0_0; }
+
+		int cp_rdv_entry(String, ErrorHandler*);
 	
+		int configure(Vector<String>&, ErrorHandler*);
 		void updateEntry(VID*, VID*);
 		bool getRdvPoint(int, VID*, VID*);
 		static void expire(Timer*, void*);
