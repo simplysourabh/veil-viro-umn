@@ -41,7 +41,7 @@ VEILPublishAccessInfo::run_timer (
 
 	//hash of IP yields a unique value so we need to generate one pkt/host
 	for(iter = hipt->begin(); iter; ++iter){
-		int packet_length = sizeof(click_ether) + sizeof(veil_header) + sizeof(access_info);
+		int packet_length = sizeof(click_ether) + sizeof(veil_header) + sizeof(IPAddress) + sizeof(VID);
 		WritablePacket *p = Packet::make(packet_length);
 
         	if (p == 0) {
