@@ -22,7 +22,7 @@ InfiniteSource(DATA \<ff ff ff ff ff ff 00 1b 11 4e 11 f7 08 06
 		      ac 10 00 01
                       00 1b 11 4e 11 f7
 		      ac 10 00 01>, LIMIT 1) 
--> VEILSetPortAnnotation(0) -> parp -> p::Print(MAXLENGTH 50) -> d::Discard;
+-> VEILSetPortAnnotation(0) -> parp -> p::Print(MAXLENGTH 50, PRINTANNO true) -> d::Discard;
 
 //case 2: host wants MAC of another host
 //2a: same interface
