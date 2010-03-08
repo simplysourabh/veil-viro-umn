@@ -34,7 +34,7 @@ VEILMappingTable::cp_mapping(String s, ErrorHandler *errh)
 int
 VEILMappingTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-	int res = -1;
+	int res = 0;
 	for (int i = 0; i < conf.size(); i++) {
 		res = cp_mapping(conf[i], errh);
 	}
