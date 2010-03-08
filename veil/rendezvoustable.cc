@@ -9,6 +9,31 @@ VEILRendezvousTable::VEILRendezvousTable () {}
 
 VEILRendezvousTable::~VEILRendezvousTable () {}
 
+//String is of the form: srcVID gatewayVID
+int
+VEILRendezvousTable::cp_rdv_entry(String s, ErrorHandler* errh){
+	VID svid, gvid;
+
+	String svid_str = cp_shift_spacevec(s);
+	if(!cp_vid(svid_str, &svid))
+		return errh->error("source VID is not in expected format");
+	String gvid_str = cp_shift_spacevec(s);
+	if(!cp_vid(gvid_str, &gvid))
+		return errh->error("gateway VID is not in expected format");
+	updateEntry(&svid, &gvid);
+	return 0;
+}
+
+int
+VEILRendezvousTable::configure(Vector<String> &conf, ErrorHandler *errh)
+{	
+	int res = 0;
+	for (int i = 0; i < conf.size(); i++) {
+		res = cp_rdv_entry(conf[i], errh);
+	}
+	return res;
+}
+
 void
 VEILRendezvousTable::updateEntry (
 	VID *svid, VID *gvid)
