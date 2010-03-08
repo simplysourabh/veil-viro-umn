@@ -53,8 +53,8 @@ VEILBuildRouteTable::run_timer (
 		route_table->updateEntry(&myInterface, ldist, &neighbor, &myInterface);		
 	}
 
-	const VEILInterfaceTable::InterfaceTable *it = interfaces->get_interfacetable_handle();
-	VEILInterfaceTable::InterfaceTable::const_iterator iiter;
+	const VEILInterfaceTable::InterfaceTable *it = interfaces->get_switchinterfacetable_handle();
+	VEILInterfaceTable::SwitchInterfaceTable::const_iterator iiter;
 
 	//TODO: use another constant that keeps track of # bits used in VID
 	//send out rdv publish and queries
