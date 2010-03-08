@@ -30,7 +30,7 @@ VEILNeighborTable::cp_neighbor(String s, ErrorHandler* errh){
 int
 VEILNeighborTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-	int res = -1;
+	int res = 0;
 	for (int i = 0; i < conf.size(); i++) {
 		res = cp_neighbor(conf[i], errh);
 	}
