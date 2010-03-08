@@ -1,5 +1,6 @@
 #include <click/config.h>
 #include <click/confparse.hh>
+#include <click/error.hh>
 #include <click/straccum.hh>
 #include "neighbortable.hh"
 
@@ -10,6 +11,32 @@ CLICK_DECLS
 VEILNeighborTable::VEILNeighborTable () {}
 
 VEILNeighborTable::~VEILNeighborTable () {}
+
+//String is of the form: neighborVID interfaceVID 
+int
+VEILNeighborTable::cp_neighbor(String s, ErrorHandler* errh){
+	VID nvid, myvid;
+
+	String nvid_str = cp_shift_spacevec(s);
+	if(!cp_vid(nvid_str, &nvid))
+		return errh->error("neighbor VID is not in expected format");
+	String myvid_str = cp_shift_spacevec(s);
+	if(!cp_vid(myvid_str, &myvid))
+		return errh->error("interface VID is not in expected format");
+	updateEntry(&nvid, &myvid);
+	return 0;
+}
+
+int
+VEILNeighborTable::configure(Vector<String> &conf, ErrorHandler *errh)
+{
+	int res = -1;
+	for (int i = 0; i < conf.size(); i++) {
+		res = cp_neighbor(conf[i], errh);
+	}
+
+	return res;
+}
 
 void
 VEILNeighborTable::updateEntry (
