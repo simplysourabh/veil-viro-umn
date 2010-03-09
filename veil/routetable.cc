@@ -93,7 +93,7 @@ VEILRouteTable::getRoute(VID* dst, int b, VID* i, VID *nh, VID *g)
 		InnerRouteTable rt = iter.value();
 		VID interface = iter.key();
 
-		if (rt.find(b) != rt.end() && dst->logical_distance(&interface)){
+		if (rt.find(b) != rt.end() && dst->logical_distance(&interface) < b) {
 			InnerRouteTableEntry irte = rt.get(b);
 			memcpy(i, &iter.key(), 6);
 			memcpy(nh, &irte.nextHop, 6);
