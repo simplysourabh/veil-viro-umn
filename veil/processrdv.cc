@@ -116,12 +116,12 @@ VEILProcessRDV::smaction(Packet* p){
 			memcpy(&gateway, &r->gatewayvid, VID_LEN);
 			VID i, nh, g;
 
-			int dist_to_gateway = myVid.logical_distance(&gateway);
+			int dist_to_gateway = dvid.logical_distance(&gateway);
 
 			//find nexthop to reach gateway
 			if(routes->getRoute(&gateway, dist_to_gateway, &i, &nh, &g))	
 			{
-				routes->updateEntry(&myVid, k, &nh, &gateway);
+				routes->updateEntry(&dvid, k, &nh, &gateway);
 			} else {
 				//we didn't find a nexthop for our gateway
 				//TODO: what to do?
