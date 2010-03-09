@@ -63,8 +63,7 @@ VEILPublishAccessInfo::run_timer (
 		vheader->packetType = htons(VEIL_PUBLISH);
 
 		access_info *af = (access_info*) (vheader + 1);
-		//TODO: does this work?
-		memcpy(af->ip.data(), &ip, 6); 
+		memcpy(af->ip.data(), &ip, 4); 
 		VID hvid = iter.value();
 		memcpy(af->vid.data(), &hvid, 6);	
 
