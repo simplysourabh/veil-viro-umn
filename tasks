@@ -1,0 +1,33 @@
+low priority
+-----------------
+*  lookup CLICK_SIZE_PACKED_ATTRIBUTE and see whether it makes sense for class VID
+
+*  what do the constants under CpVaParseCmd mean? 
+
+*  fix compilation errors with --enable-ip6
+
+*  what does CONTEXT mean in confparse?
+
+*  need logging  --  use GridLogger?
+
+*  REFACTOR: create one superclass for all table related stuff like update, lookup, expire
+
+*  set error annotation in all error pkts so that routepacket can send it out thru the error interface
+-----------------------------------------------------------------------------------------
+*  find optimal values for all elements that run periodically
+
+*  add random delays to hello advertisement -- useful esp in wireless
+
+*  all table reads and writes should be synchronized/made atomic
+
+*  expire entries in host table -- have the access switch communicate to the old host switch that host/hosts has/have moved?
+
+*  hash function for host vid generation needs to change. check after generation if unique by looking up host table.
+
+*  modify lookup function in routetable to return closest XOR distance if there are multiple choices for the same bucket (similarly for rendezvous table)
+ 
+*  publish rdv info not only about neighbors but also abt other interfaces that are part of the same switch?
+
+*  format output of read handlers 
+
+*  publish host info to access switch as soon as host sends gratuitous ARP
