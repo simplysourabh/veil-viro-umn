@@ -68,8 +68,7 @@ VEILPublishAccessInfo::run_timer (
 		memcpy(af->vid.data(), &hvid, 6);	
 
 		//source vid is the interface to which the host is connected
-		memset(e->ether_shost, 0, 6);
-		memcpy(e->ether_shost, &hvid, 4);
+		hvid.extract_switch_vid(reinterpret_cast<VID*>(&e->ether_shost));
 
 		SET_REROUTE_ANNO(p, 'r');
 	
