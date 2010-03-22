@@ -36,9 +36,6 @@ VEILProcessIP::smaction(Packet* p)
 		
 	//if IP packet came from one of our hosts
 	if(ntohs(eth->ether_type) == ETHERTYPE_IP){
-		//TODO: will we ever see pkts from one host to another
-		//which are connected to us on the same interface?
-
 		const click_ip *i = (click_ip*) (eth+1);
 		IPAddress srcip = IPAddress(i->ip_src);
 		IPAddress dstip = IPAddress(i->ip_dst);
@@ -47,11 +44,18 @@ VEILProcessIP::smaction(Packet* p)
 		VID vid, mvid, svid;
 		EtherAddress dmac;
 		EtherAddress smac = EtherAddress(eth->ether_shost);
-		
+
 		//check if dst is a host connected to us
-		//if yes, replace destVID with MAC and src MAC with src VID
-		//dvid == vid
 		if(hosts->lookupIP(&dstip, &vid)){
+			//if src and dst are connected to us
+			//thru the same interface, ignore packet
+			VID dvid;
+			vid.extract_switch_vid(&dvid);
+			if(dvid == myVid){
+				p->kill();
+				return NULL;
+			}
+
 			hosts->lookupMAC(&smac, &svid);
 			hosts->lookupVID(&dvid, &dmac);
 			memcpy(eth->ether_shost, &svid, VID_LEN);
