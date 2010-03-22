@@ -72,15 +72,12 @@ VEILProcessARP::smaction(Packet* p){
 		if(host_table->lookupIP(&dst, &hvid))
 		{
 			if(ntohs(ap->ea_hdr.ar_op) == ARPOP_REQUEST){
-				unsigned char dest_int[6];
-				memset(dest_int, 0, sizeof(dest_int));
-				memcpy(dest_int, &hvid, 4);
+				VID dest_int;
+				hvid.extract_switch_vid(&dest_int);
 
 				//if both hosts are not connect thru
 				//the same switch interface, send reply
-				//src host's vid has the same first 4B as 
-				//myVid
-				if(VID(static_cast<const unsigned char*>(dest_int)) != myVid) {
+				if(dest_int != myVid) {
 					//send ARP reply
 					WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
     					if (q == 0) {
