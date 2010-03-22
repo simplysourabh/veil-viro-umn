@@ -109,7 +109,12 @@ class VID {
 			hvid[4] = (ethaddr[0] << 2) | (ethaddr[1] >> 3) | ethaddr[2];
 			hvid[5] = (ethaddr[3] >> 1) | (ethaddr[4] << 2) | (ethaddr[5] << 4);	
 			memcpy(hostvid, hvid, 6);		
-		}  
+		} 
+
+		void extract_switch_vid(VID* svid){
+			memset(svid, 0, VID_LEN);
+			memcpy(svid, _data, VID_LEN - HOST_LEN);
+		} 
 
 		void calculate_rdv_point(int k, VID *rvid){
 			int copy_bits = VID_LEN*8 - k + 1;
