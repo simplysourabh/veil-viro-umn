@@ -53,6 +53,14 @@ VEILNeighborTable::updateEntry (
 	expiry->initialize(this);
 	expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
 	entry.expiry  = expiry;
+	// First see if the key is already present?
+	NeighborTableEntry * oldEntry;
+	oldEntry = neighbors.get_pointer(*nvid);
+	if (oldEntry != NULL){
+		oldEntry->expiry->unschedule();
+		delete(oldEntry->expiry);
+		click_chatter("Updating the neighbor table for key: %s\n", nvid->vid_string());
+	}
 	neighbors.set(*nvid, entry);
 }
 
@@ -78,7 +86,7 @@ VEILNeighborTable::expire(Timer *t, void *data)
 	VID* nvid = (VID *) td->vid;
 	// Temporary NOT deleting  entries 
 	//  Just for debugging
-	//td->neighbors->erase(*nvid);
+	td->neighbors->erase(*nvid);
 	click_chatter("%d entries in neighbor table", td->neighbors->size());
 	delete(td); 
 }
