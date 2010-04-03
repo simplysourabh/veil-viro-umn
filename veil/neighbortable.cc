@@ -76,8 +76,10 @@ VEILNeighborTable::expire(Timer *t, void *data)
 {
 	TimerData *td = (TimerData *) data;
 	VID* nvid = (VID *) td->vid;
-	td->neighbors->erase(*nvid);
-	//click_chatter("%d entries in neighbor table", td->neighbors->size());
+	// Temporary NOT deleting  entries 
+	//  Just for debugging
+	//td->neighbors->erase(*nvid);
+	click_chatter("%d entries in neighbor table", td->neighbors->size());
 	delete(td); 
 }
 
