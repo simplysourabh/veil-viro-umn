@@ -92,7 +92,7 @@ VEILNeighborTable::expire(Timer *t, void *data)
 	click_chatter("Looking for the VID: \n  <--------|%s|------->\n",nvid->vid_string().c_str());
 	click_chatter("[BEFORE EXPIRE] %d entries in neighbor table", td->neighbors->size());
 	if (td->neighbors->get_pointer(*nvid) == NULL){
-		click_chatter("NO entry for the key!  <--------|%s|-------> \n",vid_string().c_str());
+		click_chatter("NO entry for the key!  <--------|%s|-------> \n",nvid->vid_string().c_str());
 	}
 	td->neighbors->erase(*nvid);
 	click_chatter("[AFTER EXPIRE] %d entries in neighbor table", td->neighbors->size());
