@@ -24,14 +24,14 @@ CLICK_DECLS
 #define VEIL_IP                 0x08
 
 // Intervals are in ms
-#define VEIL_HELLO_INTERVAL		20000
-#define VEIL_PUBLISH_INTERVAL		50000
-#define VEIL_RDV_INTERVAL		60000
+#define VEIL_HELLO_INTERVAL		10000
+#define VEIL_PUBLISH_INTERVAL		20000
+#define VEIL_RDV_INTERVAL		20000
 /* value greater than hello/publish interval so entries don't expire just    
  * when hello/publish pkts need to be resent. risking temporarily invalid    
  * routes. 
  */ 
-#define VEIL_TBL_ENTRY_EXPIRY		21000
+#define VEIL_TBL_ENTRY_EXPIRY		20000
 
 
 struct veil_header {

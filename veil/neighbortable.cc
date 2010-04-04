@@ -34,7 +34,7 @@ VEILNeighborTable::configure(Vector<String> &conf, ErrorHandler *errh)
 	for (int i = 0; i < conf.size(); i++) {
 		res = cp_neighbor(conf[i], errh);
 	}
-
+	click_chatter("Configured the neighbor table!\n");
 	return res;
 }
 
@@ -43,7 +43,8 @@ VEILNeighborTable::updateEntry (
 	VID *nvid, VID *myvid)
 {
 	TimerData *tdata = new TimerData();
-	tdata->vid = nvid;
+	VID * nvid1 = new VID(nvid->data());
+	tdata->vid = nvid1;
 	tdata->neighbors = &neighbors;
 	
 	NeighborTableEntry entry;
@@ -59,7 +60,8 @@ VEILNeighborTable::updateEntry (
 	if (oldEntry != NULL){
 		oldEntry->expiry->unschedule();
 		delete(oldEntry->expiry);
-		click_chatter("Updating the neighbor table for key: %s\n", nvid->vid_string());
+		char xx[7]; xx[1] =xx[2] =xx[3] =xx[4] =xx[5] =xx[6] = '\0';
+		click_chatter("Refreshing the value for the KEY: <--------|%s|------->\n",nvid->vid_string().c_str());
 	}
 	neighbors.set(*nvid, entry);
 }
@@ -82,13 +84,20 @@ VEILNeighborTable::lookupEntry(VID* nvid, VID* myvid)
 void
 VEILNeighborTable::expire(Timer *t, void *data) 	
 {
+	
 	TimerData *td = (TimerData *) data;
 	VID* nvid = (VID *) td->vid;
 	// Temporary NOT deleting  entries 
 	//  Just for debugging
+	click_chatter("Looking for the VID: \n  <--------|%s|------->\n",nvid->vid_string().c_str());
+	click_chatter("[BEFORE EXPIRE] %d entries in neighbor table", td->neighbors->size());
+	if (td->neighbors->get_pointer(*nvid) == NULL){
+		click_chatter("NO entry for the key!  <--------|%s|-------> \n",vid_string().c_str());
+	}
 	td->neighbors->erase(*nvid);
-	click_chatter("%d entries in neighbor table", td->neighbors->size());
+	click_chatter("[AFTER EXPIRE] %d entries in neighbor table", td->neighbors->size());
 	delete(td); 
+	delete(t);
 }
 
 String
