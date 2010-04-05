@@ -19,10 +19,10 @@ VEILNeighborTable::cp_neighbor(String s, ErrorHandler* errh){
 
 	String nvid_str = cp_shift_spacevec(s);
 	if(!cp_vid(nvid_str, &nvid))
-		return errh->error("neighbor VID is not in expected format");
+		return errh->error("[NeighborTable] neighbor VID is not in expected format");
 	String myvid_str = cp_shift_spacevec(s);
 	if(!cp_vid(myvid_str, &myvid))
-		return errh->error("interface VID is not in expected format");
+		return errh->error("[NeighborTable] interface VID is not in expected format");
 	updateEntry(&nvid, &myvid);
 	return 0;
 }
@@ -34,7 +34,7 @@ VEILNeighborTable::configure(Vector<String> &conf, ErrorHandler *errh)
 	for (int i = 0; i < conf.size(); i++) {
 		res = cp_neighbor(conf[i], errh);
 	}
-	click_chatter("Configured the neighbor table!\n");
+	click_chatter("[NeighborTable] Configured the neighbor table!\n");
 	return res;
 }
 
@@ -60,8 +60,9 @@ VEILNeighborTable::updateEntry (
 	if (oldEntry != NULL){
 		oldEntry->expiry->unschedule();
 		delete(oldEntry->expiry);
-		char xx[7]; xx[1] =xx[2] =xx[3] =xx[4] =xx[5] =xx[6] = '\0';
-		click_chatter("Refreshing the value for the KEY: <--------|%s|------->\n",nvid->vid_string().c_str());
+		click_chatter("[NeighborTable] Neighbor VID: |%s| \n",nvid->vid_string().c_str());
+	}else{
+		click_chatter("[NeighborTable][New neighbor] Neighbor VID: |%s| MyVID: |%s|\n",nvid->vid_string().c_str(),myvid->vid_string().c_str());
 	}
 	neighbors.set(*nvid, entry);
 }
@@ -89,13 +90,14 @@ VEILNeighborTable::expire(Timer *t, void *data)
 	VID* nvid = (VID *) td->vid;
 	// Temporary NOT deleting  entries 
 	//  Just for debugging
-	click_chatter("Looking for the VID: \n  <--------|%s|------->\n",nvid->vid_string().c_str());
-	click_chatter("[BEFORE EXPIRE] %d entries in neighbor table", td->neighbors->size());
+	click_chatter("[NeighborTable] [Timer Expired] VID: |%s|\n",nvid->vid_string().c_str());
+	//click_chatter("[BEFORE EXPIRE] %d entries in neighbor table", td->neighbors->size());
 	if (td->neighbors->get_pointer(*nvid) == NULL){
-		click_chatter("NO entry for the key!  <--------|%s|-------> \n",nvid->vid_string().c_str());
+		click_chatter("[NeighborTable] [ERROR: Entry NOT FOUND] Key: |%s| \n",nvid->vid_string().c_str());
 	}
 	td->neighbors->erase(*nvid);
-	click_chatter("[AFTER EXPIRE] %d entries in neighbor table", td->neighbors->size());
+	//click_chatter("[AFTER EXPIRE] %d entries in neighbor table", td->neighbors->size());
+	//click_chatter (read_handler(this, NULL).c_str());
 	delete(td); 
 	delete(t);
 }
@@ -108,18 +110,17 @@ VEILNeighborTable::read_handler(Element *e, void *thunk)
 	NeighborTable::iterator iter;
 	NeighborTable neighbors = nt->neighbors;
 
-	sa << "Neighbor Table" << '\n';
-	sa << "neighborvid" << "  " << "myinterfacevid" << ' ' << "expiry" << '\n';
+	sa << "\n-----------------Neighbor Table START-----------------\n"<<"[NeighborTable]" << '\n';
+	sa << "Neighbor VID" << "\t" << "Myinterface VID" << '\t' << "Expiry" << '\n';
 	
 	for(iter = neighbors.begin(); iter; ++iter){
 		String vid = static_cast<VID>(iter.key()).vid_string();		
 		NeighborTableEntry nte = iter.value();
 		String myvid = static_cast<VID>(nte.myVid).vid_string();		
 		Timer *t = nte.expiry;
-
-		sa << vid << ' ' << myvid << "   " << t->expiry() << '\n';
+		sa << vid << '\t' << myvid << "\t Status:" << t->scheduled() << " ("<<t->expiry().sec() << " second to expire) \n";
 	}
-	
+	sa<< "\n----------------- Neighbor Table END -----------------\n";
 	return sa.take_string();	  
 }
 
