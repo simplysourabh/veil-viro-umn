@@ -48,7 +48,10 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 		VID neighbor = iter.key();
 		VID myInterface = nte.myVid;
 		int ldist = neighbor.logical_distance(&myInterface);
-		route_table->updateEntry(&myInterface, ldist, &neighbor, &myInterface);		
+		route_table->updateEntry(&myInterface, ldist, &neighbor, &myInterface);	
+		
+		//TODO SJ: WE SHOULD BE PUBLISHING HERE!!
+		rdv_publish(myInterface, neighbor,ldist);	
 	}
 
 	const VEILInterfaceTable::InterfaceTable *it = interfaces->get_switchinterfacetable_handle();
@@ -64,86 +67,101 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 			int ldist = int2.logical_distance(&int1);
 			if (ldist == 0){continue;}
 			route_table->updateEntry(&int1, ldist, &int2, &int1);
+			//TODO SJ: WE SHOULD BE PUBLISHING HERE!!
+			//TODO: Probably create a wrapper function for the RDV_PUBLISH.
+			rdv_publish(int1, int2,ldist);	
 		}
 	}
 	
-
-	// ACTIVE_VID_LEN is set to avoid sending queries for the 
-	// non-existant levels in the tree. 
-	
-	for(int i = HOST_LEN*8 + 1; i <= ACTIVE_VID_LEN*8; i++){
-		VID myinterface, nexthop, rdvpt;
-		//check for each interface
-		for(iiter = it->begin(); iiter; ++iiter){
-			myinterface = iiter.key();
+	//check for each interface
+	for(iiter = it->begin(); iiter; ++iiter){
+		VID myinterface = iiter.key();
+		// ACTIVE_VID_LEN is set to avoid sending queries for the 
+		// non-existant levels in the tree. 
+		for(int i = HOST_LEN*8 + 1; i <= ACTIVE_VID_LEN*8; i++){
+			VID nexthop, rdvpt;
 			//publish
 			if(route_table->getBucket(i, &myinterface, &nexthop)){
 				//check if nexthop = neighbor
-				VID interface;			
-				if(neighbors->lookupEntry(&nexthop, &interface)){
-					myinterface.calculate_rdv_point(i, &rdvpt);
-					int packet_length = sizeof(click_ether) + sizeof(veil_header) + sizeof(VID);
-					WritablePacket *p = Packet::make(packet_length);
-
-        				if (p == 0) {
-                				click_chatter( "[BuildRouteTable] [Error!] cannot make packet in buildroutetable");
-                				return;
-        				}
-
-					memset(p->data(), 0, p->length());
-
-					click_ether *e = (click_ether *) p->data();
-					p->set_ether_header(e);
-		
-					memcpy(e->ether_dhost, &rdvpt, 6); 
-					memcpy(e->ether_shost, &myinterface, 6);
-					e->ether_type = htons(ETHERTYPE_VEIL);
-
-					veil_header *vheader = (veil_header*) (e + 1);
-					vheader->packetType = htons(VEIL_RDV_PUBLISH);
-
-					VID *v = (VID*) (vheader + 1);
-					memcpy(v, &nexthop, 6); 
-				
-					output(0).push(p);
-				} else goto query;		
+				// SJ TODO: Don't need to PUBLISH HERE!
+				/*VID interface;			
+				if(!neighbors->lookupEntry(&nexthop, &interface)){
+					rdv_publish(myinterface, nexthop,i);
+				} else{
+					rdv_query(myinterface,i);
+				}*/		
 			} else { //query
-				//send a query on all interfaces to maximize 
-				//chances of getting some route
-				query:
-				myinterface.calculate_rdv_point(i, &rdvpt);
-
-				int packet_length = sizeof(click_ether) + sizeof(veil_header) + sizeof(int);		
-				WritablePacket *p = Packet::make(packet_length);
-
-	        		if (p == 0) {
-	                		click_chatter( "[BuildRouteTable] [Error!] cannot make packet in buildroutetable");
-	                		return;
-	        		}
-
-				memset(p->data(), 0, p->length());
-
-				click_ether *e = (click_ether *) p->data();
-				p->set_ether_header(e);
-	
-				memcpy(e->ether_dhost, &rdvpt, 6); 
-				memcpy(e->ether_shost, &myinterface, 6);
-
-				e->ether_type = htons(ETHERTYPE_VEIL);
-
-				veil_header *vheader = (veil_header*) (e + 1);
-				vheader->packetType = htons(VEIL_RDV_QUERY);
-
-				int *k = (int*) (vheader + 1);
-				*k = htons(i);
-				
-				output(0).push(p);
+				rdv_query(myinterface,i);					
 			}
 		}		
 	}
 	
 	myTimer.schedule_after_msec(VEIL_RDV_INTERVAL);
 }
+
+void
+VEILBuildRouteTable::rdv_publish (VID &myinterface, VID &nexthop, int i ){
+	VID rdvpt;
+	myinterface.calculate_rdv_point(i, &rdvpt);
+	int packet_length = sizeof(click_ether) + sizeof(veil_header) + sizeof(VID);
+	WritablePacket *p = Packet::make(packet_length);
+
+	if (p == 0) {
+		click_chatter( "[BuildRouteTable] [Error!] cannot make packet in buildroutetable");
+		return;
+	}
+
+	memset(p->data(), 0, p->length());
+
+	click_ether *e = (click_ether *) p->data();
+	p->set_ether_header(e);
+
+	memcpy(e->ether_dhost, &rdvpt, 6); 
+	memcpy(e->ether_shost, &myinterface, 6);
+	e->ether_type = htons(ETHERTYPE_VEIL);
+
+	veil_header *vheader = (veil_header*) (e + 1);
+	vheader->packetType = htons(VEIL_RDV_PUBLISH);
+
+	VID *v = (VID*) (vheader + 1);
+	memcpy(v, &nexthop, 6); 
+
+	click_chatter( "[BuildRouteTable] [RDV PUBLISH] |%s| --> |%s| to RDV node at |%s|\n", myinterface.vid_string().c_str(), nexthop.vid_string().c_str(), rdvpt.vid_string().c_str());
+	output(0).push(p);
+}
+
+void
+VEILBuildRouteTable::rdv_query (VID &myinterface, int i){
+	VID rdvpt;
+	myinterface.calculate_rdv_point(i, &rdvpt);
+	int packet_length = sizeof(click_ether) + sizeof(veil_header) + sizeof(int);		
+	WritablePacket *p = Packet::make(packet_length);
+
+	if (p == 0) {
+		click_chatter( "[BuildRouteTable] [Error!] cannot make packet in buildroutetable");
+		return;
+	}
+
+	memset(p->data(), 0, p->length());
+
+	click_ether *e = (click_ether *) p->data();
+	p->set_ether_header(e);
+
+	memcpy(e->ether_dhost, &rdvpt, 6); 
+	memcpy(e->ether_shost, &myinterface, 6);
+
+	e->ether_type = htons(ETHERTYPE_VEIL);
+
+	veil_header *vheader = (veil_header*) (e + 1);
+	vheader->packetType = htons(VEIL_RDV_QUERY);
+
+	int *k = (int*) (vheader + 1);
+	*k = htons(i);
+	
+	click_chatter( "[BuildRouteTable] [RDV QUERY] For |%s| at level %d to RDV node at |%s|\n", myinterface.vid_string().c_str(), i, rdvpt.vid_string().c_str());
+	output(0).push(p);
+}
+
 
 
 CLICK_ENDDECLS
