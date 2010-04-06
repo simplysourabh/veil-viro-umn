@@ -12,14 +12,20 @@ CLICK_DECLS
 
 class VEILRouteTable : public Element {
 	public:
+		// Routing Table Entry for an interface. 
+		// Each entry has three tuples: NextHop, Gateway and Expiry Time
 		struct InnerRouteTableEntry {
 			VID nextHop;
 			VID gateway;
 			Timer *expiry;
 		};
 
+		// Routing Table for an interface is a <key, value> pair
+		// Key = Bucket Number (int), Value = Nexthop, gateway, timer (InnerRouteTableEntry)
 		typedef HashTable<int, InnerRouteTableEntry> InnerRouteTable;
-
+		
+		// Full Routing Table, a <key, value> pair
+		// Key = VID of the interface, Value = InnerRouteTable
 		typedef HashTable<VID, InnerRouteTable> OuterRouteTable;
 
 		struct TimerData {

@@ -20,16 +20,16 @@ VEILRouteTable::cp_viro_route(String s, ErrorHandler* errh){
 
 	String ivid_str = cp_shift_spacevec(s);
 	if(!cp_vid(ivid_str, &ivid))
-		return errh->error("interface VID is not in expected format");
+		return errh->error("[RouteTable] [Error] interface VID is not in expected format");
 	String bucket_str = cp_shift_spacevec(s);
 	if(!cp_integer(bucket_str, &bucket))
-		return errh->error("invalid integer");
+		return errh->error("[RouteTable] [Error] invalid integer");
 	String nhvid_str = cp_shift_spacevec(s);
 	if(!cp_vid(nhvid_str, &nhvid))
-		return errh->error("nexthop VID is not in expected format");
+		return errh->error("[RouteTable] [Error] nexthop VID is not in expected format");
 	String gvid_str = cp_shift_spacevec(s);
 	if(!cp_vid(gvid_str, &gvid))
-		return errh->error("gateway VID is not in expected format");
+		return errh->error("[RouteTable] [Error] gateway VID is not in expected format");
 	updateEntry(&ivid, bucket, &nhvid, &gvid);
 	return 0;
 }
@@ -48,24 +48,30 @@ void
 VEILRouteTable::updateEntry (
 	VID *i, int b, VID *nh, VID *g)
 {
-	bool present = false;
+	// SJ : TODO: Allowing multiple routing entries per bucket?
+	
 	TimerData *tdata = new TimerData();
 	tdata->bucket = b;
-	tdata->interface = new VID();
-	memcpy(tdata->interface, i, VID_LEN);
+	tdata->interface = new VID(i->data());
+	//memcpy(tdata->interface, i, VID_LEN);
 	tdata->routes = &routes;
 
 	//we first want to check if an InnerRouteTable is already present
-
+	//Check if innerroutetable is present for interface vid = i?
 	InnerRouteTable *rt;
 	if(routes.find(*i) != routes.end()){
+		// yes we have a innerroutetable for interface vid = i
+		// get the pointer to the table.
 		rt = routes.get_pointer(*i);
-		present = true;
 	} else {
+		// No we dont have the innerroutetable for interface vid = i
+		// create new innerroutetable for the interface vid = i, and 
+		// add it to the main routing table.
 		rt = new HashTable<int, InnerRouteTableEntry>::HashTable();
+		routes.set(*i,*rt);
 	}
 
-	InnerRouteTableEntry entry;
+	InnerRouteTableEntry entry; // New routing entry
 
 	memcpy(&entry.nextHop, nh, 6);
 	memcpy(&entry.gateway, g, 6);
@@ -73,10 +79,19 @@ VEILRouteTable::updateEntry (
 	expiry->initialize(this);
 	expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
 	entry.expiry  = expiry;
+	
+	// First see if the key is already present?
+	InnerRouteTableEntry * oldEntry;
+	oldEntry = rt->get_pointer(b);
+	if (oldEntry != NULL){
+		oldEntry->expiry->unschedule();
+		delete(oldEntry->expiry);
+		click_chatter("[RouteTable] Existing Bucket %d for Interface |%s| \n",b, i->vid_string().c_str());
+	}else{
+		click_chatter("[RouteTable] New Bucket %d for Interface |%s| \n",b, i->vid_string().c_str());
+	}	
+	
 	rt->set(b, entry);
-
-	if(!present)
-		routes.set(*i,*rt);
 }
 
 bool
@@ -127,12 +142,17 @@ VEILRouteTable::expire(Timer *t, void *data)
 	VID interface;
 	memcpy(&interface, td->interface, VID_LEN);
 
+	click_chatter("[RouteTable] [Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.vid_string().c_str(), bucket);
 	delete td->interface;
 	InnerRouteTable irt = td->routes->get(interface);		
 	irt.erase(bucket);
-	if(0 == irt.size()){
+	// SJ: Why do we need to delete the entry for the 
+	// Interface when it has no buckets in there?
+	// I guess, it doesn't really matter. So for now I have 
+	// Commented it.
+	/*if(0 == irt.size()){
 		td->routes->erase(interface);
-	}
+	}*/
 	//click_chatter("%d entries in neighbor table", td->neighbors->size());
 	delete(td); 
 }
@@ -145,7 +165,8 @@ VEILRouteTable::read_handler(Element *e, void *thunk)
 	OuterRouteTable::iterator iter1;
 	InnerRouteTable::iterator iter2;
 	OuterRouteTable routes = rt->routes;
-	
+	sa << "\n-----------------Routing Table START-----------------\n"<<"[Routing Table]" << '\n';
+	sa << "My VID" << "\t" << "Bucket" << '\t' <<"NextHop VID" << "\t"<< "Gateway VID" << "\t"<< "Expiry" << '\n';
 	for(iter1 = routes.begin(); iter1; ++iter1){
 		String myInterface = static_cast<VID>(iter1.key()).vid_string();
 		InnerRouteTable rt = iter1.value();
@@ -155,10 +176,10 @@ VEILRouteTable::read_handler(Element *e, void *thunk)
 			String nextHop = static_cast<VID>(irte.nextHop).vid_string();		
 			String gateway = static_cast<VID>(irte.gateway).vid_string();		
 			Timer *t = irte.expiry;
-			sa << myInterface << ' ' << bucket << ' ' << nextHop << ' ' << gateway << ' ' << t->expiry() << '\n';
+			sa << myInterface << '\t' << bucket << '\t' << nextHop << '\t' << gateway << "\t Status:" << t->scheduled() << " ("<<t->expiry().sec() << " second to expire) \n";
 		}
 	}
-	
+	sa<< "\n----------------- Routing Table END -----------------\n";
 	return sa.take_string();	  
 }
 

@@ -48,16 +48,30 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 		VID neighbor = iter.key();
 		VID myInterface = nte.myVid;
 		int ldist = neighbor.logical_distance(&myInterface);
-
 		route_table->updateEntry(&myInterface, ldist, &neighbor, &myInterface);		
 	}
 
 	const VEILInterfaceTable::InterfaceTable *it = interfaces->get_switchinterfacetable_handle();
-	VEILInterfaceTable::SwitchInterfaceTable::const_iterator iiter;
+	VEILInterfaceTable::SwitchInterfaceTable::const_iterator iiter, iiter1, iiter2;
+	
+	// First go through the interface list, and see if these interfaces
+	// can be used by other interfaces to forward the packets for ceratain buckets. 
+	VID int1, int2, nexthop1, gateway1; 
+	for (iiter1 = it->begin(); iiter1; ++iiter1){
+		int1 = iiter1.key();
+		for (iiter2 = it->begin(); iiter2; ++iiter2){
+			int2 = iiter2.key();
+			int ldist = int2.logical_distance(&int1);
+			if (ldist == 0){continue;}
+			route_table->updateEntry(&int1, ldist, &int2, &int1);
+		}
+	}
+	
 
-	//TODO: use another constant that keeps track of # bits used in VID
-	//send out rdv publish and queries
-	for(int i = HOST_LEN*8 + 1; i <= VID_LEN*8; i++){
+	// ACTIVE_VID_LEN is set to avoid sending queries for the 
+	// non-existant levels in the tree. 
+	
+	for(int i = HOST_LEN*8 + 1; i <= ACTIVE_VID_LEN*8; i++){
 		VID myinterface, nexthop, rdvpt;
 		//check for each interface
 		for(iiter = it->begin(); iiter; ++iiter){
@@ -72,7 +86,7 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 					WritablePacket *p = Packet::make(packet_length);
 
         				if (p == 0) {
-                				click_chatter( "cannot make packet in buildroutetable");
+                				click_chatter( "[BuildRouteTable] [Error!] cannot make packet in buildroutetable");
                 				return;
         				}
 
@@ -103,7 +117,7 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 				WritablePacket *p = Packet::make(packet_length);
 
 	        		if (p == 0) {
-	                		click_chatter( "cannot make packet in buildroutetable");
+	                		click_chatter( "[BuildRouteTable] [Error!] cannot make packet in buildroutetable");
 	                		return;
 	        		}
 
