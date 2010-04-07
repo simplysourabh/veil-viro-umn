@@ -48,6 +48,8 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 		VID neighbor = iter.key();
 		VID myInterface = nte.myVid;
 		int ldist = neighbor.logical_distance(&myInterface);
+		if (ldist == 0){continue;}
+		
 		route_table->updateEntry(&myInterface, ldist, &neighbor, &myInterface);	
 		
 		//TODO SJ: WE SHOULD BE PUBLISHING HERE!!
@@ -89,8 +91,10 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 					rdv_publish(myinterface, nexthop,i);
 				} else{
 					rdv_query(myinterface,i);
-				}*/		
+				}*/
+				//click_chatter("[BuildRouteTable][Found Bucket] For Interface |%s| at level %d\n", myinterface.vid_string().c_str(),i);		
 			} else { //query
+				//click_chatter("[BuildRouteTable][MISSING Bucket] For Interface |%s| at level %d\n", myinterface.vid_string().c_str(),i);		
 				rdv_query(myinterface,i);					
 			}
 		}		

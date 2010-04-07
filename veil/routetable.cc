@@ -3,6 +3,7 @@
 #include <click/straccum.hh>
 #include <click/error.hh>
 #include "routetable.hh"
+#include<time.h>
 
 //TODO: make reads and writes atomic
 
@@ -53,7 +54,6 @@ VEILRouteTable::updateEntry (
 	TimerData *tdata = new TimerData();
 	tdata->bucket = b;
 	tdata->interface = new VID(i->data());
-	//memcpy(tdata->interface, i, VID_LEN);
 	tdata->routes = &routes;
 
 	//we first want to check if an InnerRouteTable is already present
@@ -69,16 +69,17 @@ VEILRouteTable::updateEntry (
 		// add it to the main routing table.
 		rt = new HashTable<int, InnerRouteTableEntry>::HashTable();
 		routes.set(*i,*rt);
+		rt = routes.get_pointer(*i);
 	}
 
-	InnerRouteTableEntry entry; // New routing entry
+	InnerRouteTableEntry* entry = new InnerRouteTableEntry(); // New routing entry
 
-	memcpy(&entry.nextHop, nh, 6);
-	memcpy(&entry.gateway, g, 6);
+	memcpy(&(entry->nextHop), nh, 6);
+	memcpy(&(entry->gateway), g, 6);
 	Timer *expiry = new Timer(&VEILRouteTable::expire, tdata);
 	expiry->initialize(this);
 	expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
-	entry.expiry  = expiry;
+	entry->expiry  = expiry;
 	
 	// First see if the key is already present?
 	InnerRouteTableEntry * oldEntry;
@@ -90,8 +91,7 @@ VEILRouteTable::updateEntry (
 	}else{
 		click_chatter("[RouteTable] New Bucket %d for Interface |%s| \n",b, i->vid_string().c_str());
 	}	
-	
-	rt->set(b, entry);
+	rt->set(b, *entry);
 }
 
 bool
@@ -161,13 +161,13 @@ String
 VEILRouteTable::read_handler(Element *e, void *thunk)
 {
 	StringAccum sa;
-	VEILRouteTable *rt = (VEILRouteTable *) e;
+	VEILRouteTable *rt1 = (VEILRouteTable *) e;
 	OuterRouteTable::iterator iter1;
 	InnerRouteTable::iterator iter2;
-	OuterRouteTable routes = rt->routes;
+	OuterRouteTable routes1 = rt1->routes;
 	sa << "\n-----------------Routing Table START-----------------\n"<<"[Routing Table]" << '\n';
-	sa << "My VID" << "\t" << "Bucket" << '\t' <<"NextHop VID" << "\t"<< "Gateway VID" << "\t"<< "Expiry" << '\n';
-	for(iter1 = routes.begin(); iter1; ++iter1){
+	sa << "My VID" << "\t\t" << "Bucket" << '\t' <<"NextHop VID" << "\t"<< "Gateway VID" << "\t"<< "TTL" << '\n';
+	for(iter1 = routes1.begin(); iter1; ++iter1){
 		String myInterface = static_cast<VID>(iter1.key()).vid_string();
 		InnerRouteTable rt = iter1.value();
 		for(iter2 = rt.begin(); iter2; ++iter2){
@@ -176,7 +176,7 @@ VEILRouteTable::read_handler(Element *e, void *thunk)
 			String nextHop = static_cast<VID>(irte.nextHop).vid_string();		
 			String gateway = static_cast<VID>(irte.gateway).vid_string();		
 			Timer *t = irte.expiry;
-			sa << myInterface << '\t' << bucket << '\t' << nextHop << '\t' << gateway << "\t Status:" << t->scheduled() << " ("<<t->expiry().sec() << " second to expire) \n";
+			sa << myInterface << '\t' << bucket << '\t' << nextHop << '\t' << gateway << "\t"<<t->expiry().sec() - time(NULL) << " sec\n";
 		}
 	}
 	sa<< "----------------- Routing Table END -----------------\n\n";

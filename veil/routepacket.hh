@@ -23,6 +23,7 @@ class VEILRoutePacket: public Element {
 		//this method returns the output port #		
 		int smaction(Packet*);
 	 	virtual void push (int, Packet*);
+	 	void getClosestInterfaceVID(VID dstvid, VID &myVID);
 
 	private:
 		VEILHostTable *hosts;

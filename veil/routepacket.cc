@@ -34,7 +34,6 @@ VEILRoutePacket::smaction(Packet* p){
 	int myport = PORT_ANNO(p);
 	VID myVid;
 	interfaces->lookupIntEntry(myport, &myVid);		
-	
 	const click_ether *eth = (const click_ether *) p->data();
 
 	//VEIL packets: access PUBLISH/QUERY or RDV REQ/PUB/RPLY	
@@ -42,27 +41,27 @@ VEILRoutePacket::smaction(Packet* p){
 		VID srcvid = VID(eth->ether_shost);
 		VID dstvid = VID(eth->ether_dhost);
 		
+		// SJ: Use the interface VID which is closest to the destionation!
+		getClosestInterfaceVID(dstvid, myVid); // return value is in myVid
+		
 		veil_header *vhdr = (veil_header*) (eth+1);
 		uint16_t pktType = ntohs(vhdr->packetType);
-
+		
 		int port;
 		VID myinterface;
 
 		if('r' == REROUTE_ANNO(p) || pktType  == VEIL_RDV_QUERY || 
 		   pktType  == VEIL_RDV_PUBLISH){			
 		reroute:
+			// SJ: Use the interface VID which is closest to the destionation!
+			getClosestInterfaceVID(dstvid, myVid); // return value is in myVid
 			//figure out what k is	
 			int k = myVid.logical_distance(&dstvid);
 
-			/*
-			StringAccum sa;
-			sa << myVid.vid_string() << "      " << dstvid.vid_string();
-			click_chatter("%d %s", k, sa.data());
-			*/
-			
+		
 			//if k is 0 then pkt is destined to us
 			//i.e., myVid = dstvid
-			if(0 == k){
+			if(k <= 16){
 				//we need to set the dest field of the pkt to myVid
 				click_ether *e = (click_ether*) p->data();
 				memcpy(e->ether_dhost, &myVid, VID_LEN);
@@ -148,6 +147,27 @@ VEILRoutePacket::push (
 	output(port).push(pkt);
 }
 
+void
+VEILRoutePacket::getClosestInterfaceVID(VID dstvid, VID &myVID){
+	//Return value is set in the dstvid
+	int numinterfaces = interfaces->numInterfaces();
+	VID intvid;
+	unsigned int xordist = 0xFFFFFFFF;
+	unsigned int dvid;
+	memcpy(&dvid, &dstvid, 4);
+	for (int i = 0; i < numinterfaces; i++){
+		if (interfaces->lookupIntEntry(i, &intvid)){
+			unsigned int int1;
+			memcpy (&int1, &intvid, 4);
+			unsigned int newdist = int1 ^ dvid;
+			if (newdist < xordist){
+				memcpy(&myVID, &intvid,6);
+				xordist = newdist;		
+			}
+		}
+	}
+	click_chatter("[RoutePacket][Closest MyInerface VID] Dest VID: |%s|  MyVID: |%s| \n",dstvid.vid_string().c_str(),myVID.vid_string().c_str());
+}
 CLICK_ENDDECLS
 
 EXPORT_ELEMENT(VEILRoutePacket)

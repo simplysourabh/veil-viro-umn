@@ -3,6 +3,7 @@
 #include <click/error.hh>
 #include <click/straccum.hh>
 #include "neighbortable.hh"
+#include <time.h>
 
 //TODO: make reads and writes atomic
 
@@ -111,14 +112,14 @@ VEILNeighborTable::read_handler(Element *e, void *thunk)
 	NeighborTable neighbors = nt->neighbors;
 
 	sa << "\n-----------------Neighbor Table START-----------------\n"<<"[NeighborTable]" << '\n';
-	sa << "Neighbor VID" << "\t" << "Myinterface VID" << '\t' << "Expiry" << '\n';
+	sa << "Neighbor VID" << "\t" << "Myinterface VID" << '\t' << "TTL" << '\n';
 	
 	for(iter = neighbors.begin(); iter; ++iter){
 		String vid = static_cast<VID>(iter.key()).vid_string();		
 		NeighborTableEntry nte = iter.value();
 		String myvid = static_cast<VID>(nte.myVid).vid_string();		
 		Timer *t = nte.expiry;
-		sa << vid << '\t' << myvid << "\t Status:" << t->scheduled() << " ("<<t->expiry().sec() << " second to expire) \n";
+		sa << vid << '\t' << myvid << "\t"<<t->expiry().sec() - time(NULL) << " sec\n";
 	}
 	sa<< "----------------- Neighbor Table END -----------------\n\n";
 	return sa.take_string();	  

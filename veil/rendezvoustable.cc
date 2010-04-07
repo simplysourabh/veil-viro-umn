@@ -2,6 +2,7 @@
 #include <click/confparse.hh>
 #include <click/straccum.hh>
 #include "rendezvoustable.hh"
+#include <time.h>
 
 CLICK_DECLS
 
@@ -57,9 +58,9 @@ VEILRendezvousTable::updateEntry (
 	if (oldEntry != NULL){
 		oldEntry->expiry->unschedule();
 		delete(oldEntry->expiry);
-		click_chatter("[RendezvousTable][Edge Refresh] End1 VID: |%s| ==> End2 VID: |%s| \n",src->vid_string().c_str(),dest->vid_string().c_str());
+		click_chatter("[RendezvousTable][Edge Refresh] End1 VID: |%s| --> End2 VID: |%s| \n",src->vid_string().c_str(),dest->vid_string().c_str());
 	}else{
-		click_chatter("[RendezvousTable][New Edge] End1 VID: |%s| ==> End2 VID: |%s|\n",src->vid_string().c_str(),dest->vid_string().c_str());
+		click_chatter("[RendezvousTable][New Edge] End1 VID: |%s| --> End2 VID: |%s|\n",src->vid_string().c_str(),dest->vid_string().c_str());
 	}
 	
 	rdvedges.set(*edge, entry);
@@ -96,7 +97,7 @@ VEILRendezvousTable::expire(Timer *t, void *data)
 {
 	TimerData *td = (TimerData *) data;
 	RendezvousEdge* edge = (RendezvousEdge *) td->edge;
-	click_chatter("[RendezvousTable][Timer Expired] End1 VID: |%s| ==> End2 VID: |%s| \n",edge->src.vid_string().c_str(),edge->dest.vid_string().c_str());
+	click_chatter("[RendezvousTable][Timer Expired] End1 VID: |%s| --> End2 VID: |%s| \n",edge->src.vid_string().c_str(),edge->dest.vid_string().c_str());
 	td->rdvedges->erase(*edge);
 	delete(td); 
 }
@@ -109,14 +110,13 @@ VEILRendezvousTable::read_handler(Element *e, void *thunk)
 	RendezvousTable::iterator iter;
 	RendezvousTable rdvedges = rdvt->rdvedges;
 	sa << "\n-----------------RDV Table START-----------------\n"<<"[RendezvousTable]" << '\n';
-	sa << "End1 VID   ==>   End2 VID \t\t Expiry\n";
+	sa << "End1 VID   -->   End2 VID \tTTL\n";
 	for(iter = rdvedges.begin(); iter; ++iter){
 		String svid = static_cast<VID>(iter.key().src).vid_string();		
 		RendezvousTableEntry rdvte = iter.value();
 		String gvid = static_cast<VID>(iter.key().dest).vid_string();		
 		Timer *t = rdvte.expiry;
-
-		sa << svid << " ==> " << gvid << "\t Status:" << t->scheduled() << " ("<<t->expiry().sec() << " second to expire) \n";
+		sa << svid << " --> " << gvid <<"\t"<<t->expiry().sec() - time(NULL) << " sec\n";
 	}
 	sa << "----------------- RDV Table END -----------------\n\n";
 	return sa.take_string();	  

@@ -23,8 +23,13 @@ q2::Queue;
 q1 -> out1;
 q2 -> out2;
 
+/*
 VEILGenerateHello(000000040000) -> Print(SendHELLO1)-> q1;
 VEILGenerateHello(000000000000) -> Print(SendHELLO2)-> q2;
+*/
+
+VEILGenerateHello(000000040000) -> q1;
+VEILGenerateHello(000000000000) -> q2;
 
 c::Classifier(12/9876 14/0001, //0. VEIL_HELLO
 	      12/9876 14/0002, //1. VEIL_RDV_PUBLISH
@@ -46,11 +51,16 @@ router[1] -> q2;
 router[2] -> c;
 router[3] -> Print -> Discard;
 
+/*
 in1 -> VEILSetPortAnnotation(0) -> Print(IN1) -> c;
 in2 -> VEILSetPortAnnotation(1) -> Print(IN2) -> c;
+*/
 
+in1 -> VEILSetPortAnnotation(0) -> c;
+in2 -> VEILSetPortAnnotation(1) -> c;
 
-c[0] -> Print(VEIL_HELLO) -> VEILProcessHello(neighbors, interfaces);
+//c[0] -> Print(VEIL_HELLO) -> VEILProcessHello(neighbors, interfaces);
+c[0] -> VEILProcessHello(neighbors, interfaces);
 
 prdv::VEILProcessRDV(routes, rendezvouspoints, interfaces) -> router;
 
@@ -77,7 +87,7 @@ VEILPublishAccessInfo(hosts) -> router;
 
 c[10] -> Discard;
 
-Script(print routes.table, wait 30s, loop);
+Script(wait 5s, print routes.table, wait 25s, loop);
 Script(wait 1s, print interfaces.table, wait 29s, loop);
 Script(wait 2s, print neighbors.table, wait 28s, loop);
 Script(wait 3s, print rendezvouspoints.table, wait 27s, loop);
