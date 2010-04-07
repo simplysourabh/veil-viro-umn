@@ -120,7 +120,7 @@ VEILNeighborTable::read_handler(Element *e, void *thunk)
 		Timer *t = nte.expiry;
 		sa << vid << '\t' << myvid << "\t Status:" << t->scheduled() << " ("<<t->expiry().sec() << " second to expire) \n";
 	}
-	sa<< "\n----------------- Neighbor Table END -----------------\n";
+	sa<< "----------------- Neighbor Table END -----------------\n";
 	return sa.take_string();	  
 }
 

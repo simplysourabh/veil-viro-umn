@@ -33,5 +33,6 @@ static VID calculate_access_switch(IPAddress *ip){
 	val[3] = data[3] << 5; 
 	return VID(static_cast<const unsigned char*>(val));
 }
+
 CLICK_ENDDECLS
 #endif

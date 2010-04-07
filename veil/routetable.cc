@@ -179,7 +179,7 @@ VEILRouteTable::read_handler(Element *e, void *thunk)
 			sa << myInterface << '\t' << bucket << '\t' << nextHop << '\t' << gateway << "\t Status:" << t->scheduled() << " ("<<t->expiry().sec() << " second to expire) \n";
 		}
 	}
-	sa<< "\n----------------- Routing Table END -----------------\n";
+	sa<< "----------------- Routing Table END -----------------\n";
 	return sa.take_string();	  
 }
 

@@ -20,7 +20,9 @@ VEILRendezvousTable::cp_rdv_entry(String s, ErrorHandler* errh){
 	String gvid_str = cp_shift_spacevec(s);
 	if(!cp_vid(gvid_str, &gvid))
 		return errh->error("gateway VID is not in expected format");
-	updateEntry(&svid, &gvid);
+	updateEntry(&svid,&gvid);
+	
+	click_chatter("[Warning!]: Assumes that length of VID = 6 bytes, switch vid length = 4 bytes, size of int on the machine = 4 bytes\n");
 	return 0;
 }
 
@@ -36,37 +38,54 @@ VEILRendezvousTable::configure(Vector<String> &conf, ErrorHandler *errh)
 
 void
 VEILRendezvousTable::updateEntry (
-	VID *svid, VID *gvid)
+	VID *src, VID *dest)
 {
+	RendezvousEdge *edge = new RendezvousEdge(src, dest);
+	RendezvousEdge *ed1 = new RendezvousEdge(src, dest);
 	TimerData *tdata = new TimerData();
-	tdata->vid = svid;
-	tdata->rdvpts = &rdvpts;
+	tdata->edge = ed1;
+	tdata->rdvedges = &rdvedges;
 	
 	RendezvousTableEntry entry;
-
-	memcpy(&entry.gatewayVid, gvid, 6);
 	Timer *expiry = new Timer(&VEILRendezvousTable::expire, tdata);
 	expiry->initialize(this);
 	expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
 	entry.expiry  = expiry;
-	rdvpts.set(*svid, entry);
+	// First see if the key is already present?
+	RendezvousTableEntry * oldEntry;
+	oldEntry = rdvedges.get_pointer(*edge);
+	if (oldEntry != NULL){
+		oldEntry->expiry->unschedule();
+		delete(oldEntry->expiry);
+		click_chatter("[RendezvousTable][Edge Refresh] End1 VID: |%s| <===> End2 VID: |%s| \n",src->vid_string().c_str(),dest->vid_string().c_str());
+	}else{
+		click_chatter("[RendezvousTable][New Edge] End1 VID: |%s| <===> End2 VID: |%s|\n",src->vid_string().c_str(),dest->vid_string().c_str());
+	}
+	
+	rdvedges.set(*edge, entry);
 }
 
 //TODO: this returns the first entry with dist k. Modify it to return one with lowest logical dist or one at closest XOR distance.
 bool
-VEILRendezvousTable::getRdvPoint(int k, VID* svid, VID* gvid)
+VEILRendezvousTable::getRdvPoint(int k, VID* svid, VID* gateway)
 {
 	bool found = false;
 	RendezvousTable::iterator iter;
-
-	for(iter = rdvpts.begin(); iter; ++iter){
-		RendezvousTableEntry rte = iter.value();
-		VID end1 = iter.key();
-		if(k == svid->logical_distance(&rte.gatewayVid) && 
-			svid->logical_distance(&end1) < k){
-			memcpy(gvid, &iter.key(), VID_LEN);
-			found = true;
-			break;			
+	unsigned int bestXORDist = 0xFFFFFFFF; // only considers the best 32 bits of the VIDs
+	
+	for(iter = rdvedges.begin(); iter; ++iter){
+		RendezvousEdge edge = iter.key();
+		if(k == svid->logical_distance(&edge.dest) && 
+		   svid->logical_distance(&edge.src) < k){
+			unsigned int temp1,temp2;
+			memcpy(&temp1, &edge.src, 4);
+			memcpy(&temp2, gateway,4);
+			if ((temp1 ^ temp2) <= bestXORDist){
+				memcpy(gateway, &edge.src, VID_LEN);
+				click_chatter("[RendezvousTable][Gateway Selection] Found a better GW |%s| than |%s| for |%s|\n", edge.src.vid_string().c_str(),gateway->vid_string().c_str(),svid->vid_string().c_str());
+				bestXORDist = temp1 ^ temp2; 
+			}
+			found = true;		
 		}
 	}
 	return found;
@@ -76,8 +95,9 @@ void
 VEILRendezvousTable::expire(Timer *t, void *data) 	
 {
 	TimerData *td = (TimerData *) data;
-	VID* svid = (VID *) td->vid;
-	td->rdvpts->erase(*svid);
+	RendezvousEdge* edge = (RendezvousEdge *) td->edge;
+	click_chatter("[RendezvousTable][Timer Expired] End1 VID: |%s| <===> End2 VID: |%s| \n",edge->src.vid_string().c_str(),edge->dest.vid_string().c_str());
+	td->rdvedges->erase(*edge);
 	delete(td); 
 }
 
@@ -87,17 +107,18 @@ VEILRendezvousTable::read_handler(Element *e, void *thunk)
 	StringAccum sa;
 	VEILRendezvousTable *rdvt = (VEILRendezvousTable *) e;
 	RendezvousTable::iterator iter;
-	RendezvousTable rdvpts = rdvt->rdvpts;
-	
-	for(iter = rdvpts.begin(); iter; ++iter){
-		String svid = static_cast<VID>(iter.key()).vid_string();		
+	RendezvousTable rdvedges = rdvt->rdvedges;
+	sa << "\n-----------------RDV Table START-----------------\n"<<"[RendezvousTable]" << '\n';
+	sa << "End1 VID <===> End2 VID \t\t Expiry\n";
+	for(iter = rdvedges.begin(); iter; ++iter){
+		String svid = static_cast<VID>(iter.key().src).vid_string();		
 		RendezvousTableEntry rdvte = iter.value();
-		String gvid = static_cast<VID>(rdvte.gatewayVid).vid_string();		
+		String gvid = static_cast<VID>(iter.key().dest).vid_string();		
 		Timer *t = rdvte.expiry;
 
-		sa << svid << ' ' << gvid << ' ' << t->expiry() << '\n';
+		sa << svid << " <===> " << gvid << "\t Status:" << t->scheduled() << " ("<<t->expiry().sec() << " second to expire) \n";
 	}
-	
+	sa << "----------------- RDV Table END -----------------\n";
 	return sa.take_string();	  
 }
 

@@ -173,5 +173,35 @@ operator!=(const VID &a, const VID &b)
 	return !(a == b);
 }
 
+
+class RendezvousEdge{
+	public:
+		VID src;
+		VID dest;
+		inline RendezvousEdge(){}
+		inline RendezvousEdge(RendezvousEdge *edge){ memcpy(&src, &(edge->src), 6); memcpy(&dest, &(edge->dest), 6);}
+		inline RendezvousEdge(VID *vid1, VID *vid2){ memcpy(&src, vid1, 6); memcpy(&dest, vid2, 6);}
+		~RendezvousEdge(){}
+		
+		//TODO: change.
+		inline size_t hashcode() const 
+		{ 
+			return (src.hashcode() ^ dest.hashcode());
+		}
+		
+};
+
+inline bool
+operator==(const RendezvousEdge &a, const RendezvousEdge &b)
+{
+	return (a.src == b.src && a.dest == b.dest);
+}
+
+inline bool 
+operator!=(const RendezvousEdge &a, const RendezvousEdge &b)
+{
+	return !(a == b);
+}
+
 CLICK_ENDDECLS
 #endif

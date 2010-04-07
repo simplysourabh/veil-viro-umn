@@ -6,7 +6,9 @@
 #include <click/hashtable.hh>
 #include <click/error.hh>
 #include <click/vid.hh>
+//#include <click/rendezvousedge.hh>
 #include "click_veil.hh"
+
 
 CLICK_DECLS
 
@@ -21,26 +23,25 @@ class VEILRendezvousTable : public Element {
 		int cp_rdv_entry(String, ErrorHandler*);
 	
 		int configure(Vector<String>&, ErrorHandler*);
-		void updateEntry(VID*, VID*);
-		bool getRdvPoint(int, VID*, VID*);
+		void updateEntry(VID *src, VID *dest);
+		bool getRdvPoint(int, VID *src, VID *gateway);
 		static void expire(Timer*, void*);
 		static String read_handler(Element*, void*);
 		void add_handlers();	
 	
 	private:
 		struct RendezvousTableEntry {
-			VID gatewayVid;
 			Timer *expiry;
 		};
 
 		//no real reason for this to be a hash
-		typedef HashTable<VID, RendezvousTableEntry> RendezvousTable;
+		typedef HashTable<RendezvousEdge, RendezvousTableEntry> RendezvousTable;
 		
-		RendezvousTable rdvpts;
+		RendezvousTable rdvedges;
 
 		struct TimerData {
-			RendezvousTable *rdvpts;
-			VID *vid;
+			RendezvousTable *rdvedges;
+			RendezvousEdge *edge;
 		};					
 };
 
