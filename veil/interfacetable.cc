@@ -21,7 +21,7 @@ VEILInterfaceTable::configure(Vector<String> &conf, ErrorHandler *errh)
 			switch_interfaces.set(interface, i);
 			rinterfaces.set(i, interface);
 		} else {
-			errh->error("error in processing argument in VEILInterfaceTable");
+			errh->error("[InterfaceTable][Error!]error in processing argument in VEILInterfaceTable");
 			r = -EINVAL;	
 		}
 	}
@@ -65,15 +65,14 @@ VEILInterfaceTable::read_handler(Element *e, void *thunk)
 	VEILInterfaceTable *it = (VEILInterfaceTable *) e;
 	InterfaceTable::iterator iter;
 	InterfaceTable interfaces = it->interfaces;
-	
-	sa << "Interface Table" << '\n';
-	sa << "interfacevid" << ' ' << "interface#\n";
+	sa << "\n-----------------Interface Table START-----------------\n"<<"[InterfaceTable]" << '\n';
+	sa << "Interface VID" << '\t' << "interface#\n";
 	for(iter = interfaces.begin(); iter; ++iter){
 		String vid = static_cast<VID>(iter.key()).vid_string();		
 		int i = iter.value();
-		sa << vid << ' ' << i << '\n';
+		sa << vid << '\t' << i << '\n';
 	}
-	
+	sa<< "----------------- Interface Table END -----------------\n\n";
 	return sa.take_string();	  
 }
 
