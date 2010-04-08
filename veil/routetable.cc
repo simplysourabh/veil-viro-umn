@@ -47,7 +47,7 @@ VEILRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 
 void
 VEILRouteTable::updateEntry (
-	VID *i, int b, VID *nh, VID *g)
+	VID *i, uint16_t b, VID *nh, VID *g)
 {
 	// SJ : TODO: Allowing multiple routing entries per bucket?
 	
@@ -67,7 +67,7 @@ VEILRouteTable::updateEntry (
 		// No we dont have the innerroutetable for interface vid = i
 		// create new innerroutetable for the interface vid = i, and 
 		// add it to the main routing table.
-		rt = new HashTable<int, InnerRouteTableEntry>::HashTable();
+		rt = new HashTable<uint16_t, InnerRouteTableEntry>::HashTable();
 		routes.set(*i,*rt);
 		rt = routes.get_pointer(*i);
 	}
@@ -95,32 +95,22 @@ VEILRouteTable::updateEntry (
 }
 
 bool
-VEILRouteTable::getRoute(VID* dst, int b, VID* i, VID *nh, VID *g)
+VEILRouteTable::getRoute(VID* dst, uint16_t b, VID i, VID *nh, VID *g)
 {
 	bool found = false;
 	
-	//go thru RTs for all interfaces and return the 
-	//first entry found 
-	//TODO: we can change this policy later so that if multiple
-	//routes are present, we choose the one with the lowest XOR dist
-	OuterRouteTable::iterator iter;
-	for (iter = routes.begin(); iter; ++iter){
-		InnerRouteTable rt = iter.value();
-		VID interface = iter.key();
-
-		if (rt.find(b) != rt.end() && dst->logical_distance(&interface) < b) {
-			InnerRouteTableEntry irte = rt.get(b);
-			memcpy(i, &iter.key(), 6);
-			memcpy(nh, &irte.nextHop, 6);
-			memcpy(g, &irte.gateway, 6);
-			found = true;
-		}
+	InnerRouteTable *rt = routes.get_pointer(i);
+	InnerRouteTableEntry *irte = rt->get_pointer(b);
+	if (irte != NULL){
+		memcpy(nh, &(irte->nextHop), 6);
+		memcpy(g, &(irte->gateway), 6);
+		return true;
 	}
 	return found;
 }
 
 bool
-VEILRouteTable::getBucket(int b, VID* i, VID *nh)
+VEILRouteTable::getBucket(uint16_t b, VID* i, VID *nh)
 {
 	bool found = false;
 	if (routes.find(*i) != routes.end()) {
@@ -138,7 +128,7 @@ void
 VEILRouteTable::expire(Timer *t, void *data) 	
 {
 	TimerData *td = (TimerData *) data;
-	int bucket = td->bucket;
+	uint16_t bucket = td->bucket;
 	VID interface;
 	memcpy(&interface, td->interface, VID_LEN);
 

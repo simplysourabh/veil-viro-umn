@@ -60,7 +60,14 @@ class VID {
 		{
 			return _data;
 		}
-
+		
+		inline VID getSwitchVID() const{
+			uint8_t d1[6];
+			memcpy(d1,_data,4);
+			d1[5] = d1[4] =0;
+			VID vid(d1);
+			return vid;			
+		}
 		inline String vid_string()
 		{
 			char vid[VID_LEN*2+1];

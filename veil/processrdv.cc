@@ -119,11 +119,11 @@ VEILProcessRDV::smaction(Packet* p){
 			VID gateway;
 			memcpy(&gateway, &r->gatewayvid, VID_LEN);
 			VID i, nh, g;
-
+			
 			uint16_t dist_to_gateway = dvid.logical_distance(&gateway);
-			click_chatter( "[ProcessRDV][RDV Reply][Gateway] MyVID: |%s| GWVID: |%s| BucketLevel: %d \n", dvid.vid_string().c_str(),gateway.vid_string().c_str(), dist_to_gateway);
+			click_chatter( "[ProcessRDV][RDV Reply][Gateway] MyVID: |%s| GWVID: |%s| BucketLevel: %d \n", dvid.vid_string().c_str(),gateway.vid_string().c_str(), k);
 			//find nexthop to reach gateway
-			if(routes->getRoute(&gateway, dist_to_gateway, &i, &nh, &g))	
+			if(routes->getRoute(&gateway, dist_to_gateway, i, &nh, &g))	
 			{
 				routes->updateEntry(&dvid, k, &nh, &gateway);
 			} else {
