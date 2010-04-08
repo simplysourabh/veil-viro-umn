@@ -85,21 +85,6 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 
 			// Just Query it everytime! Don't need to see if the entry is already there or not!
 			rdv_query(myinterface,i);
-			//publish
-			//if(route_table->getBucket(i, &myinterface, &nexthop)){
-				//check if nexthop = neighbor
-				// SJ TODO: Don't need to PUBLISH HERE!
-				/*VID interface;			
-				if(!neighbors->lookupEntry(&nexthop, &interface)){
-					rdv_publish(myinterface, nexthop,i);
-				} else{
-					rdv_query(myinterface,i);
-				}*/
-				//click_chatter("[BuildRouteTable][Found Bucket] For Interface |%s| at level %d\n", myinterface.vid_string().c_str(),i);		
-			//} else { //query
-				//click_chatter("[BuildRouteTable][MISSING Bucket] For Interface |%s| at level %d\n", myinterface.vid_string().c_str(),i);		
-			//	rdv_query(myinterface,i);					
-			//}
 		}		
 	}
 	

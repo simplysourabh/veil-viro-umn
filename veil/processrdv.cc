@@ -123,17 +123,18 @@ VEILProcessRDV::smaction(Packet* p){
 			VID nh, g;
 			
 			uint16_t dist_to_gateway = dvid.logical_distance(&gateway);
-			click_chatter( "[ProcessRDV][RDV Reply][Gateway] MyVID: |%s| GWVID: |%s| BucketLevel: %d \n", dvid.vid_string().c_str(),gateway.vid_string().c_str(), k);
-			//find nexthop to reach gateway
-			if(routes->getRoute(&gateway, dist_to_gateway, dvid, &nh, &g))	
-			{
-				routes->updateEntry(&dvid, k, &nh, &gateway);
-			} else {
-				//we didn't find a nexthop for our gateway
-				//TODO: what to do?
-				click_chatter( "[ProcessRDV][RDV Reply][Error!][No Nexthop to GW] MyVID: |%s| GWVID: |%s| BucketLevel: %d \n", dvid.vid_string().c_str(),gateway.vid_string().c_str(), dist_to_gateway);
+			if (dist_to_gateway > 16){
+				click_chatter( "[ProcessRDV][RDV Reply][Gateway] MyVID: |%s| GWVID: |%s| BucketLevel: %d \n", dvid.vid_string().c_str(),gateway.vid_string().c_str(), k);
+				//find nexthop to reach gateway
+				if(routes->getRoute(&gateway, dist_to_gateway, dvid, &nh, &g))	
+				{
+					routes->updateEntry(&dvid, k, &nh, &gateway);
+				} else {
+					//we didn't find a nexthop for our gateway
+					//TODO: what to do?
+					click_chatter( "[ProcessRDV][RDV Reply][Error!][No Nexthop to GW] MyVID: |%s| GWVID: |%s| BucketLevel: %d \n", dvid.vid_string().c_str(),gateway.vid_string().c_str(), dist_to_gateway);
+				}
 			}
-
 			p->kill();
 			return NULL;
 		} else {
