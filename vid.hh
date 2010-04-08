@@ -76,11 +76,11 @@ class VID {
 				^ ((size_t) _data[0] << 9);
 		}
 		
-		inline int logical_distance(VID *v)
+		inline uint16_t logical_distance(VID *v)
 		{
 			const uint8_t *vid = v->sdata();		 
-			int lprefix = 0, count = 0;
-			for(int i = 0; i < VID_LEN ; i++)
+			uint16_t lprefix = 0, count = 0;
+			for(uint16_t i = 0; i < VID_LEN ; i++)
 			{
 				if(_data[i] == vid[i])
 					lprefix += 8;
@@ -101,7 +101,7 @@ class VID {
 
 		static void generate_host_vid(VID* svid, EtherAddress* host, VID* hostvid)
 		{
-			int len = VID_LEN - HOST_LEN;			
+			uint16_t len = VID_LEN - HOST_LEN;			
 			unsigned char hvid[VID_LEN];
 			//first 4B of host VID = first 4B of switch VID
 			memcpy(hvid, svid, len);
@@ -118,9 +118,9 @@ class VID {
 			memcpy(svid, _data, VID_LEN - HOST_LEN);
 		} 
 
-		void calculate_rdv_point(int k, VID *rvid){
-			int copy_bits = VID_LEN*8 - k + 1;
-			int count = 0;
+		void calculate_rdv_point(uint16_t k, VID *rvid){
+			uint16_t copy_bits = VID_LEN*8 - k + 1;
+			uint16_t count = 0;
 			unsigned char vid[VID_LEN];
 
 			memset(vid, 0, sizeof(vid));			
@@ -140,11 +140,11 @@ class VID {
 		}	
 
 		//flips bit in place
-		void flip_bit(int k){
+		void flip_bit(uint16_t k){
 			unsigned char tvid[VID_LEN];
 			memcpy(tvid, _data, VID_LEN);
 			
-			for(int i = VID_LEN - 1; i >= 0; i--){
+			for(uint16_t i = VID_LEN - 1; i >= 0; i--){
 			        if(k > 8)
                 			k -= 8;
         		        else {

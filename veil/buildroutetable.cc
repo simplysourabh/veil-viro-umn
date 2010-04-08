@@ -47,7 +47,7 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 		VEILNeighborTable::NeighborTableEntry nte = iter.value();
 		VID neighbor = iter.key();
 		VID myInterface = nte.myVid;
-		int ldist = neighbor.logical_distance(&myInterface);
+		uint16_t ldist = neighbor.logical_distance(&myInterface);
 		if (ldist == 0){continue;}
 		
 		route_table->updateEntry(&myInterface, ldist, &neighbor, &myInterface);	
@@ -66,7 +66,7 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 		int1 = iiter1.key();
 		for (iiter2 = it->begin(); iiter2; ++iiter2){
 			int2 = iiter2.key();
-			int ldist = int2.logical_distance(&int1);
+			uint16_t ldist = int2.logical_distance(&int1);
 			if (ldist == 0){continue;}
 			route_table->updateEntry(&int1, ldist, &int2, &int1);
 			//TODO SJ: WE SHOULD BE PUBLISHING HERE!!
@@ -80,7 +80,7 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 		VID myinterface = iiter.key();
 		// ACTIVE_VID_LEN is set to avoid sending queries for the 
 		// non-existant levels in the tree. 
-		for(int i = HOST_LEN*8 + 1; i <= ACTIVE_VID_LEN*8; i++){
+		for(uint16_t i = HOST_LEN*8 + 1; i <= ACTIVE_VID_LEN*8; i++){
 			VID nexthop, rdvpt;
 			//publish
 			if(route_table->getBucket(i, &myinterface, &nexthop)){
@@ -104,7 +104,7 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 }
 
 void
-VEILBuildRouteTable::rdv_publish (VID &myinterface, VID &nexthop, int i ){
+VEILBuildRouteTable::rdv_publish (VID &myinterface, VID &nexthop, uint16_t i ){
 	VID rdvpt;
 	myinterface.calculate_rdv_point(i, &rdvpt);
 	int packet_length = sizeof(click_ether) + sizeof(veil_header) + sizeof(VID);
@@ -135,10 +135,10 @@ VEILBuildRouteTable::rdv_publish (VID &myinterface, VID &nexthop, int i ){
 }
 
 void
-VEILBuildRouteTable::rdv_query (VID &myinterface, int i){
+VEILBuildRouteTable::rdv_query (VID &myinterface, uint16_t i){
 	VID rdvpt;
 	myinterface.calculate_rdv_point(i, &rdvpt);
-	int packet_length = sizeof(click_ether) + sizeof(veil_header) + sizeof(int);		
+	int packet_length = sizeof(click_ether) + sizeof(veil_header) + sizeof(uint16_t);		
 	WritablePacket *p = Packet::make(packet_length);
 
 	if (p == 0) {
@@ -159,7 +159,7 @@ VEILBuildRouteTable::rdv_query (VID &myinterface, int i){
 	veil_header *vheader = (veil_header*) (e + 1);
 	vheader->packetType = htons(VEIL_RDV_QUERY);
 
-	int *k = (int*) (vheader + 1);
+	uint16_t *k = (uint16_t*) (vheader + 1);
 	*k = htons(i);
 	
 	click_chatter( "[BuildRouteTable] [RDV QUERY] For |%s| at level %d to RDV node at |%s|\n", myinterface.vid_string().c_str(), i, rdvpt.vid_string().c_str());

@@ -43,8 +43,8 @@ VEILProcessRDV::smaction(Packet* p){
 		//reply is a unicast pkt hence routed like other pkts
 		int interfacenum;
 		if(interfaces->lookupVidEntry(&dvid, &interfacenum)){
-			int *kptr = (int*) (vhdr + 1);
-			int k = ntohs(*kptr);
+			uint16_t *kptr = (uint16_t*) (vhdr + 1);
+			uint16_t k = ntohs(*kptr);
 			VID gateway;
 			click_chatter( "[ProcessRDV][RDV Query] Querying node: |%s| for bucket %d\n", svid.vid_string().c_str(), k);
 			if(rdvs->getRdvPoint(k, &svid, &gateway)){
@@ -53,7 +53,7 @@ VEILProcessRDV::smaction(Packet* p){
 				//to account for alignment and padding
 				//hence the split up
 				click_chatter( "[ProcessRDV][RDV Query Answered] Querying node: |%s| GW node: |%s| for bucket %d\n", svid.vid_string().c_str(),gateway.vid_string().c_str(), k);
-				int packet_length = sizeof(click_ether) + sizeof(veil_header) + (sizeof(int) + sizeof(VID));	
+				int packet_length = sizeof(click_ether) + sizeof(veil_header) + sizeof(rdv_reply);	
 
 				WritablePacket *q = Packet::make(packet_length);
 
@@ -115,12 +115,12 @@ VEILProcessRDV::smaction(Packet* p){
 		//process pkt only if it was meant for us
 		if(interfaces->lookupVidEntry(&dvid, &interfacenum)){
 			rdv_reply* r = (rdv_reply*) (vhdr + 1);
-			int k = ntohs(r->k);
+			uint16_t k = ntohs(r->k);
 			VID gateway;
 			memcpy(&gateway, &r->gatewayvid, VID_LEN);
 			VID i, nh, g;
 
-			int dist_to_gateway = dvid.logical_distance(&gateway);
+			uint16_t dist_to_gateway = dvid.logical_distance(&gateway);
 			click_chatter( "[ProcessRDV][RDV Reply][Gateway] MyVID: |%s| GWVID: |%s| BucketLevel: %d \n", dvid.vid_string().c_str(),gateway.vid_string().c_str(), dist_to_gateway);
 			//find nexthop to reach gateway
 			if(routes->getRoute(&gateway, dist_to_gateway, &i, &nh, &g))	

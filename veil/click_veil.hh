@@ -46,7 +46,7 @@ struct access_info{
 };
 
 struct rdv_reply{
-	int k;
+	uint16_t k;
 	VID gatewayvid;
 };
 
