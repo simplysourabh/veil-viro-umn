@@ -45,7 +45,7 @@ VEILPublishAccessInfo::run_timer (
 		WritablePacket *p = Packet::make(packet_length);
 
         	if (p == 0) {
-                	click_chatter( "cannot make packet in publishaccessinfo");
+                	veil_chatter( "cannot make packet in publishaccessinfo");
                 	return;
         	}
 

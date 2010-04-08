@@ -8,6 +8,7 @@
 #include <clicknet/ether.h>
 #include <clicknet/udp.h>
 #include <click/vid.hh>
+#include <click/error.hh>
 
 CLICK_DECLS
 
@@ -33,7 +34,7 @@ CLICK_DECLS
  */ 
 #define VEIL_TBL_ENTRY_EXPIRY		40000
 
-#define PRINT_DEBUG_MSG 1 // 1 = Print the debug messages, 0 = do not print.
+#define PRINT_DEBUG_MSG 0 // 1 = Print the debug messages, 0 = do not print.
 
 
 struct veil_header {
@@ -50,5 +51,13 @@ struct rdv_reply{
 	VID gatewayvid;
 };
 
+static void veil_chatter(const char *fmt,...){
+	va_list val;
+	va_start(val, fmt);
+	if (PRINT_DEBUG_MSG == 1){
+		click_chatter(fmt,val);
+	}
+	va_end(val);
+}
 CLICK_ENDDECLS
 #endif

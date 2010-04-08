@@ -71,7 +71,7 @@ VEILProcessIP::smaction(Packet* p)
 			WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(veil_header) + sizeof(click_ip));
     			
 			if (q == 0) {
-        			click_chatter("in processip: cannot make packet!");		
+        			veil_chatter("in processip: cannot make packet!");		
 				return NULL;
  			}
 			
@@ -116,7 +116,7 @@ VEILProcessIP::smaction(Packet* p)
 				WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ip));
     			
 				if (q == 0) {
-        				click_chatter("in processip: cannot make packet!");		
+        				veil_chatter("in processip: cannot make packet!");		
 					return NULL;
  				}
 			

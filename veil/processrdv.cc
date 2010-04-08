@@ -46,19 +46,19 @@ VEILProcessRDV::smaction(Packet* p){
 			uint16_t *kptr = (uint16_t*) (vhdr + 1);
 			uint16_t k = ntohs(*kptr);
 			VID gateway;
-			click_chatter( "[ProcessRDV][RDV Query] Querying node: |%s| for bucket %d\n", svid.vid_string().c_str(), k);
+			veil_chatter( "[ProcessRDV][RDV Query] Querying node: |%s| for bucket %d\n", svid.vid_string().c_str(), k);
 			if(rdvs->getRdvPoint(k, &svid, &gateway)){
 				//construct and send rdv reply
 				//sizeof(rdv_reply) reports a larger size
 				//to account for alignment and padding
 				//hence the split up
-				click_chatter( "[ProcessRDV][RDV Query Answered] Querying node: |%s| GW node: |%s| for bucket %d\n", svid.vid_string().c_str(),gateway.vid_string().c_str(), k);
+				veil_chatter( "[ProcessRDV][RDV Query Answered] Querying node: |%s| GW node: |%s| for bucket %d\n", svid.vid_string().c_str(),gateway.vid_string().c_str(), k);
 				int packet_length = sizeof(click_ether) + sizeof(veil_header) + sizeof(rdv_reply);	
 
 				WritablePacket *q = Packet::make(packet_length);
 
 	        		if (q == 0) {
-	                		click_chatter( "[ProcessRDV][Error!] cannot make packet in processrdv");
+	                		veil_chatter( "[ProcessRDV][Error!] cannot make packet in processrdv");
 	                		return NULL;
 	        		}
 
@@ -103,7 +103,7 @@ VEILProcessRDV::smaction(Packet* p){
 			VID *end2vid = (VID*) (vhdr + 1);
 			rdvs->updateEntry(end1vid, end2vid);
 			p->kill();
-			click_chatter( "[ProcessRDV][RDV Publish] Learned RDV edge: |%s| --> |%s| \n", end1vid->vid_string().c_str(),end2vid->vid_string().c_str());
+			veil_chatter( "[ProcessRDV][RDV Publish] Learned RDV edge: |%s| --> |%s| \n", end1vid->vid_string().c_str(),end2vid->vid_string().c_str());
 			return NULL;
 		} else {
 			//needs to be rerouted
@@ -124,7 +124,7 @@ VEILProcessRDV::smaction(Packet* p){
 			
 			uint16_t dist_to_gateway = dvid.logical_distance(&gateway);
 			if (dist_to_gateway > 16){
-				click_chatter( "[ProcessRDV][RDV Reply][Gateway] MyVID: |%s| GWVID: |%s| BucketLevel: %d \n", dvid.vid_string().c_str(),gateway.vid_string().c_str(), k);
+				veil_chatter( "[ProcessRDV][RDV Reply][Gateway] MyVID: |%s| GWVID: |%s| BucketLevel: %d \n", dvid.vid_string().c_str(),gateway.vid_string().c_str(), k);
 				//find nexthop to reach gateway
 				if(routes->getRoute(&gateway, dist_to_gateway, dvid, &nh, &g))	
 				{
@@ -132,7 +132,7 @@ VEILProcessRDV::smaction(Packet* p){
 				} else {
 					//we didn't find a nexthop for our gateway
 					//TODO: what to do?
-					click_chatter( "[ProcessRDV][RDV Reply][Error!][No Nexthop to GW] MyVID: |%s| GWVID: |%s| BucketLevel: %d \n", dvid.vid_string().c_str(),gateway.vid_string().c_str(), dist_to_gateway);
+					veil_chatter( "[ProcessRDV][RDV Reply][Error!][No Nexthop to GW] MyVID: |%s| GWVID: |%s| BucketLevel: %d \n", dvid.vid_string().c_str(),gateway.vid_string().c_str(), dist_to_gateway);
 				}
 			}
 			p->kill();
@@ -145,7 +145,7 @@ VEILProcessRDV::smaction(Packet* p){
 
 	//not a rdv pkt
 	//TODO: handle error
-	click_chatter( "[ProcessRDV][RDV Unknown Type][Error!] PacketType: %d \n",vhdr->packetType);
+	veil_chatter( "[ProcessRDV][RDV Unknown Type][Error!] PacketType: %d \n",vhdr->packetType);
 	p->kill();
 	return NULL;
 }

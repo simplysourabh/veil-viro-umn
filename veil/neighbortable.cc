@@ -35,7 +35,7 @@ VEILNeighborTable::configure(Vector<String> &conf, ErrorHandler *errh)
 	for (int i = 0; i < conf.size(); i++) {
 		res = cp_neighbor(conf[i], errh);
 	}
-	click_chatter("[NeighborTable] Configured the neighbor table!\n");
+	veil_chatter("[NeighborTable] Configured the neighbor table!\n");
 	return res;
 }
 
@@ -61,9 +61,9 @@ VEILNeighborTable::updateEntry (
 	if (oldEntry != NULL){
 		oldEntry->expiry->unschedule();
 		delete(oldEntry->expiry);
-		click_chatter("[NeighborTable] Neighbor VID: |%s| \n",nvid->vid_string().c_str());
+		veil_chatter("[NeighborTable] Neighbor VID: |%s| \n",nvid->vid_string().c_str());
 	}else{
-		click_chatter("[NeighborTable][New neighbor] Neighbor VID: |%s| MyVID: |%s|\n",nvid->vid_string().c_str(),myvid->vid_string().c_str());
+		veil_chatter("[NeighborTable][New neighbor] Neighbor VID: |%s| MyVID: |%s|\n",nvid->vid_string().c_str(),myvid->vid_string().c_str());
 	}
 	neighbors.set(*nvid, entry);
 }
@@ -91,14 +91,14 @@ VEILNeighborTable::expire(Timer *t, void *data)
 	VID* nvid = (VID *) td->vid;
 	// Temporary NOT deleting  entries 
 	//  Just for debugging
-	click_chatter("[NeighborTable] [Timer Expired] VID: |%s|\n",nvid->vid_string().c_str());
-	//click_chatter("[BEFORE EXPIRE] %d entries in neighbor table", td->neighbors->size());
+	veil_chatter("[NeighborTable] [Timer Expired] VID: |%s|\n",nvid->vid_string().c_str());
+	//veil_chatter("[BEFORE EXPIRE] %d entries in neighbor table", td->neighbors->size());
 	if (td->neighbors->get_pointer(*nvid) == NULL){
-		click_chatter("[NeighborTable] [ERROR: Entry NOT FOUND] Key: |%s| \n",nvid->vid_string().c_str());
+		veil_chatter("[NeighborTable] [ERROR: Entry NOT FOUND] Key: |%s| \n",nvid->vid_string().c_str());
 	}
 	td->neighbors->erase(*nvid);
-	//click_chatter("[AFTER EXPIRE] %d entries in neighbor table", td->neighbors->size());
-	//click_chatter (read_handler(this, NULL).c_str());
+	//veil_chatter("[AFTER EXPIRE] %d entries in neighbor table", td->neighbors->size());
+	//veil_chatter (read_handler(this, NULL).c_str());
 	delete(td); 
 	delete(t);
 }

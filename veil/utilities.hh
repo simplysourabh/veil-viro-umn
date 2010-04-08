@@ -6,6 +6,7 @@
 #include <click/ipaddress.hh>
 #include <click/packet_anno.hh>
 #include <click/packet.hh>
+#include <click/error.hh>
 #include "click_veil.hh"
 
 CLICK_DECLS

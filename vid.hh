@@ -151,7 +151,7 @@ class VID {
 			unsigned char tvid[VID_LEN];
 			memcpy(tvid, _data, VID_LEN);
 			
-			for(uint16_t i = VID_LEN - 1; i >= 0; i--){
+			for(int i = VID_LEN - 1; i >= 0; i--){
 			        if(k > 8)
                 			k -= 8;
         		        else {

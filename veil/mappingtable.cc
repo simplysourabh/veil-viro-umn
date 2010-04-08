@@ -109,7 +109,7 @@ VEILMappingTable::expire(Timer *t, void *data)
 	TimerData *td = (TimerData *) data;
 	IPAddress* ip = (IPAddress *) td->ip;
 	td->ipmap->erase(*ip);
-	//click_chatter("%d entries in neighbor table", td->neighbors->size());
+	//veil_chatter("%d entries in neighbor table", td->neighbors->size());
 	delete(td); 
 }
 

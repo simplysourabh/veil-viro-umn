@@ -45,7 +45,7 @@ VEILGenerateHello::run_timer (
 	WritablePacket *packet = Packet::make(packet_length);
 
         if (packet == 0) {
-                click_chatter( "in %s: cannot make packet!", name().c_str());
+                veil_chatter( "in %s: cannot make packet!", name().c_str());
                 return;
         }
 
