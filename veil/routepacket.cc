@@ -137,10 +137,10 @@ VEILRoutePacket::getPort(VID dstvid, Packet *p){
 			memcpy(&myVid, &nexthop,6);
 			k = myVid.logical_distance(&dstvid);
 			// now look up in the routing table for this local interface.
-			veil_chatter("[RoutePacket] For Dest VID: |%s|  Nexthop: |%s| is my local interface.\n",dstvid.vid_string().c_str(),nexthop.vid_string().c_str());
+			click_chatter("[RoutePacket] For Dest VID: |%s|  Nexthop: |%s| is my local interface.\n",dstvid.vid_string().c_str(),nexthop.vid_string().c_str());
 		}
 		else{
-			veil_chatter("[RoutePacket][ERROR][NEXTHOP IS NEITHER A PHYSICAL NEIGHBOR, NOR MY LOCAL INTERFACE] I SHOULD NEVER REACH HERE:  For Dest VID: |%s|  MyVID: |%s| NextHop: |%s| \n",dstvid.vid_string().c_str(),myVid.vid_string().c_str(), nexthop.vid_string().c_str());
+			click_chatter("[RoutePacket][ERROR][NEXTHOP IS NEITHER A PHYSICAL NEIGHBOR, NOR MY LOCAL INTERFACE] I SHOULD NEVER REACH HERE:  For Dest VID: |%s|  MyVID: |%s| NextHop: |%s| \n",dstvid.vid_string().c_str(),myVid.vid_string().c_str(), nexthop.vid_string().c_str());
 			port = -1; 
 			return port;
 		}
@@ -179,7 +179,7 @@ VEILRoutePacket::getClosestInterfaceVID(VID dstvid, VID &myVID){
 			}
 		}
 	}
-	veil_chatter("[RoutePacket][Closest MyInerface VID] Dest VID: |%s|  MyVID: |%s| \n",dstvid.vid_string().c_str(),myVID.vid_string().c_str());
+	click_chatter("[RoutePacket][Closest MyInerface VID] Dest VID: |%s|  MyVID: |%s| \n",dstvid.vid_string().c_str(),myVID.vid_string().c_str());
 }
 CLICK_ENDDECLS
 
