@@ -80,7 +80,9 @@ VEILProcessRDV::smaction(Packet* p){
 				rdv_reply *r = (rdv_reply*) (vheader+1);
 				r->k = htons(k);
 				memcpy(&r->gatewayvid, &gateway, VID_LEN);
-
+				
+				// SJ: IT Seems that we have forgotten to KILL the old packet p!
+				p->kill();
 				return q;	
 			} else {
 				//TODO: didn't get a rdv point. handle this
@@ -118,12 +120,12 @@ VEILProcessRDV::smaction(Packet* p){
 			uint16_t k = ntohs(r->k);
 			VID gateway;
 			memcpy(&gateway, &r->gatewayvid, VID_LEN);
-			VID i, nh, g;
+			VID nh, g;
 			
 			uint16_t dist_to_gateway = dvid.logical_distance(&gateway);
 			click_chatter( "[ProcessRDV][RDV Reply][Gateway] MyVID: |%s| GWVID: |%s| BucketLevel: %d \n", dvid.vid_string().c_str(),gateway.vid_string().c_str(), k);
 			//find nexthop to reach gateway
-			if(routes->getRoute(&gateway, dist_to_gateway, i, &nh, &g))	
+			if(routes->getRoute(&gateway, dist_to_gateway, dvid, &nh, &g))	
 			{
 				routes->updateEntry(&dvid, k, &nh, &gateway);
 			} else {

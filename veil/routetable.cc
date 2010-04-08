@@ -131,11 +131,13 @@ VEILRouteTable::expire(Timer *t, void *data)
 	uint16_t bucket = td->bucket;
 	VID interface;
 	memcpy(&interface, td->interface, VID_LEN);
-
 	click_chatter("[RouteTable] [Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.vid_string().c_str(), bucket);
-	delete td->interface;
-	InnerRouteTable irt = td->routes->get(interface);		
-	irt.erase(bucket);
+	delete(td->interface);
+	InnerRouteTable* irt = td->routes->get_pointer(interface);		
+	// Erase returns the number of elements deleted, so if it is 0, then it means that corresponding entry was not deleted.
+	if (irt->erase(bucket) == 0){
+		click_chatter("[RouteTable][Delete ERROR!!][Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.vid_string().c_str(), bucket);
+	}
 	// SJ: Why do we need to delete the entry for the 
 	// Interface when it has no buckets in there?
 	// I guess, it doesn't really matter. So for now I have 
