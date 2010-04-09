@@ -24,7 +24,7 @@ class VEILRoutePacket: public Element {
 		int smaction(Packet*);
 	 	virtual void push (int, Packet*);
 	 	void getClosestInterfaceVID(VID dstvid, VID &myVID);
-	 	int getPort(VID dstvid, Packet *p);
+	 	int getPort(VID dstvid, Packet *p, uint16_t & k);
 
 	private:
 		VEILHostTable *hosts;

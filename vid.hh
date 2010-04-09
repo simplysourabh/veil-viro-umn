@@ -161,6 +161,16 @@ class VID {
 			}
 			memcpy(_data, tvid, VID_LEN);
 		}
+		static int XOR(VID a, VID b){
+			uint32_t dist =0;
+			uint32_t temp;
+			for (short i = 0; i < 4; i++){
+				temp = a._data[i] ^ b._data[i];
+				temp = temp << (24 - i*8);
+				dist = dist + temp;
+			}
+			return dist;
+		}
 };
 
 inline bool

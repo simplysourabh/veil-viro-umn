@@ -17,13 +17,13 @@ VEILRendezvousTable::cp_rdv_entry(String s, ErrorHandler* errh){
 
 	String svid_str = cp_shift_spacevec(s);
 	if(!cp_vid(svid_str, &svid))
-		return errh->error("source VID is not in expected format");
+		return errh->error("[RendezvousTable -->][Error!] source VID is not in expected format");
 	String gvid_str = cp_shift_spacevec(s);
 	if(!cp_vid(gvid_str, &gvid))
-		return errh->error("gateway VID is not in expected format");
+		return errh->error("[RendezvousTable -->][Error!] gateway VID is not in expected format");
 	updateEntry(&svid,&gvid);
 	
-	click_chatter("[Warning!]: Assumes that length of VID = 6 bytes, switch vid length = 4 bytes, size of int on the machine = 4 bytes\n");
+	click_chatter("[RendezvousTable -->] [Warning!]: Assumes that length of VID = 6 bytes, switch vid length = 4 bytes, size of int on the machine = 4 bytes\n");
 	return 0;
 }
 
@@ -58,9 +58,9 @@ VEILRendezvousTable::updateEntry (
 	if (oldEntry != NULL){
 		oldEntry->expiry->unschedule();
 		delete(oldEntry->expiry);
-		click_chatter("[RendezvousTable][Edge Refresh] End1 VID: |%s| --> End2 VID: |%s| \n",src->vid_string().c_str(),dest->vid_string().c_str());
+		click_chatter("[RendezvousTable -->][Edge Refresh] End1 VID: |%s| --> End2 VID: |%s| \n",src->vid_string().c_str(),dest->vid_string().c_str());
 	}else{
-		click_chatter("[RendezvousTable][New Edge] End1 VID: |%s| --> End2 VID: |%s|\n",src->vid_string().c_str(),dest->vid_string().c_str());
+		click_chatter("[RendezvousTable -->][New Edge] End1 VID: |%s| --> End2 VID: |%s|\n",src->vid_string().c_str(),dest->vid_string().c_str());
 	}
 	
 	rdvedges.set(*edge, entry);
@@ -83,7 +83,7 @@ VEILRendezvousTable::getRdvPoint(int k, VID* svid, VID* gateway)
 			memcpy(&temp2, gateway,4);
 			if ((temp1 ^ temp2) <= bestXORDist){
 				memcpy(gateway, &edge.src, VID_LEN);
-				click_chatter("[RendezvousTable][Gateway Selection] Found a better GW |%s| than |%s| for |%s| at level %d\n", edge.src.vid_string().c_str(),gateway->vid_string().c_str(),svid->vid_string().c_str(),k);
+				click_chatter("[RendezvousTable -->][Gateway Selection] Found a better GW |%s| than |%s| for |%s| at level %d\n", edge.src.vid_string().c_str(),gateway->vid_string().c_str(),svid->vid_string().c_str(),k);
 				bestXORDist = temp1 ^ temp2; 
 			}
 			found = true;		
@@ -97,7 +97,7 @@ VEILRendezvousTable::expire(Timer *t, void *data)
 {
 	TimerData *td = (TimerData *) data;
 	RendezvousEdge* edge = (RendezvousEdge *) td->edge;
-	click_chatter("[RendezvousTable][Timer Expired] End1 VID: |%s| --> End2 VID: |%s| \n",edge->src.vid_string().c_str(),edge->dest.vid_string().c_str());
+	click_chatter("[RendezvousTable -->][Timer Expired] End1 VID: |%s| --> End2 VID: |%s| \n",edge->src.vid_string().c_str(),edge->dest.vid_string().c_str());
 	td->rdvedges->erase(*edge);
 	delete(td); 
 }
@@ -109,7 +109,7 @@ VEILRendezvousTable::read_handler(Element *e, void *thunk)
 	VEILRendezvousTable *rdvt = (VEILRendezvousTable *) e;
 	RendezvousTable::iterator iter;
 	RendezvousTable rdvedges = rdvt->rdvedges;
-	sa << "\n-----------------RDV Table START-----------------\n"<<"[RendezvousTable]" << '\n';
+	sa << "\n-----------------RDV Table START-----------------\n"<<"[RendezvousTable -->]" << '\n';
 	sa << "End1 VID   -->   End2 VID \tTTL\n";
 	for(iter = rdvedges.begin(); iter; ++iter){
 		String svid = static_cast<VID>(iter.key().src).vid_string();		

@@ -21,16 +21,16 @@ VEILRouteTable::cp_viro_route(String s, ErrorHandler* errh){
 
 	String ivid_str = cp_shift_spacevec(s);
 	if(!cp_vid(ivid_str, &ivid))
-		return errh->error("[RouteTable] [Error] interface VID is not in expected format");
+		return errh->error("[++RouteTable] [Error] interface VID is not in expected format");
 	String bucket_str = cp_shift_spacevec(s);
 	if(!cp_integer(bucket_str, &bucket))
-		return errh->error("[RouteTable] [Error] invalid integer");
+		return errh->error("[++RouteTable] [Error] invalid integer");
 	String nhvid_str = cp_shift_spacevec(s);
 	if(!cp_vid(nhvid_str, &nhvid))
-		return errh->error("[RouteTable] [Error] nexthop VID is not in expected format");
+		return errh->error("[++RouteTable] [Error] nexthop VID is not in expected format");
 	String gvid_str = cp_shift_spacevec(s);
 	if(!cp_vid(gvid_str, &gvid))
-		return errh->error("[RouteTable] [Error] gateway VID is not in expected format");
+		return errh->error("[++RouteTable] [Error] gateway VID is not in expected format");
 	updateEntry(&ivid, bucket, &nhvid, &gvid);
 	return 0;
 }
@@ -87,9 +87,9 @@ VEILRouteTable::updateEntry (
 	if (oldEntry != NULL){
 		oldEntry->expiry->unschedule();
 		delete(oldEntry->expiry);
-		click_chatter("[RouteTable] Existing Bucket %d for Interface |%s| \n",b, i->vid_string().c_str());
+		click_chatter("[++RouteTable] Existing Bucket %d for Interface |%s| \n",b, i->vid_string().c_str());
 	}else{
-		click_chatter("[RouteTable] New Bucket %d for Interface |%s| \n",b, i->vid_string().c_str());
+		click_chatter("[++RouteTable] New Bucket %d for Interface |%s| \n",b, i->vid_string().c_str());
 	}	
 	rt->set(b, *entry);
 }
@@ -131,12 +131,12 @@ VEILRouteTable::expire(Timer *t, void *data)
 	uint16_t bucket = td->bucket;
 	VID interface;
 	memcpy(&interface, td->interface, VID_LEN);
-	click_chatter("[RouteTable] [Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.vid_string().c_str(), bucket);
+	click_chatter("[++RouteTable] [Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.vid_string().c_str(), bucket);
 	delete(td->interface);
 	InnerRouteTable* irt = td->routes->get_pointer(interface);		
 	// Erase returns the number of elements deleted, so if it is 0, then it means that corresponding entry was not deleted.
 	if (irt->erase(bucket) == 0){
-		click_chatter("[RouteTable][Delete ERROR!!][Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.vid_string().c_str(), bucket);
+		click_chatter("[++RouteTable][Delete ERROR!!][Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.vid_string().c_str(), bucket);
 	}
 	// SJ: Why do we need to delete the entry for the 
 	// Interface when it has no buckets in there?
