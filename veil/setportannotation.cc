@@ -15,8 +15,10 @@ VEILSetPortAnnotation::configure (
 	Vector<String> &conf,
 	ErrorHandler *errh)
 {
+	printDebugMessages = true;
 	return cp_va_kparse(conf, this, errh,
                 "PORT", cpkP+cpkM, cpUnsigned, &port,
+                "PRINTDEBUG", 0, cpBool, &printDebugMessages,
 		cpEnd);
 }
 

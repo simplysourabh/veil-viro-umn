@@ -43,6 +43,7 @@ class VEILMappingTable : public Element {
 			IPMapTable *ipmap;
 			IPAddress* ip;
 		};
+		bool printDebugMessages ;
 
 };
 

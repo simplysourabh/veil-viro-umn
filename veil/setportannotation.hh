@@ -19,7 +19,7 @@ class VEILSetPortAnnotation : public Element {
 
 	private:
 		int port;
-
+		bool printDebugMessages ;
 };
  
 CLICK_ENDDECLS

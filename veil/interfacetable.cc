@@ -15,7 +15,8 @@ VEILInterfaceTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 	int r = 0;
 	VID interface;
-	for(int i = 0; i < conf.size(); i++){
+	int i = 0;
+	for(i = 0; i < conf.size()-1; i++){
 		if(cp_vid(conf[i], &interface)){
 			interfaces.set(interface, i);
 			switch_interfaces.set(interface, i);
@@ -26,6 +27,10 @@ VEILInterfaceTable::configure(Vector<String> &conf, ErrorHandler *errh)
 		}
 	}
 
+	cp_shift_spacevec(conf[i]);
+	String printflag = cp_shift_spacevec(conf[i]);
+	if(!cp_bool(printflag, &printDebugMessages))
+		return errh->error("[## InterfaceTable **] [Error] PRINTDEBUG FLAG should be either true or false");	
 	return r;
 }
 

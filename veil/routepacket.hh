@@ -31,7 +31,7 @@ class VEILRoutePacket: public Element {
 		VEILRouteTable *routes;
 		VEILInterfaceTable *interfaces;
 		VEILNeighborTable *neighbors;
-			
+		bool printDebugMessages ;
 };
 
 CLICK_ENDDECLS

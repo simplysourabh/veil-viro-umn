@@ -16,9 +16,10 @@ VEILGenerateHello::configure (
 	ErrorHandler *errh)
 {
 	int res = -1;
-
+	printDebugMessages = true;
 	res = cp_va_kparse(conf, this, errh,
                 "MYVID", cpkP+cpkM, cpVid, &myVid,
+                "PRINTDEBUG", 0, cpBool, &printDebugMessages,
 		cpEnd);
 	
 	//TODO: pass initialization errors if any to errh
@@ -45,7 +46,7 @@ VEILGenerateHello::run_timer (
 	WritablePacket *packet = Packet::make(packet_length);
 
         if (packet == 0) {
-                click_chatter( "in %s: cannot make packet!", name().c_str());
+                veil_chatter(true, "-o-o- [ GenerateHello ]in %s: cannot make packet!", name().c_str());
                 return;
         }
 

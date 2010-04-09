@@ -26,7 +26,7 @@ class VEILPublishAccessInfo : public Element {
 	private:
 		Timer myTimer;
 		VEILHostTable *hosts;
-
+		bool printDebugMessages ;
 };
  
 CLICK_ENDDECLS

@@ -23,10 +23,12 @@ VEILProcessARP::configure (
 	Vector<String> &conf,
 	ErrorHandler *errh)
 {
+	printDebugMessages = true;
 	return cp_va_kparse(conf, this, errh,
 		"HOSTTABLE", cpkM+cpkP, cpElementCast, "VEILHostTable", &host_table,
 		"MAPPINGTABLE", cpkM+cpkP, cpElementCast, "VEILMappingTable", &map,
 		"INTERFACETABLE", cpkM+cpkP, cpElementCast, "VEILInterfaceTable", &interfaces,
+		"PRINTDEBUG", 0, cpBool, &printDebugMessages,
 		cpEnd);
 }
 
@@ -81,7 +83,7 @@ VEILProcessARP::smaction(Packet* p){
 					//send ARP reply
 					WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
     					if (q == 0) {
-        					click_chatter("in processarp: cannot make packet!");		
+        					veil_chatter(true,"[  ProcessARP  ][Error!] in processarp: cannot make packet!");		
 						return 0;
  					}
 					click_ether *e = (click_ether *) q->data();
@@ -116,7 +118,7 @@ VEILProcessARP::smaction(Packet* p){
 			if(map->lookupIP(&dst, &ipvid, &interfacevid)){
 				WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
     				if (q == 0) {
-        				click_chatter("in processarp: cannot make packet!");
+        				veil_chatter(true,"[  ProcessARP  ][Error!] in processarp: cannot make packet!");
         				return 0;
     				}
 				click_ether *e = (click_ether *) q->data();
@@ -154,7 +156,7 @@ VEILProcessARP::smaction(Packet* p){
                                 {
 					WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(veil_header) + sizeof(click_ether_arp));
     					if (q == 0) {
-        					click_chatter("in processarp: cannot make packet!");
+        					veil_chatter(true,"[  ProcessARP  ][Error!] in processarp: cannot make packet!");
 						return 0;
     					}
 					click_ether *e = (click_ether *) q->data();
@@ -213,7 +215,7 @@ VEILProcessARP::smaction(Packet* p){
 				if(map->lookupIP(&dst, &ipvid, &mvid) || host_table->lookupIP(&dst, &ipvid)){
 					WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(veil_header) + sizeof(click_ether_arp));
     					if (q == 0) {
-        					click_chatter("in processarp: cannot make packet!");
+        					veil_chatter(true,"[  ProcessARP  ][Error!] in processarp: cannot make packet!");
         					return 0;
     					}
 					click_ether *e = (click_ether *) q->data();
@@ -260,7 +262,7 @@ VEILProcessARP::smaction(Packet* p){
 				if(host_table->lookupVID(&hostvid, &dest)){
 					WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
 		    			if (q == 0) {
-					        click_chatter("in arp responder: cannot make packet!");
+					        veil_chatter(true,"[  ProcessARP  ][Error!] in arp responder: cannot make packet!");
 					        return 0;
     					}
 

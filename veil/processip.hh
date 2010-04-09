@@ -30,7 +30,7 @@ class VEILProcessIP : public Element {
 		VEILInterfaceTable *interfaces;
 		VEILMappingTable *map;
 		VEILHostTable *hosts;
-			
+		bool printDebugMessages ;
 };
 
 CLICK_ENDDECLS

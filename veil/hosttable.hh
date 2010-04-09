@@ -44,7 +44,7 @@ class VEILHostTable : public Element {
 		HostTable hosts;
 		ReverseHostTable rhosts;
 		HostIPTable iphosts;
-
+		bool printDebugMessages ;
 		enum { h_table, i_table };
 };
 

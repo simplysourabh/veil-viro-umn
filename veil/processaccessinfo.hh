@@ -27,6 +27,7 @@ class VEILProcessAccessInfo : public Element {
 	private:
 		VEILInterfaceTable *interfaces;
 		VEILMappingTable *map;
+		bool printDebugMessages ;
 			
 };
 

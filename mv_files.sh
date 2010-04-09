@@ -31,7 +31,7 @@ cd /opt/ns-allinone-2.29/click/
 sudo make install
 
 # go to veil directory and run configure, make and make install
-#cd elements/veil
+cd elements/veil
 #sudo ./configure
 #sudo make elemlist
 #sudo make 

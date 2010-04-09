@@ -32,6 +32,7 @@ class VEILBuildRouteTable: public Element {
 		VEILNeighborTable *neighbors;
 		VEILRouteTable *route_table;
 		VEILInterfaceTable *interfaces;
+		bool printDebugMessages;
 			
 };
 

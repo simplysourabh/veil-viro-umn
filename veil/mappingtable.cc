@@ -34,10 +34,16 @@ VEILMappingTable::cp_mapping(String s, ErrorHandler *errh)
 int
 VEILMappingTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+	click_chatter("[-:MAPPINGTABLE:-][FixME] Its mandagory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");	
 	int res = 0;
-	for (int i = 0; i < conf.size(); i++) {
+	int i = 0;
+	for (i = 0; i < conf.size()-1; i++) {
 		res = cp_mapping(conf[i], errh);
 	}
+	cp_shift_spacevec(conf[i]);
+	String printflag = cp_shift_spacevec(conf[i]);
+	if(!cp_bool(printflag, &printDebugMessages))
+		return errh->error("[-:MAPPINGTABLE:-][Error] PRINTDEBUG FLAG should be either true or false");	
 	return res;
 }
 
@@ -109,6 +115,8 @@ VEILMappingTable::expire(Timer *t, void *data)
 	TimerData *td = (TimerData *) data;
 	IPAddress* ip = (IPAddress *) td->ip;
 	td->ipmap->erase(*ip);
+	t->clear();
+	delete(t);
 	//click_chatter("%d entries in neighbor table", td->neighbors->size());
 	delete(td); 
 }

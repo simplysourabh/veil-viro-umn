@@ -27,7 +27,7 @@ class VEILProcessRDV: public Element {
 		VEILRouteTable *routes;
 		VEILRendezvousTable *rdvs;
 		VEILInterfaceTable *interfaces;
-			
+		bool printDebugMessages ;
 };
 
 CLICK_ENDDECLS

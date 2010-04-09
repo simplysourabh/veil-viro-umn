@@ -19,9 +19,11 @@ VEILProcessHello::configure (
 	Vector<String> &conf,
 	ErrorHandler *errh)
 {
+	printDebugMessages = true;
 	return cp_va_kparse(conf, this, errh,
 		"NEIGHBORTABLE", cpkM+cpkP, cpElementCast, "VEILNeighborTable", &neighbor_table,
 		"INTERFACETABLE", cpkM+cpkP, cpElementCast, "VEILInterfaceTable", &interfaces,
+		"PRINTDEBUG", 0, cpBool, &printDebugMessages,
 		cpEnd);
 }
 

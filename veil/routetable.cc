@@ -4,6 +4,7 @@
 #include <click/error.hh>
 #include "routetable.hh"
 #include<time.h>
+#include "click_veil.hh"
 
 //TODO: make reads and writes atomic
 
@@ -38,10 +39,16 @@ VEILRouteTable::cp_viro_route(String s, ErrorHandler* errh){
 int
 VEILRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {	
+	click_chatter("[++RouteTable][FixME] Its mandagory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
 	int res = 0;
-	for (int i = 0; i < conf.size(); i++) {
+	int i = 0;
+	for (i = 0; i < conf.size()-1; i++) {
 		res = cp_viro_route(conf[i], errh);
 	}
+	cp_shift_spacevec(conf[i]);
+	String printflag = cp_shift_spacevec(conf[i]);
+	if(!cp_bool(printflag, &printDebugMessages))
+		return errh->error("[++RouteTable] [Error] PRINTDEBUG FLAG should be either true or false");	
 	return res;
 }
 
@@ -87,9 +94,9 @@ VEILRouteTable::updateEntry (
 	if (oldEntry != NULL){
 		oldEntry->expiry->unschedule();
 		delete(oldEntry->expiry);
-		click_chatter("[++RouteTable] Existing Bucket %d for Interface |%s| \n",b, i->vid_string().c_str());
+		veil_chatter(printDebugMessages,"[++RouteTable] Existing Bucket %d for Interface |%s| \n",b, i->vid_string().c_str());
 	}else{
-		click_chatter("[++RouteTable] New Bucket %d for Interface |%s| \n",b, i->vid_string().c_str());
+		veil_chatter(printDebugMessages,"[++RouteTable] New Bucket %d for Interface |%s| \n",b, i->vid_string().c_str());
 	}	
 	rt->set(b, *entry);
 }
@@ -131,12 +138,12 @@ VEILRouteTable::expire(Timer *t, void *data)
 	uint16_t bucket = td->bucket;
 	VID interface;
 	memcpy(&interface, td->interface, VID_LEN);
-	click_chatter("[++RouteTable] [Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.vid_string().c_str(), bucket);
+	veil_chatter(true,"[++RouteTable] [Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.vid_string().c_str(), bucket);
 	delete(td->interface);
 	InnerRouteTable* irt = td->routes->get_pointer(interface);		
 	// Erase returns the number of elements deleted, so if it is 0, then it means that corresponding entry was not deleted.
 	if (irt->erase(bucket) == 0){
-		click_chatter("[++RouteTable][Delete ERROR!!][Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.vid_string().c_str(), bucket);
+		veil_chatter(true,"[++RouteTable][Delete ERROR!!][Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.vid_string().c_str(), bucket);
 	}
 	// SJ: Why do we need to delete the entry for the 
 	// Interface when it has no buckets in there?
@@ -145,8 +152,10 @@ VEILRouteTable::expire(Timer *t, void *data)
 	/*if(0 == irt.size()){
 		td->routes->erase(interface);
 	}*/
-	//click_chatter("%d entries in neighbor table", td->neighbors->size());
+	//veil_chatter(printDebugMessages,"%d entries in neighbor table", td->neighbors->size());
 	delete(td); 
+	t->clear();
+	delete(t);
 }
 
 String

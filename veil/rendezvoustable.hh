@@ -42,7 +42,8 @@ class VEILRendezvousTable : public Element {
 		struct TimerData {
 			RendezvousTable *rdvedges;
 			RendezvousEdge *edge;
-		};					
+		};
+		bool printDebugMessages ;
 };
 
 CLICK_ENDDECLS

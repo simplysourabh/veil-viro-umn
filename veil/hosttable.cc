@@ -33,11 +33,17 @@ VEILHostTable::cp_host(String s, ErrorHandler* errh)
 int
 VEILHostTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+	click_chatter("[^^ HOST TABLE ^^][FixME] Its mandagory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
 	int res = 0;
-	for (int i = 0; i < conf.size(); i++) {
+	int i = 0;
+	for ( i = 0; i < conf.size()-1; i++) {
 		res = cp_host(conf[i], errh);
 	}
 	
+	cp_shift_spacevec(conf[i]);
+	String printflag = cp_shift_spacevec(conf[i]);
+	if(!cp_bool(printflag, &printDebugMessages))
+		return errh->error("[^^ HOST TABLE ^^][Error] PRINTDEBUG FLAG should be either true or false");	
 	return res;
 }
 

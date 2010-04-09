@@ -23,17 +23,24 @@ VEILRendezvousTable::cp_rdv_entry(String s, ErrorHandler* errh){
 		return errh->error("[RendezvousTable -->][Error!] gateway VID is not in expected format");
 	updateEntry(&svid,&gvid);
 	
-	click_chatter("[RendezvousTable -->] [Warning!]: Assumes that length of VID = 6 bytes, switch vid length = 4 bytes, size of int on the machine = 4 bytes\n");
+	veil_chatter(printDebugMessages,"[RendezvousTable -->] [Warning!]: Assumes that length of VID = 6 bytes, switch vid length = 4 bytes, size of int on the machine = 4 bytes\n");
 	return 0;
 }
 
 int
 VEILRendezvousTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {	
+click_chatter("[RendezvousTable -->][FixME] Its mandagory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
 	int res = 0;
-	for (int i = 0; i < conf.size(); i++) {
+	int i = 0;
+	for (i = 0; i < conf.size()-1; i++) {
 		res = cp_rdv_entry(conf[i], errh);
 	}
+	
+	cp_shift_spacevec(conf[i]);
+	String printflag = cp_shift_spacevec(conf[i]);
+	if(!cp_bool(printflag, &printDebugMessages))
+		return errh->error("[RendezvousTable -->][Error] PRINTDEBUG FLAG should be either true or false");	
 	return res;
 }
 
@@ -58,9 +65,9 @@ VEILRendezvousTable::updateEntry (
 	if (oldEntry != NULL){
 		oldEntry->expiry->unschedule();
 		delete(oldEntry->expiry);
-		click_chatter("[RendezvousTable -->][Edge Refresh] End1 VID: |%s| --> End2 VID: |%s| \n",src->vid_string().c_str(),dest->vid_string().c_str());
+		veil_chatter(printDebugMessages,"[RendezvousTable -->][Edge Refresh] End1 VID: |%s| --> End2 VID: |%s| \n",src->vid_string().c_str(),dest->vid_string().c_str());
 	}else{
-		click_chatter("[RendezvousTable -->][New Edge] End1 VID: |%s| --> End2 VID: |%s|\n",src->vid_string().c_str(),dest->vid_string().c_str());
+		veil_chatter(printDebugMessages,"[RendezvousTable -->][New Edge] End1 VID: |%s| --> End2 VID: |%s|\n",src->vid_string().c_str(),dest->vid_string().c_str());
 	}
 	
 	rdvedges.set(*edge, entry);
@@ -81,7 +88,7 @@ VEILRendezvousTable::getRdvPoint(int k, VID* svid, VID* gateway)
 			uint32_t newdist = VID::XOR(edge.src, *svid);
 			if (newdist <= bestXORDist){
 				memcpy(gateway, &edge.src, VID_LEN);
-				click_chatter("[RendezvousTable -->][Gateway Selection] Found a better GW |%s| than |%s| for |%s| at level %d\n", edge.src.vid_string().c_str(),gateway->vid_string().c_str(),svid->vid_string().c_str(),k);
+				veil_chatter(printDebugMessages,"[RendezvousTable -->][Gateway Selection] Found a better GW |%s| than |%s| for |%s| at level %d\n", edge.src.vid_string().c_str(),gateway->vid_string().c_str(),svid->vid_string().c_str(),k);
 				bestXORDist = newdist; 
 			}
 			found = true;		
@@ -95,8 +102,10 @@ VEILRendezvousTable::expire(Timer *t, void *data)
 {
 	TimerData *td = (TimerData *) data;
 	RendezvousEdge* edge = (RendezvousEdge *) td->edge;
-	click_chatter("[RendezvousTable -->][Timer Expired] End1 VID: |%s| --> End2 VID: |%s| \n",edge->src.vid_string().c_str(),edge->dest.vid_string().c_str());
+	veil_chatter(true,"[RendezvousTable -->][Timer Expired] End1 VID: |%s| --> End2 VID: |%s| \n",edge->src.vid_string().c_str(),edge->dest.vid_string().c_str());
 	td->rdvedges->erase(*edge);
+	t->clear(); 
+	delete(t);
 	delete(td); 
 }
 

@@ -4,7 +4,6 @@
 #include <clicknet/ip.h>
 #include <click/vid.hh>
 #include "utilities.hh"
-#include "click_veil.hh"
 #include "buildroutetable.hh"
 
 CLICK_DECLS
@@ -18,10 +17,12 @@ VEILBuildRouteTable::configure (
 	Vector<String> &conf,
 	ErrorHandler *errh)
 {
+	printDebugMessages = true;
 	return cp_va_kparse(conf, this, errh,
 		"NEIGHBORTABLE", cpkM+cpkP, cpElementCast, "VEILNeighborTable", &neighbors,
 		"ROUTETABLE", cpkM+cpkP, cpElementCast, "VEILRouteTable", &route_table,
 		"INTERFACETABLE", cpkM+cpkP, cpElementCast, "VEILInterfaceTable", &interfaces,
+		"PRINTDEBUG", 0, cpBool, &printDebugMessages,
 		cpEnd);
 }
 
@@ -97,28 +98,31 @@ VEILBuildRouteTable::rdv_publish (VID &myinterface, VID &nexthop, uint16_t i ){
 	myinterface.calculate_rdv_point(i, &rdvpt);
 	int packet_length = sizeof(click_ether) + sizeof(veil_header) + sizeof(VID);
 	WritablePacket *p = Packet::make(packet_length);
-
+//veil_chatter(printDebugMessages,"[** BuildRouteTable **] [RDV PUBLISH] Here I am ");
 	if (p == 0) {
-		click_chatter( "[** BuildRouteTable **] [Error!] cannot make packet in buildroutetable");
+		veil_chatter(true, "[** BuildRouteTable **] [Error!] cannot make packet in buildroutetable");
 		return;
 	}
-
+//veil_chatter(printDebugMessages,"[** BuildRouteTable **] [RDV PUBLISH] Here I am 1");
 	memset(p->data(), 0, p->length());
-
+//veil_chatter(printDebugMessages,"[** BuildRouteTable **] [RDV PUBLISH] Here I am 2");
 	click_ether *e = (click_ether *) p->data();
 	p->set_ether_header(e);
-
+//veil_chatter(printDebugMessages,"[** BuildRouteTable **] [RDV PUBLISH] Here I am 3");
 	memcpy(e->ether_dhost, &rdvpt, 6); 
 	memcpy(e->ether_shost, &myinterface, 6);
+//veil_chatter(printDebugMessages,"[** BuildRouteTable **] [RDV PUBLISH] Here I am 4");	
 	e->ether_type = htons(ETHERTYPE_VEIL);
-
+//veil_chatter(printDebugMessages,"[** BuildRouteTable **] [RDV PUBLISH] Here I am 5");
 	veil_header *vheader = (veil_header*) (e + 1);
+//veil_chatter(printDebugMessages,"[** BuildRouteTable **] [RDV PUBLISH] Here I am 6");	
 	vheader->packetType = htons(VEIL_RDV_PUBLISH);
-
+//veil_chatter(printDebugMessages,"[** BuildRouteTable **] [RDV PUBLISH] Here I am 7");
 	VID *v = (VID*) (vheader + 1);
 	memcpy(v, &nexthop, 6); 
-
-	click_chatter( "[** BuildRouteTable **] [RDV PUBLISH] |%s| --> |%s| to RDV node at |%s|\n", myinterface.vid_string().c_str(), nexthop.vid_string().c_str(), rdvpt.vid_string().c_str());
+//veil_chatter(printDebugMessages,"[** BuildRouteTable **] [RDV PUBLISH] Here I am 8");
+	veil_chatter(printDebugMessages,"[** BuildRouteTable **] [RDV PUBLISH] |%s| --> |%s| to RDV node at |%s|\n", myinterface.vid_string().c_str(), nexthop.vid_string().c_str(), rdvpt.vid_string().c_str());
+//veil_chatter(printDebugMessages,"[** BuildRouteTable **] [RDV PUBLISH] Here I am 9");	
 	//p-> kill();
 	output(0).push(p);
 }
@@ -131,7 +135,7 @@ VEILBuildRouteTable::rdv_query (VID &myinterface, uint16_t i){
 	WritablePacket *p = Packet::make(packet_length);
 
 	if (p == 0) {
-		click_chatter( "[** BuildRouteTable **] [Error!] cannot make packet in buildroutetable");
+		veil_chatter(true, "[** BuildRouteTable **] [Error!] cannot make packet in buildroutetable");
 		return;
 	}
 
@@ -151,7 +155,7 @@ VEILBuildRouteTable::rdv_query (VID &myinterface, uint16_t i){
 	uint16_t *k = (uint16_t*) (vheader + 1);
 	*k = htons(i);
 	
-	click_chatter( "[** BuildRouteTable **] [RDV QUERY] For |%s| at level %d to RDV node at |%s|\n", myinterface.vid_string().c_str(), i, rdvpt.vid_string().c_str());
+	veil_chatter(printDebugMessages, "[** BuildRouteTable **] [RDV QUERY] For |%s| at level %d to RDV node at |%s|\n", myinterface.vid_string().c_str(), i, rdvpt.vid_string().c_str());
 	output(0).push(p);
 }
 

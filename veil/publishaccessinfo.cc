@@ -17,8 +17,11 @@ VEILPublishAccessInfo::configure (
 	Vector<String> &conf,
 	ErrorHandler *errh)
 {
+	printDebugMessages = true;
 	return cp_va_kparse(conf, this, errh,
-                "HOSTTABLE", cpkM+cpkP, cpElementCast, "VEILHostTable", &hosts,	cpEnd);
+                "HOSTTABLE", cpkM+cpkP, cpElementCast, "VEILHostTable", &hosts,	
+                "PRINTDEBUG", 0, cpBool, &printDebugMessages,
+                cpEnd);
 }
 
 int
@@ -45,7 +48,7 @@ VEILPublishAccessInfo::run_timer (
 		WritablePacket *p = Packet::make(packet_length);
 
         	if (p == 0) {
-                	click_chatter( "cannot make packet in publishaccessinfo");
+                	veil_chatter(true, "[PublishAccessInfo---->][Error!] cannot make packet in publishaccessinfo");
                 	return;
         	}
 

@@ -42,7 +42,7 @@ class VEILInterfaceTable : public Element {
 		InterfaceTable interfaces;
 		ReverseInterfaceTable rinterfaces;
 		SwitchInterfaceTable switch_interfaces;
-			
+		bool printDebugMessages ;	
 };
 
 CLICK_ENDDECLS

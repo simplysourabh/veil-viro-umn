@@ -48,6 +48,7 @@ class VEILNeighborTable : public Element {
 
 	private:		
 		NeighborTable neighbors;
+		bool printDebugMessages ;
 						
 };
 

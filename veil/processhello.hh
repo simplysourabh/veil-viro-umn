@@ -24,7 +24,7 @@ class VEILProcessHello : public Element {
 	private:
 		VEILNeighborTable *neighbor_table;		
 		VEILInterfaceTable *interfaces;
-			
+		bool printDebugMessages ;
 };
 
 CLICK_ENDDECLS

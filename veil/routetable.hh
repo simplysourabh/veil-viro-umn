@@ -52,6 +52,7 @@ class VEILRouteTable : public Element {
 	
 	private:	
 		OuterRouteTable routes;
+		bool printDebugMessages ;
 							
 };
 

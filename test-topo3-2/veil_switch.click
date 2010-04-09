@@ -6,13 +6,13 @@ set eth0 eth2;
 set eth1 eth3;
 */
 
-interfaces::VEILInterfaceTable(000000070000,000000010000);
+interfaces::VEILInterfaceTable(000000070000,000000010000, PRINTDEBUG false);
 
-hosts::VEILHostTable;
-neighbors::VEILNeighborTable;
-mapping::VEILMappingTable;
-rendezvouspoints::VEILRendezvousTable;
-routes::VEILRouteTable;
+hosts::VEILHostTable(PRINTDEBUG false);
+neighbors::VEILNeighborTable(PRINTDEBUG false);
+mapping::VEILMappingTable(PRINTDEBUG false);
+rendezvouspoints::VEILRendezvousTable(PRINTDEBUG false);
+routes::VEILRouteTable(PRINTDEBUG false);
 out1::ToDevice(eth6);
 out2::ToDevice(eth5);
 in1::FromDevice(eth6);
@@ -28,8 +28,8 @@ VEILGenerateHello(000000040000) -> Print(SendHELLO1)-> q1;
 VEILGenerateHello(000000000000) -> Print(SendHELLO2)-> q2;
 */
 
-VEILGenerateHello(000000070000) -> q1;
-VEILGenerateHello(000000010000) -> q2;
+VEILGenerateHello(000000070000, PRINTDEBUG false) -> q1;
+VEILGenerateHello(000000010000, PRINTDEBUG false) -> q2;
 
 c::Classifier(12/9876 14/0001, //0. VEIL_HELLO
 	      12/9876 14/0002, //1. VEIL_RDV_PUBLISH
@@ -43,7 +43,7 @@ c::Classifier(12/9876 14/0001, //0. VEIL_HELLO
 	      12/0800,       //9. ETHERTYPE_IP
 	      -);    	     //A. Everything Else (DISCARD)
 
-router::VEILRoutePacket(hosts, routes, interfaces, neighbors);
+router::VEILRoutePacket(hosts, routes, interfaces, neighbors, PRINTDEBUG false);
 
 
 //need Queue to convert from push to pull
@@ -62,30 +62,30 @@ in2 -> VEILSetPortAnnotation(1) -> c;
 
 
 //c[0] -> Print(VEIL_HELLO) -> VEILProcessHello(neighbors, interfaces);
-c[0] -> VEILProcessHello(neighbors, interfaces);
+c[0] -> VEILProcessHello(neighbors, interfaces,PRINTDEBUG false);
 
-prdv::VEILProcessRDV(routes, rendezvouspoints, interfaces) -> router;
+prdv::VEILProcessRDV(routes, rendezvouspoints, interfaces, PRINTDEBUG false) -> router;
 
 c[1] -> prdv;
 c[2] -> prdv;
 c[3] -> prdv;
 
-parp::VEILProcessARP(hosts, mapping, interfaces) -> router;
+parp::VEILProcessARP(hosts, mapping, interfaces,PRINTDEBUG false) -> router;
 
 c[4] -> parp;
 c[5] -> parp;
 c[8] -> parp;
 
-c[6] -> paci::VEILProcessAccessInfo(mapping, interfaces) -> router;
+c[6] -> paci::VEILProcessAccessInfo(mapping, interfaces,PRINTDEBUG false) -> router;
 
-pip::VEILProcessIP(hosts, mapping, interfaces) -> router;
+pip::VEILProcessIP(hosts, mapping, interfaces, PRINTDEBUG false) -> router;
 
 c[7] -> pip;
 c[9] -> pip;
 
-VEILBuildRouteTable(neighbors, routes, interfaces) -> router;
+VEILBuildRouteTable(neighbors, routes, interfaces,PRINTDEBUG false) -> router;
 
-VEILPublishAccessInfo(hosts) -> router;
+VEILPublishAccessInfo(hosts, PRINTDEBUG false) -> router;
 
 c[10] -> Discard;
 

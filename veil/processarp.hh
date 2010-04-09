@@ -28,7 +28,7 @@ class VEILProcessARP: public Element {
 		VEILHostTable *host_table;
 		VEILMappingTable *map;
 		VEILInterfaceTable *interfaces;
-			
+		bool printDebugMessages ;
 };
 
 CLICK_ENDDECLS

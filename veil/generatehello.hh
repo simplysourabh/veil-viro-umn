@@ -24,6 +24,7 @@ class VEILGenerateHello : public Element {
 	private:
 		Timer myTimer;
 		VID myVid;
+		bool printDebugMessages ;
 
 };
  
