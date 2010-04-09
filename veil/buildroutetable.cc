@@ -65,9 +65,11 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 	VID int1, int2, nexthop1, gateway1; 
 	for (iiter1 = it->begin(); iiter1; ++iiter1){
 		int1 = iiter1.key();
+		
 		for (iiter2 = it->begin(); iiter2; ++iiter2){
 			int2 = iiter2.key();
 			uint16_t ldist = int2.logical_distance(&int1);
+			click_chatter("\n--> BUILD ROUTE TABLE <-- Int1 |%s| and Int2 |%s| LDIST: |%d| \n", int1.vid_string().c_str(), int2.vid_string().c_str(), ldist);
 			if (ldist == 0){continue;}
 			route_table->updateEntry(&int1, ldist, &int2, &int1);
 			//TODO SJ: WE SHOULD BE PUBLISHING HERE!!
@@ -83,7 +85,6 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 		// non-existant levels in the tree. 
 		for(uint16_t i = HOST_LEN*8 + 1; i <= ACTIVE_VID_LEN*8; i++){
 			VID nexthop, rdvpt;
-
 			// Just Query it everytime! Don't need to see if the entry is already there or not!
 			rdv_query(myinterface,i);
 		}		

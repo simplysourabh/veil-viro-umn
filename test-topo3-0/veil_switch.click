@@ -49,7 +49,7 @@ router::VEILRoutePacket(hosts, routes, interfaces, neighbors);
 router[0] -> q1;
 router[1] -> q2;
 router[2] -> c;
-router[3] -> Print -> Discard;
+router[3] -> Print(<--RoutePacketERROR-->) -> Discard;
 
 /*
 in1 -> VEILSetPortAnnotation(0) -> Print(IN1) -> c;
