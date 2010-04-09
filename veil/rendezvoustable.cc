@@ -78,13 +78,11 @@ VEILRendezvousTable::getRdvPoint(int k, VID* svid, VID* gateway)
 		RendezvousEdge edge = iter.key();
 		if(k == svid->logical_distance(&edge.dest) && 
 		   svid->logical_distance(&edge.src) < k){
-			unsigned int temp1,temp2;
-			memcpy(&temp1, &edge.src, 4);
-			memcpy(&temp2, gateway,4);
-			if ((temp1 ^ temp2) <= bestXORDist){
+			uint32_t newdist = VID::XOR(edge.src, svid);
+			if (newdist <= bestXORDist){
 				memcpy(gateway, &edge.src, VID_LEN);
 				click_chatter("[RendezvousTable -->][Gateway Selection] Found a better GW |%s| than |%s| for |%s| at level %d\n", edge.src.vid_string().c_str(),gateway->vid_string().c_str(),svid->vid_string().c_str(),k);
-				bestXORDist = temp1 ^ temp2; 
+				bestXORDist = newdist; 
 			}
 			found = true;		
 		}
