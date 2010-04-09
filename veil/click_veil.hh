@@ -51,6 +51,7 @@ struct rdv_reply{
 	VID gatewayvid;
 };
 
+/*
 static void veil_chatter(const char *fmt,...){
 	va_list val;
 	va_start(val, fmt);
@@ -58,6 +59,6 @@ static void veil_chatter(const char *fmt,...){
 		click_chatter(fmt,val);
 	}
 	va_end(val);
-}
+}*/
 CLICK_ENDDECLS
 #endif
