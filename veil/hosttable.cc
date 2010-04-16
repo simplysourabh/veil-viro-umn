@@ -9,6 +9,13 @@ VEILHostTable::VEILHostTable () {}
 VEILHostTable::~VEILHostTable () {}
 
 //str is of the form: VID MAC IP
+//TODO: SJ:
+/*
+We need to add the timer with each entry here.
+When a new packet comes in, we will first check if it has a corresponding VID or not:
+If yes: Then reschedule he timer after XX number of seconds.
+If no: Add a new entry, and initialize the timer with XX number of seconds.
+*/
 int 
 VEILHostTable::cp_host(String s, ErrorHandler* errh)
 {

@@ -6,7 +6,6 @@
 #include <click/hashtable.hh>
 #include <click/error.hh>
 #include <click/vid.hh>
-//#include <click/rendezvousedge.hh>
 #include "click_veil.hh"
 
 

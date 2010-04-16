@@ -69,7 +69,6 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 		for (iiter2 = it->begin(); iiter2; ++iiter2){
 			int2 = iiter2.key();
 			uint16_t ldist = int2.logical_distance(&int1);
-			click_chatter("\n--> BUILD ROUTE TABLE <-- Int1 |%s| and Int2 |%s| LDIST: |%d| \n", int1.vid_string().c_str(), int2.vid_string().c_str(), ldist);
 			if (ldist == 0){continue;}
 			route_table->updateEntry(&int1, ldist, &int2, &int1);
 			//TODO SJ: WE SHOULD BE PUBLISHING HERE!!
