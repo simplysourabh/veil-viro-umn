@@ -68,9 +68,9 @@ VEILNeighborTable::updateEntry (
 	if (oldEntry != NULL){
 		oldEntry->expiry->unschedule();
 		delete(oldEntry->expiry);
-		veil_chatter(printDebugMessages,"[::NeighborTable::] Neighbor VID: |%s| \n",nvid->vid_string().c_str());
+		veil_chatter(printDebugMessages,"[::NeighborTable::] Neighbor VID: |%s| \n",nvid->swtichVIDString().c_str());
 	}else{
-		veil_chatter(printDebugMessages,"[::NeighborTable::][New neighbor] Neighbor VID: |%s| MyVID: |%s|\n",nvid->vid_string().c_str(),myvid->vid_string().c_str());
+		veil_chatter(printDebugMessages,"[::NeighborTable::][New neighbor] Neighbor VID: |%s| MyVID: |%s|\n",nvid->swtichVIDString().c_str(),myvid->swtichVIDString().c_str());
 	}
 	neighbors.set(*nvid, entry);
 }
@@ -98,10 +98,10 @@ VEILNeighborTable::expire(Timer *t, void *data)
 	VID* nvid = (VID *) td->vid;
 	// Temporary NOT deleting  entries 
 	//  Just for debugging
-	veil_chatter(true,"[::NeighborTable::] [Timer Expired] VID: |%s|\n",nvid->vid_string().c_str());
+	veil_chatter(true,"[::NeighborTable::] [Timer Expired] VID: |%s|\n",nvid->swtichVIDString().c_str());
 	//veil_chatter(printDebugMessages,"[BEFORE EXPIRE] %d entries in neighbor table", td->neighbors->size());
 	if (td->neighbors->get_pointer(*nvid) == NULL){
-		veil_chatter(true,"[::NeighborTable::] [ERROR: Entry NOT FOUND] Key: |%s| \n",nvid->vid_string().c_str());
+		veil_chatter(true,"[::NeighborTable::] [ERROR: Entry NOT FOUND] Key: |%s| \n",nvid->swtichVIDString().c_str());
 	}
 	td->neighbors->erase(*nvid);
 	//veil_chatter(printDebugMessages,"[AFTER EXPIRE] %d entries in neighbor table", td->neighbors->size());
@@ -122,9 +122,9 @@ VEILNeighborTable::read_handler(Element *e, void *thunk)
 	sa << "Neighbor VID" << "\t" << "Myinterface VID" << '\t' << "TTL" << '\n';
 	
 	for(iter = neighbors.begin(); iter; ++iter){
-		String vid = static_cast<VID>(iter.key()).vid_string();		
+		String vid = static_cast<VID>(iter.key()).swtichVIDString();		
 		NeighborTableEntry nte = iter.value();
-		String myvid = static_cast<VID>(nte.myVid).vid_string();		
+		String myvid = static_cast<VID>(nte.myVid).swtichVIDString();		
 		Timer *t = nte.expiry;
 		sa << vid << '\t' << myvid << "\t"<<t->expiry().sec() - time(NULL) << " sec\n";
 	}

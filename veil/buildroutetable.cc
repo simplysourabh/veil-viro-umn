@@ -121,7 +121,7 @@ VEILBuildRouteTable::rdv_publish (VID &myinterface, VID &nexthop, uint16_t i ){
 	VID *v = (VID*) (vheader + 1);
 	memcpy(v, &nexthop, 6); 
 //veil_chatter(printDebugMessages,"[** BuildRouteTable **] [RDV PUBLISH] Here I am 8");
-	veil_chatter(printDebugMessages,"[** BuildRouteTable **] [RDV PUBLISH] |%s| --> |%s| to RDV node at |%s|\n", myinterface.vid_string().c_str(), nexthop.vid_string().c_str(), rdvpt.vid_string().c_str());
+	veil_chatter(printDebugMessages,"[** BuildRouteTable **] [RDV PUBLISH] |%s| --> |%s| to RDV node at |%s|\n", myinterface.swtichVIDString().c_str(), nexthop.swtichVIDString().c_str(), rdvpt.swtichVIDString().c_str());
 //veil_chatter(printDebugMessages,"[** BuildRouteTable **] [RDV PUBLISH] Here I am 9");	
 	//p-> kill();
 	output(0).push(p);
@@ -155,7 +155,7 @@ VEILBuildRouteTable::rdv_query (VID &myinterface, uint16_t i){
 	uint16_t *k = (uint16_t*) (vheader + 1);
 	*k = htons(i);
 	
-	veil_chatter(printDebugMessages, "[** BuildRouteTable **] [RDV QUERY] For |%s| at level %d to RDV node at |%s|\n", myinterface.vid_string().c_str(), i, rdvpt.vid_string().c_str());
+	veil_chatter(printDebugMessages, "[** BuildRouteTable **] [RDV QUERY] For |%s| at level %d to RDV node at |%s|\n", myinterface.swtichVIDString().c_str(), i, rdvpt.swtichVIDString().c_str());
 	output(0).push(p);
 }
 

@@ -51,11 +51,18 @@ VEILProcessARP::smaction(Packet* p){
 		const click_ether_arp *ap = (const click_ether_arp *) (eth+1);
 		IPAddress src = IPAddress(ap->arp_spa);
 		IPAddress dst = IPAddress(ap->arp_tpa);
-
+		
+		veil_chatter(printDebugMessages,"[  ProcessARP  ][ARP] From %s(%s) to %s(%s),\n", src.s().c_str(), esrc.s().c_str(), dst.s().c_str(),edest.s().c_str());
+		
 		//Gratuitous ARP request or reply
 		//update host table
-		if(edest.is_broadcast() && src == dst)   
+		// SJ: Let's assume, if its a broadcast packet then it is 
+		// one of our directly connected host 
+		// Therefore dropping the condition:  && src == dst in the if below.
+		if(edest.is_broadcast())   
                 {	
+			veil_chatter(printDebugMessages,"[  ProcessARP  ][HOST UPDATE] IP: %s MAC: %s,\n", src.s().c_str(), esrc.s().c_str());
+
 			VID::generate_host_vid(&myVid, &esrc, &hvid);
 			host_table->updateEntry(&hvid, &esrc);
 			host_table->updateIPEntry(&src, &hvid);

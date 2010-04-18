@@ -70,8 +70,16 @@ class VID {
 		}
 		inline String vid_string()
 		{
-			char vid[VID_LEN*2+1];
-			snprintf(vid, (int)sizeof(vid), "%02x%02x%02x%02x%02x%02x", _data[0], _data[1], _data[2], _data[3], _data[4], _data[5]);
+			char vid[VID_LEN*2+1+6];
+			snprintf(vid, (int)sizeof(vid), "%02x:%02x:%02x:%02x::%02x-%02x\0", _data[0], _data[1], _data[2], _data[3], _data[4], _data[5]);
+			vid[VID_LEN*2+6] = '\0';
+			return String(vid);
+		}
+
+		inline String swtichVIDString()
+		{
+			char vid[VID_LEN*2+1+4];
+			snprintf(vid, (int)sizeof(vid), "%02x:%02x:%02x:%02x\0", _data[0], _data[1], _data[2], _data[3]);
 			vid[VID_LEN*2] = '\0';
 			return String(vid);
 		}

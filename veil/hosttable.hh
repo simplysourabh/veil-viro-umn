@@ -32,7 +32,7 @@ class VEILHostTable : public Element {
 		bool lookupVID(VID*, EtherAddress*);
 		bool lookupMAC(EtherAddress*, VID*);
 		bool lookupIP(IPAddress*, VID*);
-
+		void updateEntry (VID *vid, EtherAddress *mac, IPAddress *ip);
 		inline const HostIPTable* get_host_iptable_handle(){
 			return &iphosts;
 		}
@@ -45,7 +45,7 @@ class VEILHostTable : public Element {
 		ReverseHostTable rhosts;
 		HostIPTable iphosts;
 		bool printDebugMessages ;
-		enum { h_table, i_table };
+		enum { h_table, i_table, table };
 };
 
 CLICK_ENDDECLS

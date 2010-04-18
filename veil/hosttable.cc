@@ -25,14 +25,14 @@ VEILHostTable::cp_host(String s, ErrorHandler* errh)
 
 	String hvid_str = cp_shift_spacevec(s);
 	if(!cp_vid(hvid_str, &hvid))
-		return errh->error("host VID is not in expected format");
+		return errh->error("[^^ HOST TABLE ^^][Error] host VID is not in expected format");
 	String hmac_str = cp_shift_spacevec(s);
 	if(!cp_ethernet_address(hmac_str, &hmac))	
-		return errh->error("host MAC is not in expected format");	
+		return errh->error("[^^ HOST TABLE ^^][Error] host MAC is not in expected format");	
 	updateEntry(&hvid, &hmac);
 	String hip_str = cp_shift_spacevec(s);
 	if(!cp_ip_address(hip_str, &hip))
-		return errh->error("host IP is not in expected format");	
+		return errh->error("[^^ HOST TABLE ^^][Error] host IP is not in expected format");	
 	updateIPEntry(&hip, &hvid);
 	return 0;
 }
@@ -61,6 +61,16 @@ VEILHostTable::updateEntry (
 {
 	hosts.set(*vid, *mac);
 	rhosts.set(*mac, *vid);
+}
+
+void
+VEILHostTable::updateEntry (
+	VID *vid,
+	EtherAddress *mac,
+	IPAddress *ip)
+{
+	updateEntry(vid, mac);
+	updateIPEntry(ip, vid);
 }
 
 void
@@ -152,6 +162,21 @@ VEILHostTable::read_handler(Element *e, void *thunk)
 			sa << vid << ' ' << ipa << ' ' << '\n';
 		}
 		return sa.take_string();
+	case table:
+		sa << "\n----------------- Host Table START-----------------\n"<<"[^^ HOST TABLE ^^]" << '\n';
+		sa << "Host IP   " << "\t" << "Host MAC        " << '\t' << "Host VID" << '\n';
+		for(iiter = iphosts.begin(); iiter; ++iiter){
+			IPAddress ipa = iiter.key();
+			VID v = static_cast<VID>(iiter.value());
+			EtherAddress ea;
+			if(!ht->lookupVID(&v, &ea)){
+				veil_chatter(true, "[^^ HOST TABLE ^^][Error] No IP to VID mapping for : %s\n", ipa.s().c_str());
+			}				
+			sa << ipa << '\t' << ea << '\t' << v.vid_string()<<'\n';
+		}
+		sa<< "----------------- Host Table END -----------------\n\n";
+		return sa.take_string();
+	
 	default: return " ";
 	}		  
 }
@@ -161,6 +186,7 @@ VEILHostTable::add_handlers()
 {
 	add_read_handler("host_table", read_handler, h_table);
 	add_read_handler("ip_table", read_handler, i_table);
+	add_read_handler("table", read_handler, table);
 }
 
 

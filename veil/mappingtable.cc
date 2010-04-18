@@ -97,7 +97,7 @@ VEILMappingTable::read_handler(Element *e, void *thunk)
 		IPAddress ipa = iter.key();
 		MappingTableEntry mte = iter.value();
 		String ipvid = static_cast<VID>(mte.ipVid).vid_string();		
-		String myvid = static_cast<VID>(mte.myVid).vid_string();				
+		String myvid = static_cast<VID>(mte.myVid).swtichVIDString();				
 		sa << ipa << ' ' << ipvid << ' ' << myvid << '\n';
 	}	
 	return sa.take_string();	  
