@@ -90,16 +90,17 @@ VEILMappingTable::read_handler(Element *e, void *thunk)
 	IPMapTable::iterator iter;
 	IPMapTable ipmap = mt->ipmap;
 
-	sa << "\nMappingTable\n";
-	sa << "IPAddress" << "       " << "vid" << "          " << "interfacevid\n";
+	sa << "\n----------------- Mapping START-----------------"<< '\n';
+	sa << "HOST IP" << "\t" << "HOST VID" << "\t\t" << "Interface VID\n";
 	
 	for(iter = ipmap.begin(); iter; ++iter){
 		IPAddress ipa = iter.key();
 		MappingTableEntry mte = iter.value();
 		String ipvid = static_cast<VID>(mte.ipVid).vid_string();		
-		String myvid = static_cast<VID>(mte.myVid).swtichVIDString();				
-		sa << ipa << ' ' << ipvid << ' ' << myvid << '\n';
-	}	
+		String myvid = static_cast<VID>(mte.myVid).switchVIDString();				
+		sa << ipa << '\t' << ipvid << '\t' << myvid << '\n';
+	}
+	sa<< "----------------- Mapping Table END -----------------\n\n";	
 	return sa.take_string();	  
 }
 

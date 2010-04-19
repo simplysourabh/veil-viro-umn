@@ -92,3 +92,5 @@ Script(wait 1s, print routes.table, wait 29s, loop);
 Script(wait 2s, print neighbors.table, wait 28s, loop);
 Script(wait 3s, print rendezvouspoints.table, wait 27s, loop);
 Script(wait 4s, print hosts.table, wait 6s, loop);
+Script(wait 5s, print mapping.table, wait 5s, loop);
+

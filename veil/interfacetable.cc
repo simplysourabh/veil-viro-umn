@@ -73,7 +73,7 @@ VEILInterfaceTable::read_handler(Element *e, void *thunk)
 	sa << "\n-----------------Interface Table START-----------------\n"<<"[InterfaceTable]" << '\n';
 	sa << "Interface VID" << '\t' << "interface#\n";
 	for(iter = interfaces.begin(); iter; ++iter){
-		String vid = static_cast<VID>(iter.key()).swtichVIDString();		
+		String vid = static_cast<VID>(iter.key()).switchVIDString();		
 		int i = iter.value();
 		sa << vid << '\t' << i << '\n';
 	}

@@ -76,7 +76,7 @@ class VID {
 			return String(vid);
 		}
 
-		inline String swtichVIDString()
+		inline String switchVIDString()
 		{
 			char vid[VID_LEN*2+1+4];
 			snprintf(vid, (int)sizeof(vid), "%02x:%02x:%02x:%02x\0", _data[0], _data[1], _data[2], _data[3]);

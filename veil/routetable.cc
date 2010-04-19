@@ -94,9 +94,9 @@ VEILRouteTable::updateEntry (
 	if (oldEntry != NULL){
 		oldEntry->expiry->unschedule();
 		delete(oldEntry->expiry);
-		veil_chatter(printDebugMessages,"[++RouteTable] Existing Bucket %d for Interface |%s| \n",b, i->swtichVIDString().c_str());
+		veil_chatter(printDebugMessages,"[++RouteTable] Existing Bucket %d for Interface |%s| \n",b, i->switchVIDString().c_str());
 	}else{
-		veil_chatter(printDebugMessages,"[++RouteTable] New Bucket %d for Interface |%s| \n",b, i->swtichVIDString().c_str());
+		veil_chatter(printDebugMessages,"[++RouteTable] New Bucket %d for Interface |%s| \n",b, i->switchVIDString().c_str());
 	}	
 	rt->set(b, *entry);
 }
@@ -138,12 +138,12 @@ VEILRouteTable::expire(Timer *t, void *data)
 	uint16_t bucket = td->bucket;
 	VID interface;
 	memcpy(&interface, td->interface, VID_LEN);
-	veil_chatter(true,"[++RouteTable] [Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.swtichVIDString().c_str(), bucket);
+	veil_chatter(true,"[++RouteTable] [Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.switchVIDString().c_str(), bucket);
 	delete(td->interface);
 	InnerRouteTable* irt = td->routes->get_pointer(interface);		
 	// Erase returns the number of elements deleted, so if it is 0, then it means that corresponding entry was not deleted.
 	if (irt->erase(bucket) == 0){
-		veil_chatter(true,"[++RouteTable][Delete ERROR!!][Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.swtichVIDString().c_str(), bucket);
+		veil_chatter(true,"[++RouteTable][Delete ERROR!!][Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.switchVIDString().c_str(), bucket);
 	}
 	// SJ: Why do we need to delete the entry for the 
 	// Interface when it has no buckets in there?
@@ -169,13 +169,13 @@ VEILRouteTable::read_handler(Element *e, void *thunk)
 	sa << "\n-----------------Routing Table START-----------------\n"<<"[Routing Table]" << '\n';
 	sa << "My VID" << "\t\t" << "Bucket" << '\t' <<"NextHop VID" << "\t"<< "Gateway VID" << "\t"<< "TTL" << '\n';
 	for(iter1 = routes1.begin(); iter1; ++iter1){
-		String myInterface = static_cast<VID>(iter1.key()).swtichVIDString();
+		String myInterface = static_cast<VID>(iter1.key()).switchVIDString();
 		InnerRouteTable rt = iter1.value();
 		for(iter2 = rt.begin(); iter2; ++iter2){
 			int bucket = iter2.key();		
 			InnerRouteTableEntry irte = iter2.value();
-			String nextHop = static_cast<VID>(irte.nextHop).swtichVIDString();		
-			String gateway = static_cast<VID>(irte.gateway).swtichVIDString();		
+			String nextHop = static_cast<VID>(irte.nextHop).switchVIDString();		
+			String gateway = static_cast<VID>(irte.gateway).switchVIDString();		
 			Timer *t = irte.expiry;
 			sa << myInterface << '\t' << bucket << '\t' << nextHop << '\t' << gateway << "\t"<<t->expiry().sec() - time(NULL) << " sec\n";
 		}

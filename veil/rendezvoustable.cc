@@ -65,9 +65,9 @@ VEILRendezvousTable::updateEntry (
 	if (oldEntry != NULL){
 		oldEntry->expiry->unschedule();
 		delete(oldEntry->expiry);
-		veil_chatter(printDebugMessages,"[RendezvousTable -->][Edge Refresh] End1 VID: |%s| --> End2 VID: |%s| \n",src->swtichVIDString().c_str(),dest->swtichVIDString().c_str());
+		veil_chatter(printDebugMessages,"[RendezvousTable -->][Edge Refresh] End1 VID: |%s| --> End2 VID: |%s| \n",src->switchVIDString().c_str(),dest->switchVIDString().c_str());
 	}else{
-		veil_chatter(printDebugMessages,"[RendezvousTable -->][New Edge] End1 VID: |%s| --> End2 VID: |%s|\n",src->swtichVIDString().c_str(),dest->swtichVIDString().c_str());
+		veil_chatter(printDebugMessages,"[RendezvousTable -->][New Edge] End1 VID: |%s| --> End2 VID: |%s|\n",src->switchVIDString().c_str(),dest->switchVIDString().c_str());
 	}
 	
 	rdvedges.set(*edge, entry);
@@ -88,7 +88,7 @@ VEILRendezvousTable::getRdvPoint(int k, VID* svid, VID* gateway)
 			uint32_t newdist = VID::XOR(edge.src, *svid);
 			if (newdist <= bestXORDist){
 				memcpy(gateway, &edge.src, VID_LEN);
-				veil_chatter(printDebugMessages,"[RendezvousTable -->][Gateway Selection] Found a better GW |%s| than |%s| for |%s| at level %d\n", edge.src.swtichVIDString().c_str(),gateway->swtichVIDString().c_str(),svid->swtichVIDString().c_str(),k);
+				veil_chatter(printDebugMessages,"[RendezvousTable -->][Gateway Selection] Found a better GW |%s| than |%s| for |%s| at level %d\n", edge.src.switchVIDString().c_str(),gateway->switchVIDString().c_str(),svid->switchVIDString().c_str(),k);
 				bestXORDist = newdist; 
 			}
 			found = true;		
@@ -102,7 +102,7 @@ VEILRendezvousTable::expire(Timer *t, void *data)
 {
 	TimerData *td = (TimerData *) data;
 	RendezvousEdge* edge = (RendezvousEdge *) td->edge;
-	veil_chatter(true,"[RendezvousTable -->][Timer Expired] End1 VID: |%s| --> End2 VID: |%s| \n",edge->src.swtichVIDString().c_str(),edge->dest.swtichVIDString().c_str());
+	veil_chatter(true,"[RendezvousTable -->][Timer Expired] End1 VID: |%s| --> End2 VID: |%s| \n",edge->src.switchVIDString().c_str(),edge->dest.switchVIDString().c_str());
 	td->rdvedges->erase(*edge);
 	t->clear(); 
 	delete(t);
@@ -119,9 +119,9 @@ VEILRendezvousTable::read_handler(Element *e, void *thunk)
 	sa << "\n-----------------RDV Table START-----------------\n"<<"[RendezvousTable -->]" << '\n';
 	sa << "End1 VID   -->   End2 VID \tTTL\n";
 	for(iter = rdvedges.begin(); iter; ++iter){
-		String svid = static_cast<VID>(iter.key().src).swtichVIDString();		
+		String svid = static_cast<VID>(iter.key().src).switchVIDString();		
 		RendezvousTableEntry rdvte = iter.value();
-		String gvid = static_cast<VID>(iter.key().dest).swtichVIDString();		
+		String gvid = static_cast<VID>(iter.key().dest).switchVIDString();		
 		Timer *t = rdvte.expiry;
 		sa << svid << " --> " << gvid <<"\t"<<t->expiry().sec() - time(NULL) << " sec\n";
 	}
