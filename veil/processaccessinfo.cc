@@ -46,7 +46,8 @@ VEILProcessAccessInfo::smaction(Packet* p)
 		IPAddress ip = ai->ip;	
 		VID vid = ai->vid;
 		map->updateEntry(&ip, &vid, &myVid);
-
+		veil_chatter(printDebugMessages,"[ProcessACESSInfo!][STORE MAPPING] HOST IP: %s  VID: %s  AccessSwitchVID: %s\n", ip.s().c_str(),  vid.vid_string().c_str(),myVid.switchVIDString().c_str() );
+		
 		p->kill();	
 		return NULL;
 	}

@@ -91,7 +91,7 @@ VEILMappingTable::read_handler(Element *e, void *thunk)
 	IPMapTable ipmap = mt->ipmap;
 
 	sa << "\n----------------- Mapping START-----------------"<< '\n';
-	sa << "HOST IP" << "\t" << "HOST VID" << "\t\t" << "Interface VID\n";
+	sa << "HOST IP " << " \t" << "HOST VID" << "\t\t" << "HOST Switch(Interface) VID\n";
 	
 	for(iter = ipmap.begin(); iter; ++iter){
 		IPAddress ipa = iter.key();

@@ -76,6 +76,7 @@ VEILPublishAccessInfo::run_timer (
 		SET_REROUTE_ANNO(p, 'r');
 	
 		output(0).push(p);
+		veil_chatter(printDebugMessages,"[PublishAccessInfo---->][Access Info Publish] HOST IP: %s  VID: %s  AccessSwitchVID: %s\n", ip.s().c_str(),  hvid.vid_string().c_str(),accessvid.switchVIDString().c_str() );
 	}
 	myTimer.schedule_after_msec(VEIL_PUBLISH_INTERVAL);
 }
