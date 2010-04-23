@@ -30,13 +30,13 @@ CLICK_DECLS
 
 // Intervals are in ms
 #define VEIL_HELLO_INTERVAL		10000
-#define VEIL_PUBLISH_INTERVAL		20000
-#define VEIL_RDV_INTERVAL		20000
+#define VEIL_PUBLISH_INTERVAL		10000
+#define VEIL_RDV_INTERVAL		10000
 /* value greater than hello/publish interval so entries don't expire just    
  * when hello/publish pkts need to be resent. risking temporarily invalid    
  * routes. 
  */ 
-#define VEIL_TBL_ENTRY_EXPIRY		120000
+#define VEIL_TBL_ENTRY_EXPIRY		20000
 
 #define PRINT_DEBUG_MSG 0 // 1 = Print the debug messages, 0 = do not print.
 

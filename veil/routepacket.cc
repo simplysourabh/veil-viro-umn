@@ -89,11 +89,11 @@ VEILRoutePacket::smaction(Packet* p){
 		int port;
 		if(interfaces->lookupVidEntry(&(interfacevid), &port)){
 		//TODO: did it return the right port here?
-			veil_chatter(true,"[-x- RoutePacket] Pkt type: Ethertype_ARP Destination MAC: %s on interface: %s at port: %d \n", dst.s().c_str(),interfacevid.vid_string().c_str(), port);
+			veil_chatter(printDebugMessages,"[-x- RoutePacket] Pkt type: Ethertype_ARP Destination MAC: %s on interface: %s at port: %d \n", dst.s().c_str(),interfacevid.vid_string().c_str(), port);
 			return port;
 		}else{
 			port = numinterfaces+1; // ERROR PORT
-			veil_chatter(true,"[-x- RoutePacket] NO ENTRY!! Pkt type: Ethertype_ARP Destination MAC: %s on interface: %s at port: %d \n", dst.s().c_str(),interfacevid.vid_string().c_str(), port);
+			veil_chatter(printDebugMessages,"[-x- RoutePacket] NO ENTRY!! Pkt type: Ethertype_ARP Destination MAC: %s on interface: %s at port: %d \n", dst.s().c_str(),interfacevid.vid_string().c_str(), port);
 			return port;
 		}
 	}	
@@ -105,7 +105,7 @@ VEILRoutePacket::smaction(Packet* p){
 		VID dvid;
 		memcpy(&dvid, &dst, VID_LEN);
 		int port = getPort(dvid, p,k);
-		veil_chatter(true,"[-x- RoutePacket] Pkt type: Ethertype_VEIL_IP Destination VID: %s  at port: %d \n", dst.s().c_str(), port);
+		veil_chatter(printDebugMessages,"[-x- RoutePacket] Pkt type: Ethertype_VEIL_IP Destination VID: %s  at port: %d \n", dst.s().c_str(), port);
 		return (port >= 0 ? port : numinterfaces+1);
 	}
 	//TODO: any error conditions here?
