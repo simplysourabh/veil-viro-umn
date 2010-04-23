@@ -34,10 +34,11 @@ VEILInterfaceTable::configure(Vector<String> &conf, ErrorHandler *errh)
 	return r;
 }
 
+/*
 void
 VEILInterfaceTable::deleteHostInterface(VID *i){	
 	switch_interfaces.erase(*i);
-}
+}*/
 
 bool
 VEILInterfaceTable::lookupVidEntry(VID* ivid, int* i)

@@ -52,7 +52,12 @@ VEILProcessARP::smaction(Packet* p){
 		IPAddress src = IPAddress(ap->arp_spa);
 		IPAddress dst = IPAddress(ap->arp_tpa);
 		
-		veil_chatter(printDebugMessages,"[  ProcessARP  ][ARP] From %s(%s) to %s(%s),\n", src.s().c_str(), esrc.s().c_str(), dst.s().c_str(),edest.s().c_str());
+		VID::generate_host_vid(&myVid, &esrc, &hvid);
+		//host_table->updateEntry(&hvid, &esrc);
+		//host_table->updateIPEntry(&src, &hvid);
+		host_table->updateEntry(&hvid, &esrc, &src);
+		
+		veil_chatter(printDebugMessages,"[  ProcessARP  ][ARP] From ip=%s(mac=%s,vid=%s) to ip=%s(mac=%s),\n", src.s().c_str(), esrc.s().c_str(), hvid.vid_string().c_str(),dst.s().c_str(),edest.s().c_str());
 		
 		//Gratuitous ARP request or reply
 		//update host table
@@ -61,17 +66,16 @@ VEILProcessARP::smaction(Packet* p){
 		// Therefore dropping the condition:  && src == dst in the if below.
 		if(edest.is_broadcast())   
                 {	
-			veil_chatter(printDebugMessages,"[  ProcessARP  ][HOST UPDATE] IP: %s MAC: %s,\n", src.s().c_str(), esrc.s().c_str());
-
-			VID::generate_host_vid(&myVid, &esrc, &hvid);
-			host_table->updateEntry(&hvid, &esrc);
-			host_table->updateIPEntry(&src, &hvid);
-			interfaces->deleteHostInterface(&myVid);
+			
+			//WHy were we doing this??? Deleting the interface entry ?? May be we want to separate the interfaces connected to client? SJ
+			//interfaces->deleteHostInterface(&myVid);
 			// IF both src IP and dst IP are same then, exit!
 			if (src == dst) {
 				veil_chatter(printDebugMessages,"[  ProcessARP  ][Gratuitous ARP] IP: %s MAC: %s,\n", src.s().c_str(), esrc.s().c_str());
 				p->kill();
 				return NULL;
+			}else{
+				veil_chatter(printDebugMessages,"[  ProcessARP  ][HOST UPDATE] IP: %s MAC: %s,\n", src.s().c_str(), esrc.s().c_str());
 			}
 		}
 		
@@ -130,7 +134,13 @@ VEILProcessARP::smaction(Packet* p){
 		        //construct ARP reply
 		        veil_chatter(printDebugMessages,"[  ProcessARP  ][ARP Req] Looking into my MAPPING TABLE for IP: %s SrcVID: %s, packet came on Interface: %s,\n", dst.s().c_str(), hvid.vid_string().c_str(), myVid.switchVIDString().c_str());
 			if(map->lookupIP(&dst, &ipvid, &interfacevid)){
-				veil_chatter(printDebugMessages,"[  ProcessARP  ][ARP Req] Found!! Mapping for IP: %s SrcVID: %s in my MAPPING TABLE\n", dst.s().c_str(), hvid.vid_string().c_str());
+				veil_chatter(printDebugMessages,"[  ProcessARP  ][ARP Req] Found!! Mapping for IP: %s SrcVID: %s in my MAPPING TABLE mapped to: %s \n", dst.s().c_str(), hvid.vid_string().c_str(), ipvid.vid_string().c_str());
+				
+				short opcode = htons(ARPOP_REPLY);
+				short etypeip = htons(ETHERTYPE_IP);
+				short htypeether = htons(ARPHRD_ETHER);
+				short ethertype = htons(ETHERTYPE_ARP);
+				
 				WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
     				if (q == 0) {
         				veil_chatter(true,"[  ProcessARP  ][Error!] in processarp: cannot make packet!");
@@ -140,14 +150,14 @@ VEILProcessARP::smaction(Packet* p){
 				q->set_ether_header(e);
 				memcpy(e->ether_dhost, &esrc, 6);
 				memcpy(e->ether_shost, &ipvid, 6);
-				e->ether_type = htons(ETHERTYPE_ARP);
+				e->ether_type = ethertype;
 
 				click_ether_arp *ea = (click_ether_arp *) (e + 1);
-    				ea->ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
-				ea->ea_hdr.ar_pro = htons(ETHERTYPE_IP);
+    				ea->ea_hdr.ar_hrd = htypeether;
+				ea->ea_hdr.ar_pro = etypeip;
 				ea->ea_hdr.ar_hln = 6;
 				ea->ea_hdr.ar_pln = 4;
-				ea->ea_hdr.ar_op = htons(ARPOP_REPLY);
+				ea->ea_hdr.ar_op = opcode;
 				memcpy(ea->arp_sha, &ipvid, 6);
 				memcpy(ea->arp_spa, &dst, 4);
     				memcpy(ea->arp_tha, &esrc, 6);
@@ -245,7 +255,7 @@ VEILProcessARP::smaction(Packet* p){
 					q->set_ether_header(e);
 					
 					memcpy(e->ether_dhost, &svid, 6);
-					memcpy(e->ether_shost, &dvid, 6);
+					memcpy(e->ether_shost, &ipvid, 6);
 					e->ether_type = htons(ETHERTYPE_VEIL);
 					veil_header *vhdr = (veil_header*) (e+1);
 					vhdr->packetType = htons(VEIL_ARP_RPLY);
@@ -340,8 +350,11 @@ VEILProcessARP::push (
 	Packet* pkt)
 {
 	Packet *p = smaction(pkt);
-	if(p != NULL)
+	if(p != NULL){
+		//veil_chatter(printDebugMessages,"[  ProcessARP  ][VEIL_ENCAP_ARP][ARP Reply] BEFORE Pushing the packet to be routed!!");
 		output(0).push(p);
+		//veil_chatter(printDebugMessages,"[  ProcessARP  ][VEIL_ENCAP_ARP][ARP Reply] AFTER Pushing the packet to be routed!!");	
+	}
 }
 
 CLICK_ENDDECLS

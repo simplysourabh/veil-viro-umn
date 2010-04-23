@@ -11,11 +11,13 @@
 #include <click/error.hh>
 #include <stdarg.h>
 #include <stdio.h>
+#include <time.h>
 
 CLICK_DECLS
 
 //temporary solution to identify VEIL pkts
 #define ETHERTYPE_VEIL          0x9876
+#define ETHERTYPE_VEIL_IP          0x9878
 
 #define VEIL_HELLO 		0x01	
 #define VEIL_RDV_PUBLISH	0x02	
@@ -34,7 +36,7 @@ CLICK_DECLS
  * when hello/publish pkts need to be resent. risking temporarily invalid    
  * routes. 
  */ 
-#define VEIL_TBL_ENTRY_EXPIRY		40000
+#define VEIL_TBL_ENTRY_EXPIRY		120000
 
 #define PRINT_DEBUG_MSG 0 // 1 = Print the debug messages, 0 = do not print.
 
@@ -65,10 +67,13 @@ struct rdv_reply{
 inline 
 void veil_chatter(bool printit, const char *fmt, ...){
 	if (!printit) return;
-	
+	char buf[2000];
+	bzero(buf,2000);
+	time_t myt; time(&myt);
 	va_list val;
 	va_start(val, fmt);
-	vprintf(fmt,val);
+	vsprintf(buf,fmt,val);
+	printf("\nAt %s:: %s", ctime(&myt), buf);
 	va_end(val);
 }
 CLICK_ENDDECLS

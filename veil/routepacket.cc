@@ -48,7 +48,7 @@ VEILRoutePacket::smaction(Packet* p){
 		VID srcvid = VID(eth->ether_shost);
 		VID dstvid = VID(eth->ether_dhost);
 		//veil_chatter(printDebugMessages,"[-x- RoutePacket] Destination: |%s| \n", dstvid.switchVIDString().c_str());
-		veil_chatter(printDebugMessages,"[-x- RoutePacket] Destination: |%s| \n", dstvid.switchVIDString().c_str());
+
 		veil_header *vhdr = (veil_header*) (eth+1);
 		uint16_t pktType = ntohs(vhdr->packetType);
 		
@@ -57,7 +57,7 @@ VEILRoutePacket::smaction(Packet* p){
 		while(('r' == REROUTE_ANNO(p) || pktType  == VEIL_RDV_QUERY || pktType  == VEIL_RDV_PUBLISH) && port < 0){			
 			dstvid.flip_bit(k);
 			//veil_chatter(printDebugMessages,"[-x- RoutePacket] Destination after %dth bit flip: |%s| \n",k, dstvid.switchVIDString().c_str());
-			veil_chatter(printDebugMessages,"[-x- RoutePacket] Destination after %dth bit flip: |%s| \n",k, dstvid.switchVIDString().c_str());
+			//veil_chatter(printDebugMessages,"[-x- RoutePacket] Destination after %dth bit flip: |%s| \n",k, dstvid.switchVIDString().c_str());
 			port = getPort(dstvid,p,k);
 			dstvidChanged = true;
 		}
@@ -68,6 +68,7 @@ VEILRoutePacket::smaction(Packet* p){
 			click_ether *e = (click_ether*) p->data();
 			memcpy(e->ether_dhost, &dstvid, VID_LEN);
 		}
+		veil_chatter(printDebugMessages,"[-x- RoutePacket] Pkt type: Ethertype_veil Destination: |%s| at port: %d \n", dstvid.switchVIDString().c_str(), port);
 		return (port >= 0 ? port : numinterfaces+1);
 		// returns the port number if found, else to the ERROR outputport given by numinterfaces + 1
 		
@@ -82,15 +83,31 @@ VEILRoutePacket::smaction(Packet* p){
 		EtherAddress dst = EtherAddress(eth->ether_dhost);
 		VID dstvid;
 		hosts->lookupMAC(&dst, &dstvid);
-		unsigned char interfacevid[VID_LEN];
-		memcpy(interfacevid, &dstvid, VID_LEN - HOST_LEN);
+		VID interfacevid;
+		memcpy(&interfacevid, &dstvid, VID_LEN - HOST_LEN);
 		
 		int port;
-		interfaces->lookupVidEntry(&VID(interfacevid), &port);
+		if(interfaces->lookupVidEntry(&(interfacevid), &port)){
 		//TODO: did it return the right port here?
-		return port;
+			veil_chatter(true,"[-x- RoutePacket] Pkt type: Ethertype_ARP Destination MAC: %s on interface: %s at port: %d \n", dst.s().c_str(),interfacevid.vid_string().c_str(), port);
+			return port;
+		}else{
+			port = numinterfaces+1; // ERROR PORT
+			veil_chatter(true,"[-x- RoutePacket] NO ENTRY!! Pkt type: Ethertype_ARP Destination MAC: %s on interface: %s at port: %d \n", dst.s().c_str(),interfacevid.vid_string().c_str(), port);
+			return port;
+		}
 	}	
-
+	
+	if(ntohs(eth->ether_type) == ETHERTYPE_VEIL_IP){
+		// TODO TTL Decrement?
+		
+		EtherAddress dst = EtherAddress(eth->ether_dhost);
+		VID dvid;
+		memcpy(&dvid, &dst, VID_LEN);
+		int port = getPort(dvid, p,k);
+		veil_chatter(true,"[-x- RoutePacket] Pkt type: Ethertype_VEIL_IP Destination VID: %s  at port: %d \n", dst.s().c_str(), port);
+		return (port >= 0 ? port : numinterfaces+1);
+	}
 	//TODO: any error conditions here?
 	return numinterfaces+1;
 }
@@ -146,7 +163,7 @@ VEILRoutePacket::getPort(VID dstvid, Packet *p, uint16_t & k){
 			memcpy(&myVid, &nexthop,6);
 			k = myVid.logical_distance(&dstvid);
 			// now look up in the routing table for this local interface.
-			veil_chatter(printDebugMessages,"[-x- RoutePacket] For Dest VID: |%s|  Nexthop: |%s| is my local interface.\n",dstvid.switchVIDString().c_str(),nexthop.switchVIDString().c_str());
+			//veil_chatter(printDebugMessages,"[-x- RoutePacket] For Dest VID: |%s|  Nexthop: |%s| is my local interface.\n",dstvid.switchVIDString().c_str(),nexthop.switchVIDString().c_str());
 		}
 		else{
 			veil_chatter(true,"[-x- RoutePacket][ERROR][NEXTHOP IS NEITHER A PHYSICAL NEIGHBOR, NOR MY LOCAL INTERFACE] I SHOULD NEVER REACH HERE:  For Dest VID: |%s|  MyVID: |%s| NextHop: |%s| \n",dstvid.switchVIDString().c_str(),myVid.switchVIDString().c_str(), nexthop.switchVIDString().c_str());
@@ -167,7 +184,7 @@ VEILRoutePacket::push (
 	int port = smaction(pkt);
 	if (pkt != NULL)
 	{
-		veil_chatter(printDebugMessages,"[-x- RoutePacket] Forwarding packet on port %d.\n",port);
+		//veil_chatter(printDebugMessages,"[-x- RoutePacket] Forwarding packet on port %d.\n",port);
 		output(port).push(pkt);
 	}
 }
@@ -187,7 +204,7 @@ VEILRoutePacket::getClosestInterfaceVID(VID dstvid, VID &myVID){
 			}
 		}
 	}
-	veil_chatter(printDebugMessages,"[-x- RoutePacket][Closest MyInerface VID] Dest VID: |%s|  MyVID: |%s| XoRDist: %d\n",dstvid.switchVIDString().c_str(),myVID.switchVIDString().c_str(), xordist);
+	//veil_chatter(printDebugMessages,"[-x- RoutePacket][Closest MyInerface VID] Dest VID: |%s|  MyVID: |%s| XoRDist: %d\n",dstvid.switchVIDString().c_str(),myVID.switchVIDString().c_str(), xordist);
 }
 CLICK_ENDDECLS
 

@@ -33,7 +33,7 @@ class VEILInterfaceTable : public Element {
 		static String read_handler(Element*, void*);
 		void add_handlers();
 	
-		void deleteHostInterface(VID*);
+		//void deleteHostInterface(VID*);
 		inline const SwitchInterfaceTable* get_switchinterfacetable_handle(){
 			return &switch_interfaces;
 		}

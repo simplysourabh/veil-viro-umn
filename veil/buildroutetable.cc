@@ -65,16 +65,18 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 	VID int1, int2, nexthop1, gateway1; 
 	for (iiter1 = it->begin(); iiter1; ++iiter1){
 		int1 = iiter1.key();
-		
+		//click_chatter("BuildRouteTable: For Interface %s ", int1.switchVIDString().c_str());
 		for (iiter2 = it->begin(); iiter2; ++iiter2){
 			int2 = iiter2.key();
 			uint16_t ldist = int2.logical_distance(&int1);
 			if (ldist == 0){continue;}
+			//click_chatter("Neighbor %s ", int2.switchVIDString().c_str());			
 			route_table->updateEntry(&int1, ldist, &int2, &int1);
 			//TODO SJ: WE SHOULD BE PUBLISHING HERE!!
 			//TODO: Probably create a wrapper function for the RDV_PUBLISH.
 			rdv_publish(int1, int2,ldist);	
 		}
+		//click_chatter("\n");
 	}
 	
 	//check for each interface
