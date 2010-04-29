@@ -24,6 +24,7 @@ class VEILGenerateHello : public Element {
 	private:
 		Timer myTimer;
 		VID myVid;
+		VID myuid; // Used to assign a unique id later on. currently same as the myvid.
 		bool printDebugMessages ;
 
 };

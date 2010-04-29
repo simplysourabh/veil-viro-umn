@@ -2,6 +2,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include "click_veil.hh"
+#include "veil_packet.hh"
 #include "generatehello.hh"
  
 CLICK_DECLS
@@ -21,7 +22,8 @@ VEILGenerateHello::configure (
                 "MYVID", cpkP+cpkM, cpVid, &myVid,
                 "PRINTDEBUG", 0, cpBool, &printDebugMessages,
 		cpEnd);
-	
+	// initialize the myuid to myVid
+	memcpy(&myuid, &myVid, 6);
 	//TODO: pass initialization errors if any to errh
 	return(res);
 }
@@ -42,7 +44,7 @@ VEILGenerateHello::run_timer (
 {
 	assert(timer == &myTimer);
 
-	int packet_length = sizeof(click_ether) + sizeof(veil_header);
+	int packet_length = sizeof(click_ether) + sizeof(veil_sub_header);
 	WritablePacket *packet = Packet::make(packet_length);
 
         if (packet == 0) {
@@ -55,12 +57,16 @@ VEILGenerateHello::run_timer (
 	click_ether *e = (click_ether *) packet->data();
 	packet->set_ether_header(e);
 	memset(e->ether_dhost, 0xff, 6); // broadcast
-	memcpy(e->ether_shost, myVid.data(), 6);
+	memcpy(e->ether_shost, myuid.data(), 6);
 	//TODO: we don't have a shim header to identify VEIL pkts hence this temporary solution. find a better alternative. Instead of type, could we do with just first testing type and if invalid, looking for the right VEIL type in the 2B just after eth header?
 	e->ether_type = htons(ETHERTYPE_VEIL);
 
-	veil_header *vheader = (veil_header*) (e + 1);
-	vheader->packetType = htons(VEIL_HELLO);	
+	setSrcVID(packet, myVid);
+	//Do not need to set the destination vid in this case.
+	//setDstVID(packet,)
+	setVEILType(packet, VEIL_HELLO);
+	//No need to set the TTL on this packet
+	//setVEILTTL(packet,...);
 
 	// Send HELLO packets to neighbors
 	output(0).push(packet);

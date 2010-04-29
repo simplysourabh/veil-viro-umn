@@ -38,7 +38,7 @@ VEILProcessHello::simple_action(Packet* p)
 
 	click_ether *e = (click_ether*) p->data();
 
-	VID nVid = VID((const unsigned char*)e->ether_shost);
+	VID nVid = getSrcVID(p);
 	neighbor_table->updateEntry(&nVid, &myVid);
 
 	p->kill();
