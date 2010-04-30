@@ -11,7 +11,7 @@ hosts::VEILHostTable(PRINTDEBUG false);
 neighbors::VEILNeighborTable(PRINTDEBUG false);
 mapping::VEILMappingTable(PRINTDEBUG false);
 rendezvouspoints::VEILRendezvousTable(PRINTDEBUG false);
-routes::VEILRouteTable(PRINTDEBUG false);
+routes::VEILRouteTable(PRINTDEBUG true);
 out1::ToDevice(eth5);
 out2::ToDevice(eth2);
 
@@ -86,7 +86,7 @@ VEILPublishAccessInfo(hosts, PRINTDEBUG false) -> router;
 c[10] -> Discard;
 
 Script(wait 0s, print interfaces.table, wait 600s, loop);
-Script(wait 1s, print routes.table, wait 590s, loop);
+Script(wait 1s, print routes.table, wait 5s, loop);
 Script(wait 2s, print neighbors.table, wait 580s, loop);
 Script(wait 3s, print rendezvouspoints.table, wait 570s, loop);
 Script(wait 4s, print hosts.table, wait 106s, loop);

@@ -15,7 +15,7 @@ class VEILRouteTable : public Element {
 		// Routing Table Entry for an interface. 
 		// Each entry has three tuples: NextHop, Gateway and Expiry Time
 		struct RoutingEntry {
-			VID nextHop;
+			VID nexthop;
 			VID gateway;
 			//Timer *expiry;
 			bool isDefault;
@@ -29,7 +29,7 @@ class VEILRouteTable : public Element {
 
 		// Routing Table for an interface is a <key, value> pair
 		// Key = Bucket Number (int), Value = Nexthop, gateway, timer (InnerRouteTableEntry)
-		//typedef HashTable<uint16_t, InnerRouteTableEntry> InnerRouteTable;
+		//typedef HashTable<uint8_t, InnerRouteTableEntry> InnerRouteTable;
 		typedef HashTable<uint8_t, Bucket> InnerRouteTable;
 		
 		// Full Routing Table, a <key, value> pair
@@ -52,8 +52,8 @@ class VEILRouteTable : public Element {
 		int cp_viro_route(String, ErrorHandler*);
 
 		int configure(Vector<String>&, ErrorHandler*);
-		void updateEntry(VID *i, uint8_t b, VID *nh, VID *g, bool isDefault);
-		bool getRoute(VID*, uint8_t, VID, VID*, VID*, bool isDefault);
+		void updateEntry(VID *i, uint8_t b, VID *nh, VID *g, bool isDefault=true);
+		bool getRoute(VID*, uint8_t, VID, VID*, VID*, bool isDefault=true);
 		bool  getBucket(uint8_t, VID*, VID*);
 		static void expire(Timer*, void*);
 		static String read_handler(Element*, void*);
