@@ -35,7 +35,10 @@ CLICK_DECLS
  * routes. 
  */ 
 #define VEIL_TBL_ENTRY_EXPIRY	20000
-#define MAX_TTL 0xff
+#define MAX_TTL 				0xff
+
+// Maximum number of gateways stored in each Bucket
+#define MAX_GW_PER_BUCKET		4
 
 #define PRINT_DEBUG_MSG 0 // 1 = Print the debug messages, 0 = do not print.
 

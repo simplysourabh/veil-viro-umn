@@ -14,15 +14,23 @@ class VEILRouteTable : public Element {
 	public:
 		// Routing Table Entry for an interface. 
 		// Each entry has three tuples: NextHop, Gateway and Expiry Time
-		struct InnerRouteTableEntry {
+		struct RoutingEntry {
 			VID nextHop;
 			VID gateway;
+			//Timer *expiry;
+			bool isDefault;
+			bool isValid;
+		};
+
+		struct Bucket{
+			RoutingEntry buckets[MAX_GW_PER_BUCKET];
 			Timer *expiry;
 		};
 
 		// Routing Table for an interface is a <key, value> pair
 		// Key = Bucket Number (int), Value = Nexthop, gateway, timer (InnerRouteTableEntry)
-		typedef HashTable<uint16_t, InnerRouteTableEntry> InnerRouteTable;
+		//typedef HashTable<uint16_t, InnerRouteTableEntry> InnerRouteTable;
+		typedef HashTable<uint8_t, Bucket> InnerRouteTable;
 		
 		// Full Routing Table, a <key, value> pair
 		// Key = VID of the interface, Value = InnerRouteTable
@@ -31,7 +39,8 @@ class VEILRouteTable : public Element {
 		struct TimerData {
 			OuterRouteTable *routes;
 			VID *interface;
-			uint16_t bucket;
+			uint8_t bucket;
+			VID *gateway;
 		};
 		
 		VEILRouteTable();
@@ -43,9 +52,9 @@ class VEILRouteTable : public Element {
 		int cp_viro_route(String, ErrorHandler*);
 
 		int configure(Vector<String>&, ErrorHandler*);
-		void updateEntry(VID*, uint16_t, VID*, VID*);
-		bool getRoute(VID*, uint16_t, VID, VID*, VID*);
-		bool  getBucket(uint16_t, VID*, VID*);
+		void updateEntry(VID *i, uint8_t b, VID *nh, VID *g, bool isDefault);
+		bool getRoute(VID*, uint8_t, VID, VID*, VID*, bool isDefault);
+		bool  getBucket(uint8_t, VID*, VID*);
 		static void expire(Timer*, void*);
 		static String read_handler(Element*, void*);
 		void add_handlers();	

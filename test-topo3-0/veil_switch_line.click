@@ -26,7 +26,7 @@ q2 -> out2;
 VEILGenerateHello(000000010000, PRINTDEBUG false) -> q1;
 VEILGenerateHello(0000000B0000, PRINTDEBUG false) -> q2;
 
-c::Classifier(12/9876 14/0001, //0. VEIL_HELLO
+c::Classifier(12/9876 26/0000, //0. VEIL_HELLO
 	      12/9876 14/0002, //1. VEIL_RDV_PUBLISH
 	      12/9876 14/0003, //2. VEIL_RDV_QUERY
               12/9876 14/0004, //3. VEIL_RDV_REPLY

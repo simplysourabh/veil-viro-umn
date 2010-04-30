@@ -3,8 +3,9 @@
 #include <click/straccum.hh>
 #include <click/error.hh>
 #include "routetable.hh"
-#include<time.h>
+#include <time.h>
 #include "click_veil.hh"
+#include <stdlib.h>
 
 //TODO: make reads and writes atomic
 
@@ -39,7 +40,7 @@ VEILRouteTable::cp_viro_route(String s, ErrorHandler* errh){
 int
 VEILRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {	
-	click_chatter("[++RouteTable][FixME] Its mandagory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
+	click_chatter("[++RouteTable][FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
 	int res = 0;
 	int i = 0;
 	for (i = 0; i < conf.size()-1; i++) {
@@ -52,20 +53,19 @@ VEILRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 	return res;
 }
 
+
+// updates the routing entry for the bucket:b of interface:i with nexthop:nh gateway:g
+// Also whenever default entry is updated, all the other entries are removed
+// TODO: get rid of the above restriction.
 void
 VEILRouteTable::updateEntry (
-	VID *i, uint16_t b, VID *nh, VID *g)
+	VID *i, uint16_t b, VID *nh, VID *g, bool isDefault=true)
 {
 	// SJ : TODO: Allowing multiple routing entries per bucket?
 	
-	TimerData *tdata = new TimerData();
-	tdata->bucket = b;
-	tdata->interface = new VID(i->data());
-	tdata->routes = &routes;
-
 	//we first want to check if an InnerRouteTable is already present
 	//Check if innerroutetable is present for interface vid = i?
-	InnerRouteTable *rt;
+	InnerRouteTable *rt; uint8_t j = 0;
 	if(routes.find(*i) != routes.end()){
 		// yes we have a innerroutetable for interface vid = i
 		// get the pointer to the table.
@@ -74,58 +74,136 @@ VEILRouteTable::updateEntry (
 		// No we dont have the innerroutetable for interface vid = i
 		// create new innerroutetable for the interface vid = i, and 
 		// add it to the main routing table.
-		rt = new HashTable<uint16_t, InnerRouteTableEntry>::HashTable();
+		rt = new HashTable<uint16_t, Bucket>::HashTable();
 		routes.set(*i,*rt);
 		rt = routes.get_pointer(*i);
 	}
 
-	InnerRouteTableEntry* entry = new InnerRouteTableEntry(); // New routing entry
+	// Now see if we have any mapping for the bucket:b in interface:i
+	Bucket *buck;
+	buck = rt->get_pointer(b);
 
-	memcpy(&(entry->nextHop), nh, 6);
-	memcpy(&(entry->gateway), g, 6);
-	Timer *expiry = new Timer(&VEILRouteTable::expire, tdata);
-	expiry->initialize(this);
-	expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
-	entry->expiry  = expiry;
-	
-	// First see if the key is already present?
-	InnerRouteTableEntry * oldEntry;
-	oldEntry = rt->get_pointer(b);
-	if (oldEntry != NULL){
-		oldEntry->expiry->unschedule();
-		delete(oldEntry->expiry);
-		veil_chatter(printDebugMessages,"[++RouteTable] Existing Bucket %d for Interface |%s| \n",b, i->switchVIDString().c_str());
-	}else{
-		veil_chatter(printDebugMessages,"[++RouteTable] New Bucket %d for Interface |%s| \n",b, i->switchVIDString().c_str());
-	}	
-	rt->set(b, *entry);
+	// there is no mapping already, so create one and add it.
+	if (buck == NULL){
+		Bucket *newbuck = new Bucket();
+		rt->set(b,*newbuck);
+		buck = rt->get_pointer(b);
+		//set up the timer
+		TimerData *tdata = new TimerData();
+		tdata->bucket = b;
+		tdata->interface = new VID(i->data());
+		tdata->routes = &routes;
+		Timer *expiry = new Timer(&VEILRouteTable::expire, tdata);
+		expiry->initialize(this);
+		expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
+		buck->expiry  = expiry;
+		//make all the buckets invalid initially
+		for (j = 0; j < MAX_GW_PER_BUCKET; j++){
+			buck->buckets[j].isValid = false;
+			buck->buckets[j].isDefault = false;
+		}
+	}
+
+	// if its the default entry then write it in the beginning, and purge all the old entries:
+	if (isDefault){
+		memcpy(&(buck->buckets[0].nextHop), nh, 6);
+		memcpy(&(buck->buckets[0].gateway), g, 6);
+		buck->buckets[0].isValid = true;
+		buck->buckets[0].isDefault = true;
+		buck->expiry->clear();
+		buck->expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
+		veil_chatter(printDebugMessages,"[++RouteTable] Updated Default and \" purged\" all the other Bucket %d for Interface |%s| \n",b, i->switchVIDString().c_str());
+		for (j = 1; j < MAX_GW_PER_BUCKET; j++){
+			buck->buckets[j].isValid = false;
+		}
+		return;
+	}
+	for (j = 0; j < MAX_GW_PER_BUCKET; j++){
+		if (buck->buckets[j].isValid == false){
+			memcpy(&(buck->buckets[j].nextHop), nh, 6);
+			memcpy(&(buck->buckets[j].gateway), g, 6);
+			buck->buckets[j].isValid = true;
+			buck->buckets[j].isDefault = false;
+			buck->expiry->clear();
+			buck->expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
+			veil_chatter(printDebugMessages,"[++RouteTable] Bucket %d for Interface |%s| \n",b, i->switchVIDString().c_str());
+			return;
+		}
+	}
 }
 
+
+// return the gateway:g and nexthop:nh for bucket:b
+// returns the default entry if isDefault = true else returns anyone of the entries at random
 bool
-VEILRouteTable::getRoute(VID* dst, uint16_t b, VID i, VID *nh, VID *g)
+VEILRouteTable::getRoute(VID* dst, uint16_t b, VID i, VID *nh, VID *g,bool isDefault=true)
 {
 	bool found = false;
-	
+	uint8_t j = 0;
 	InnerRouteTable *rt = routes.get_pointer(i);
-	InnerRouteTableEntry *irte = rt->get_pointer(b);
-	if (irte != NULL){
-		memcpy(nh, &(irte->nextHop), 6);
-		memcpy(g, &(irte->gateway), 6);
-		return true;
+	Bucket *buck = rt->get_pointer(b);
+	if (buck != NULL){
+		if (isDefault){
+			for (j = 0; j < MAX_GW_PER_BUCKET; j++){
+				if (buck->buckets[j].isValid && buck->buckets[j].isDefault){
+					memcpy(nh, &(buck->buckets[j].nexthop), 6);
+					memcpy(g, &(buck->buckets[j]->gateway), 6);
+					return true;
+				}
+			}
+			return false;
+		}else{
+			srand(time(NULL));
+			totalValidEntries = 0;
+			uint8_t k = 0;
+
+			// first count how many valid entries are there.
+			for (k = 0; k < MAX_GW_PER_BUCKET; k++){
+				if (buck->buckets[k].isValid){
+					totalValidEntries++;
+				}
+			}
+
+			//if no valid entries then exit.
+			if (totalValidEntries == 0){return false;}
+
+			// now pick one randomly
+			uint8_t pickj = rand() % totalValidEntries;
+			uint8_t r = 0;
+			for (k = 0; k < MAX_GW_PER_BUCKET; k++){
+				if (buck->buckets[k].isValid){
+					if (r == pickj){
+						memcpy(nh, &(buck->buckets[pickj].nexthop), 6);
+						memcpy(g, &(buck->buckets[pickj]->gateway), 6);
+						return true;
+					}
+					r++;
+				}
+			}
+		}
 	}
 	return found;
 }
 
+// return the default nexthop:nh for bucket:b for interface:i
 bool
 VEILRouteTable::getBucket(uint16_t b, VID* i, VID *nh)
 {
 	bool found = false;
+	uint8_t j = 0;
 	if (routes.find(*i) != routes.end()) {
 		InnerRouteTable rt = routes.get(*i);
 		if (rt.find(b) != rt.end()) {
-			InnerRouteTableEntry irte = rt.get(b);
-			memcpy(nh, &irte.nextHop, VID_LEN);
-			found = true;
+			Bucket buck = rt.get(b);
+			for (j = 0; j < MAX_GW_PER_BUCKET; j++){
+				if (buck.buckets[j].isDefault && buck.buckets[j].isValid){
+					break;
+				}
+			}
+			if (j < MAX_GW_PER_BUCKET){
+				memcpy(nh, &(buck.buckets[j].nextHop), VID_LEN);
+				found = true;
+			}
 		}
 	}
 	return found;
@@ -135,24 +213,22 @@ void
 VEILRouteTable::expire(Timer *t, void *data) 	
 {
 	TimerData *td = (TimerData *) data;
-	uint16_t bucket = td->bucket;
+	uint8_t bucket = td->bucket;
 	VID interface;
 	memcpy(&interface, td->interface, VID_LEN);
 	veil_chatter(true,"[++RouteTable] [Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.switchVIDString().c_str(), bucket);
 	delete(td->interface);
-	InnerRouteTable* irt = td->routes->get_pointer(interface);		
+	InnerRouteTable* irt = td->routes->get_pointer(interface);
+	Bucket buck = irt->get(bucket);
 	// Erase returns the number of elements deleted, so if it is 0, then it means that corresponding entry was not deleted.
-	if (irt->erase(bucket) == 0){
+	if (buck == irt->end()){
 		veil_chatter(true,"[++RouteTable][Delete ERROR!!][Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.switchVIDString().c_str(), bucket);
+	}else{
+		for (uint8_t i = 0; i < MAX_GW_PER_BUCKET; i++){
+			buck.buckets[i].isValid = false;
+			buck.buckets[i].isDefault = false;
+		}
 	}
-	// SJ: Why do we need to delete the entry for the 
-	// Interface when it has no buckets in there?
-	// I guess, it doesn't really matter. So for now I have 
-	// Commented it.
-	/*if(0 == irt.size()){
-		td->routes->erase(interface);
-	}*/
-	//veil_chatter(printDebugMessages,"%d entries in neighbor table", td->neighbors->size());
 	delete(td); 
 	t->clear();
 	delete(t);
@@ -167,17 +243,22 @@ VEILRouteTable::read_handler(Element *e, void *thunk)
 	InnerRouteTable::iterator iter2;
 	OuterRouteTable routes1 = rt1->routes;
 	sa << "\n-----------------Routing Table START-----------------\n"<<"[Routing Table]" << '\n';
-	sa << "My VID" << "\t\t" << "Bucket" << '\t' <<"NextHop VID" << "\t"<< "Gateway VID" << "\t"<< "TTL" << '\n';
+	sa << "My VID" << "\t\t" << "Bucket" << '\t' <<"NextHop VID" << "\t"<< "Gateway VID" <<"\t"<<"isDefault" <<"\t"<< "TTL" << '\n';
 	for(iter1 = routes1.begin(); iter1; ++iter1){
 		String myInterface = static_cast<VID>(iter1.key()).switchVIDString();
 		InnerRouteTable rt = iter1.value();
 		for(iter2 = rt.begin(); iter2; ++iter2){
 			int bucket = iter2.key();		
-			InnerRouteTableEntry irte = iter2.value();
-			String nextHop = static_cast<VID>(irte.nextHop).switchVIDString();		
-			String gateway = static_cast<VID>(irte.gateway).switchVIDString();		
-			Timer *t = irte.expiry;
-			sa << myInterface << '\t' << bucket << '\t' << nextHop << '\t' << gateway << "\t"<<t->expiry().sec() - time(NULL) << " sec\n";
+			Bucket buck = iter2.value();
+			for (uint8_t i =0; i< MAX_GW_PER_BUCKET;i++){
+				if (buck.buckets[i].isValid){
+					String nextHop = static_cast<VID>(buck.buckets[i].nextHop).switchVIDString();
+					String gateway = static_cast<VID>(buck.buckets[i].gateway).switchVIDString();
+					Timer *t = buck.expiry;
+					String def = buck.buckets[i].isDefault?"Yes":"No";
+					sa << myInterface << '\t' << bucket << '\t' << nextHop << '\t' << gateway << "\t"<<def<<"\t"<<t->expiry().sec() - time(NULL) << " sec\n";
+				}
+			}
 		}
 	}
 	sa<< "----------------- Routing Table END -----------------\n\n";
