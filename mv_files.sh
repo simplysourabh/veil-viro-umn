@@ -2,7 +2,7 @@
 cd ~/veil-viro-umn
 
 # now copy the vid.hh to include/click
-#cp vid.hh /opt/ns-allinone-2.29/click/include/click/
+cp vid.hh /opt/ns-allinone-2.29/click/include/click/
 
 
 # copy confparse.cc to click/lib

@@ -7,11 +7,11 @@ set eth5 eth2;
 
 interfaces::VEILInterfaceTable(000000010000,0000000B0000, PRINTDEBUG false);
 
-hosts::VEILHostTable(PRINTDEBUG false);
+hosts::VEILHostTable(PRINTDEBUG true);
 neighbors::VEILNeighborTable(PRINTDEBUG false);
-mapping::VEILMappingTable(PRINTDEBUG false);
+mapping::VEILMappingTable(PRINTDEBUG true);
 rendezvouspoints::VEILRendezvousTable(PRINTDEBUG false);
-routes::VEILRouteTable(PRINTDEBUG true);
+routes::VEILRouteTable(PRINTDEBUG false);
 out1::ToDevice(eth5);
 out2::ToDevice(eth2);
 
@@ -27,13 +27,13 @@ VEILGenerateHello(000000010000, PRINTDEBUG false) -> q1;
 VEILGenerateHello(0000000B0000, PRINTDEBUG false) -> q2;
 
 c::Classifier(12/9876 26/0000, //0. VEIL_HELLO
-	      12/9876 14/0002, //1. VEIL_RDV_PUBLISH
-	      12/9876 14/0003, //2. VEIL_RDV_QUERY
-              12/9876 14/0004, //3. VEIL_RDV_REPLY
-              12/9876 14/0005, //4. VEIL_ARP_REQ
-              12/9876 14/0006, //5. VEIL_ARP_RPLY
-              12/9876 14/0007, //6. VEIL_PUBLISH
-              12/9878, 	       //7. ETHERTYPE_VEIL_IP
+	      12/9876 26/0403, //1. VEIL_RDV_PUBLISH
+	      12/9876 26/0404, //2. VEIL_RDV_QUERY
+              12/9876 26/0402, //3. VEIL_RDV_REPLY
+              12/9876 26/0602, //4. VEIL_ENCAP_ARP
+              12/9876 26/0201, //5. VEIL_MAP_PUBLISH
+              12/9876 26/0202, //6. VEIL_MAP_UPDATE
+              12/9876 26/0601, //7. VEIL_ENCAP_IP
 	      12/0806,         //8. ETHERTYPE_ARP
 	      12/0800,         //9. ETHERTYPE_IP
 	      -);    	       //A. Everything Else (DISCARD)
@@ -47,16 +47,9 @@ router[1] -> q2;
 router[2] -> c;
 router[3] -> Print(<--RoutePacketERROR-->) -> Discard;
 
-/*
-in1 -> VEILSetPortAnnotation(0) -> Print(IN1) -> c;
-in2 -> VEILSetPortAnnotation(1) -> Print(IN2) -> c;
-*/
-
 in1 -> VEILSetPortAnnotation(0) -> c;
 in2 -> VEILSetPortAnnotation(1) -> c;
 
-
-//c[0] -> Print(VEIL_HELLO) -> VEILProcessHello(neighbors, interfaces);
 c[0] -> VEILProcessHello(neighbors, interfaces,PRINTDEBUG false);
 
 prdv::VEILProcessRDV(routes, rendezvouspoints, interfaces, PRINTDEBUG false) -> router;
@@ -65,18 +58,23 @@ c[1] -> prdv;
 c[2] -> prdv;
 c[3] -> prdv;
 
-parp::VEILProcessARP(hosts, mapping, interfaces,PRINTDEBUG false) ->  router;
+parp::VEILProcessARP(hosts, mapping, interfaces,PRINTDEBUG true) ->  router;
 
-c[4]  -> parp;
-c[5]  -> parp;
-c[8]  ->  parp;
+c[4]  -> Print (ETHERARP) ->  parp;
+c[8]  -> Print (VEIL_ARP) ->  parp;
 
-c[6] -> paci::VEILProcessAccessInfo(mapping, interfaces,PRINTDEBUG false) -> router;
+paci::VEILProcessAccessInfo(mapping, interfaces,PRINTDEBUG true) -> router;
+c[5] -> paci;
+c[6] -> paci; 
 
-pip::VEILProcessIP(hosts, mapping, interfaces, PRINTDEBUG false) -> router;
+//pip::VEILProcessIP(hosts, mapping, interfaces, PRINTDEBUG false) -> router;
 
+/*
 c[7]  ->  pip;
 c[9]  -> pip;
+*/
+c[7]  -> Discard;
+c[9]  -> Discard;
 
 
 VEILBuildRouteTable(neighbors, routes, interfaces,PRINTDEBUG false) -> router;
@@ -85,9 +83,9 @@ VEILPublishAccessInfo(hosts, PRINTDEBUG false) -> router;
 
 c[10] -> Discard;
 
-Script(wait 0s, print interfaces.table, wait 600s, loop);
-Script(wait 1s, print routes.table, wait 5s, loop);
-Script(wait 2s, print neighbors.table, wait 580s, loop);
-Script(wait 3s, print rendezvouspoints.table, wait 570s, loop);
-Script(wait 4s, print hosts.table, wait 106s, loop);
-Script(wait 5s, print mapping.table, wait 105s, loop);
+Script(wait 0s, print interfaces.table, wait 60s, loop);
+Script(wait 1s, print routes.table, wait 15s, loop);
+Script(wait 2s, print neighbors.table, wait 15s, loop);
+Script(wait 3s, print rendezvouspoints.table, wait 15s, loop);
+Script(wait 4s, print hosts.table, wait 10s, loop);
+Script(wait 5s, print mapping.table, wait 10s, loop);

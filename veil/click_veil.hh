@@ -74,6 +74,7 @@ CLICK_DECLS
 // connected to it by sending an ARP Reply packet to all of them.
 #define VEIL_MAP_UPDATE			0x0202
 
+
 // An encapsulated IP packet. source and dest will be the VIDs of the end-hosts.
 #define VEIL_ENCAP_IP			0x0601
 // An encapsulated ARP packet, source and dest will be the VIDs of the end-hosts.
@@ -124,13 +125,10 @@ struct veil_sub_header{
 
 // Type: VEIL_RDV_PUBLISH
 // |Bucket 1 byte : Optional 1 byte : Neighbor switch vid 4 bytes|
-struct veil_payload_rdv_pub{
+struct veil_payload_rdv_publish{
 	uint8_t bucket;
 	uint8_t optional ;
-	uint8_t neighbor_vid0;
-	uint8_t neighbor_vid1;
-	uint8_t neighbor_vid2;
-	uint8_t neighbor_vid3;
+	uint8_t neighbor_vid[4];
 };
 
 // Type: VEIL_RDV_QUERY
@@ -144,13 +142,10 @@ struct veil_payload_rdv_query{
 // GW_COUNT = 1   (if only default gateway is supplied)
 // GW_COUNT = k+1 (if additional k gateways are also supplied)
 // |Bucket 1 byte : GW_COUNT 1 byte : Gateway1 switch vid 4 bytes : Gateway2 switch vid 4 bytes :...: Gateway(k+1) switch vid 4 bytes|
-struct veil_payload_rdv_rep{
+struct veil_payload_rdv_reply{
 	uint8_t bucket;
 	uint8_t gw_count ;
-	uint8_t gw_vid0;
-	uint8_t gw_vid1;
-	uint8_t gw_vid2;
-	uint8_t gw_vid3;
+	uint8_t gw_vid[MAX_GW_PER_BUCKET][4];
 };
 
 // Type: VEIL_RDV_PUBLISH

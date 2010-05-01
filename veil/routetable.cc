@@ -111,7 +111,7 @@ VEILRouteTable::updateEntry (
 		memcpy(&(buck->buckets[0].gateway), g, 6);
 		buck->buckets[0].isValid = true;
 		buck->buckets[0].isDefault = true;
-		buck->expiry->clear();
+		buck->expiry->unschedule();
 		buck->expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
 		veil_chatter(printDebugMessages,"[++RouteTable] Updated Default and \" purged\" all the other Bucket %d for Interface |%s| \n",b, i->switchVIDString().c_str());
 		for (j = 1; j < MAX_GW_PER_BUCKET; j++){
@@ -125,7 +125,7 @@ VEILRouteTable::updateEntry (
 			memcpy(&(buck->buckets[j].gateway), g, 6);
 			buck->buckets[j].isValid = true;
 			buck->buckets[j].isDefault = false;
-			buck->expiry->clear();
+			buck->expiry->unschedule();
 			buck->expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
 			veil_chatter(printDebugMessages,"[++RouteTable] Bucket %d for Interface |%s| \n",b, i->switchVIDString().c_str());
 			return;
@@ -220,14 +220,14 @@ VEILRouteTable::expire(Timer *t, void *data)
 	veil_chatter(true,"[++RouteTable] [Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.switchVIDString().c_str(), bucket);
 	delete(td->interface);
 	InnerRouteTable* irt = td->routes->get_pointer(interface);
-	Bucket buck = irt->get(bucket);
+	Bucket* buck = irt->get_pointer(bucket);
 	// Erase returns the number of elements deleted, so if it is 0, then it means that corresponding entry was not deleted.
 	if (irt->find(bucket) == irt->end()){
 		veil_chatter(true,"[++RouteTable][Delete ERROR!!][Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.switchVIDString().c_str(), bucket);
 	}else{
 		for (uint8_t i = 0; i < MAX_GW_PER_BUCKET; i++){
-			buck.buckets[i].isValid = false;
-			buck.buckets[i].isDefault = false;
+			buck->buckets[i].isValid = false;
+			buck->buckets[i].isDefault = false;
 		}
 	}
 	delete(td); 

@@ -34,18 +34,26 @@ VEILProcessAccessInfo::smaction(Packet* p)
 
 	click_ether *e = (click_ether*) p->data();
 
-	//we should process this packet only if it is destined to one of 
-	//our interfaces
 	VID dvid = VID(e->ether_dhost);
+
 	int interface;
+	if (!interfaces->lookupVidEntry(&dvid, &interface)){
+		// Should I have received this packet? see if ether_dhost is me or not?
+		p->kill();
+		return NULL;
+	}
+
+	veil_sub_header* vheader = (veil_sub_header *) (e+1);
+	memcpy(&dvid, &vheader->dvid, 6);
+
+	// Am I the final destination?
 	if(interfaces->lookupVidEntry(&dvid, &interface))
 	{
-		veil_header *vhdr = (veil_header*) (e+1);
-		access_info *ai = (access_info*)  (vhdr+1);
-	
-		IPAddress ip = ai->ip;	
-		VID vid = ai->vid;
-		map->updateEntry(&ip, &vid, &myVid);
+		veil_payload_map_publish * payload_publish = (veil_payload_map_publish*)(vheader+1);
+		IPAddress ip = payload_publish->ip;
+		VID vid = payload_publish->vid;
+		EtherAddress mac = payload_publish->mac;
+		map->updateEntry(&ip, &vid, &myVid, &mac);
 		veil_chatter(printDebugMessages,"[ProcessACESSInfo!][STORE MAPPING] HOST IP: %s  VID: %s  AccessSwitchVID: %s\n", ip.s().c_str(),  vid.vid_string().c_str(),myVid.switchVIDString().c_str() );
 		
 		p->kill();	

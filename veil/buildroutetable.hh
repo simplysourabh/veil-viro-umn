@@ -23,8 +23,8 @@ class VEILBuildRouteTable: public Element {
 		int configure(Vector<String> &, ErrorHandler *);
 		int initialize(ErrorHandler *);
 		void run_timer(Timer *);
-		void rdv_query (VID &myinterface, uint16_t i);
-		void rdv_publish (VID &myinterface, VID &nexthop, uint16_t i);
+		void rdv_query (VID &myinterface, uint8_t i);
+		void rdv_publish (VID &myinterface, VID &nexthop, uint8_t i);
 
 	private:
 		Timer myTimer;

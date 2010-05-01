@@ -91,11 +91,11 @@ class VID {
 				^ ((size_t) _data[0] << 9);
 		}
 		
-		inline uint16_t logical_distance(VID *v)
+		inline uint8_t logical_distance(VID *v)
 		{
 			const uint8_t *vid = v->sdata();		 
-			uint16_t lprefix = 0, count = 0;
-			for(uint16_t i = 0; i < VID_LEN ; i++)
+			uint8_t lprefix = 0, count = 0;
+			for(uint8_t i = 0; i < VID_LEN ; i++)
 			{
 				if(_data[i] == vid[i])
 					lprefix += 8;
