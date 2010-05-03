@@ -7,11 +7,12 @@ set eth5 eth2;
 
 interfaces::VEILInterfaceTable(000000010000,0000000B0000, PRINTDEBUG false);
 
-hosts::VEILHostTable(PRINTDEBUG true);
+hosts::VEILHostTable(PRINTDEBUG false);
 neighbors::VEILNeighborTable(PRINTDEBUG false);
-mapping::VEILMappingTable(PRINTDEBUG true);
+mapping::VEILMappingTable(PRINTDEBUG false);
 rendezvouspoints::VEILRendezvousTable(PRINTDEBUG false);
 routes::VEILRouteTable(PRINTDEBUG false);
+
 out1::ToDevice(eth5);
 out2::ToDevice(eth2);
 
@@ -36,7 +37,8 @@ c::Classifier(12/9876 26/0000, //0. VEIL_HELLO
               12/9876 26/0601, //7. VEIL_ENCAP_IP
 	      12/0806,         //8. ETHERTYPE_ARP
 	      12/0800,         //9. ETHERTYPE_IP
-	      -);    	       //A. Everything Else (DISCARD)
+	      12/9878,	       //A. OLD ETHERTYPE_VEIL_IP
+	      -);    	       //B. Everything Else (DISCARD)
 
 router::VEILRoutePacket(hosts, routes, interfaces, neighbors, PRINTDEBUG false);
 
@@ -63,29 +65,27 @@ parp::VEILProcessARP(hosts, mapping, interfaces,PRINTDEBUG true) ->  router;
 c[4]  -> Print (ETHERARP) ->  parp;
 c[8]  -> Print (VEIL_ARP) ->  parp;
 
-paci::VEILProcessAccessInfo(mapping, interfaces,PRINTDEBUG true) -> router;
+paci::VEILProcessAccessInfo(mapping, interfaces,PRINTDEBUG false) -> router;
 c[5] -> paci;
 c[6] -> paci; 
 
-//pip::VEILProcessIP(hosts, mapping, interfaces, PRINTDEBUG false) -> router;
+pip::VEILProcessIP(hosts, mapping, interfaces, PRINTDEBUG true)-> router;
 
-/*
-c[7]  ->  pip;
+c[7]  -> pip;
 c[9]  -> pip;
-*/
-c[7]  -> Discard;
-c[9]  -> Discard;
+c[10] -> pip;
+
 
 
 VEILBuildRouteTable(neighbors, routes, interfaces,PRINTDEBUG false) -> router;
 
 VEILPublishAccessInfo(hosts, PRINTDEBUG false) -> router;
 
-c[10] -> Discard;
+c[11] -> Discard;
 
-Script(wait 0s, print interfaces.table, wait 60s, loop);
-Script(wait 1s, print routes.table, wait 15s, loop);
-Script(wait 2s, print neighbors.table, wait 15s, loop);
-Script(wait 3s, print rendezvouspoints.table, wait 15s, loop);
-Script(wait 4s, print hosts.table, wait 10s, loop);
-Script(wait 5s, print mapping.table, wait 10s, loop);
+Script(wait 0s, print interfaces.table, wait 600s, loop);
+Script(wait 1s, print routes.table, wait 615s, loop);
+Script(wait 2s, print neighbors.table, wait 615s, loop);
+Script(wait 3s, print rendezvouspoints.table, wait 615s, loop);
+Script(wait 4s, print hosts.table, wait 200s, loop);
+Script(wait 5s, print mapping.table, wait 200s, loop);
