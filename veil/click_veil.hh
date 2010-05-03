@@ -35,7 +35,7 @@ CLICK_DECLS
  * routes. 
  */ 
 #define VEIL_TBL_ENTRY_EXPIRY	20000
-#define MAX_TTL 				0xff
+#define MAX_TTL 				0x0f
 
 // Maximum number of gateways stored in each Bucket
 #define MAX_GW_PER_BUCKET		4
@@ -82,6 +82,13 @@ CLICK_DECLS
 // ENCAP_REDIRECTION: A data packet which has been "redirected" by the "old-host-switch".
 #define VEIL_ENCAP_REDIRECTION	0x0603
 
+#define IP_FORWARDING_TYPE			1 // can be 0 or 1 or 2
+// set it to 1 if we want to enable the ENACAPSULATION of
+// IP packets as IP packets. else set it to 0:
+// When set as 0, We simply overwrite the MAC addresses on the
+// Ethernet header, and it won't allow VEIL_SWITCHES to be interconnected using ETHERNET SWITCHES.
+// i.e. VEIL_SWITCHES must be WIRED directly to each other.
+// if it is set to 2: then "MULTIPATH ROUTING" is enabled for the IP packets.
 
 // REMOVE THIS LATER START
 struct veil_header {

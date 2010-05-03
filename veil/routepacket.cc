@@ -77,6 +77,16 @@ VEILRoutePacket::smaction(Packet* p){
 		memcpy(eth->ether_dhost, &nextvid,6);
 		memcpy(eth->ether_shost, &myVid, 6);
 
+		// update the ttl on the packet.
+		uint8_t ttl = vheader->ttl;
+		vheader->ttl = ttl-1;
+
+		if (ttl == 0){
+			// if ttl has expired
+			veil_chatter(true,"[-x- RoutePacket][TTL EXPIRED] Pkt type: Ethertype_veil Destination: |%s| at port: %d \n", dstvid.switchVIDString().c_str(), port);
+			return numinterfaces+1;
+		}
+
 		veil_chatter(printDebugMessages,"[-x- RoutePacket] Pkt type: Ethertype_veil Destination: |%s| at port: %d \n", dstvid.switchVIDString().c_str(), port);
 		return (port >= 0 ? port : numinterfaces+1);
 		// returns the port number if found, else to the ERROR outputport given by numinterfaces + 1
@@ -217,6 +227,7 @@ VEILRoutePacket::getClosestInterfaceVID(VID dstvid, VID &myVID){
 	}
 	//veil_chatter(printDebugMessages,"[-x- RoutePacket][Closest MyInerface VID] Dest VID: |%s|  MyVID: |%s| XoRDist: %d\n",dstvid.switchVIDString().c_str(),myVID.switchVIDString().c_str(), xordist);
 }
+
 CLICK_ENDDECLS
 
 EXPORT_ELEMENT(VEILRoutePacket)

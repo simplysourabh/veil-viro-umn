@@ -41,7 +41,7 @@ VEILMappingTable::cp_mapping(String s, ErrorHandler *errh)
 int
 VEILMappingTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-	click_chatter("[-:MAPPINGTABLE:-][FixME] Its mandagory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");	
+	click_chatter("[-:MAPPINGTABLE:-][FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
 	int res = 0;
 	int i = 0;
 	for (i = 0; i < conf.size()-1; i++) {
@@ -59,26 +59,26 @@ VEILMappingTable::updateEntry (IPAddress *ip, VID *ipvid, VID *myvid, EtherAddre
 {
 	MappingTableEntry entry;
 	// first see if mapping is already there or not?
-	if(ipmap.find(*ip)== ipmap.end()){
+	if(ipmap.find(*ip) != ipmap.end()){
 		entry = ipmap.get(*ip);
+		MappingTableEntry *ent_pointer = ipmap.get_pointer(*ip);
+		ent_pointer->expiry->unschedule();
+
 		if((*ipvid) != entry.ipVid || (*myvid) != entry.myVid || (*ipmac) != entry.ipmac){
 			veil_chatter(printDebugMessages,"[-:MAPPINGTABLE:-] New mapping for IP: %s to VID: %s, old vid: %s \n", ip->s().c_str(), ipvid->vid_string().c_str(), entry.ipVid.vid_string().c_str());
 			// TODO: Send a VEIL_MAP_UPDATE to original switch, so that it can update its host table.
-		}else{
-			// refresh the timer in this case.
-			MappingTableEntry *ent_pointer = ipmap.get_pointer(*ip);
-			ent_pointer->expiry->unschedule();
-			ent_pointer->expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
+			memcpy(&(ent_pointer->ipVid), ipvid->data(),6);
+			memcpy(&(ent_pointer->myVid), myvid->data(),6);
+			memcpy(&(ent_pointer->ipmac), ipmac->data(),6);
 		}
+		// refresh the timer in this case.
+		ent_pointer->expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
 		return;
 	}
 
 	TimerData *tdata = new TimerData();
 	tdata->ipmap = &ipmap;
 	memcpy(&tdata->ip, &ip, 4);
-	
-
-
 	memcpy(&entry.ipVid, ipvid->data(), 6);
 	memcpy(&entry.myVid, myvid->data(), 6);
 	memcpy(&entry.ipmac, ipmac->data(), 6);
@@ -86,7 +86,7 @@ VEILMappingTable::updateEntry (IPAddress *ip, VID *ipvid, VID *myvid, EtherAddre
 	expiry->initialize(this);
 	expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
 	entry.expiry  = expiry;
-    ipmap.set(*ip, entry);
+	ipmap.set(*ip, entry);
 }
 
 bool
@@ -117,7 +117,7 @@ VEILMappingTable::read_handler(Element *e, void *thunk)
 
 	sa << "\n----------------- Mapping START-----------------"<< '\n';
 	sa << "HOST IP " << " \t" << "HOST VID" <<"\t\t"<<"Host MAC"<< "\t" << "Access Switch(Interface) VID\n";
-	
+
 	for(iter = ipmap.begin(); iter; ++iter){
 		IPAddress ipa = iter.key();
 		MappingTableEntry mte = iter.value();
