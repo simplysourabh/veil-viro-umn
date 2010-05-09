@@ -62,7 +62,7 @@ VEILRoutePacket::smaction(Packet* p){
 		while(('r' == REROUTE_ANNO(p) || veil_type  == VEIL_RDV_QUERY || veil_type  == VEIL_RDV_PUBLISH || veil_type == VEIL_MAP_PUBLISH) && port < 0){
 			dstvid.flip_bit(k);
 			//veil_chatter(printDebugMessages,"[-x- RoutePacket] Destination after %dth bit flip: |%s| \n",k, dstvid.switchVIDString().c_str());
-			//veil_chatter(printDebugMessages,"[-x- RoutePacket] Destination after %dth bit flip: |%s| \n",k, dstvid.switchVIDString().c_str());
+			veil_chatter(printDebugMessages,"[-x- RoutePacket] Destination after %dth bit flip: |%s| \n",k, dstvid.switchVIDString().c_str());
 			port = getPort(dstvid,p,k,nextvid);
 			dstvidChanged = true;
 		}

@@ -230,9 +230,7 @@ VEILRouteTable::expire(Timer *t, void *data)
 			buck->buckets[i].isDefault = false;
 		}
 	}
-	delete(td); 
 	t->clear();
-	delete(t);
 }
 
 String

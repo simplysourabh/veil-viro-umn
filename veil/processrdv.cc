@@ -64,14 +64,15 @@ VEILProcessRDV::smaction(Packet* p){
 	if(ntohs(vheader->veil_type) == VEIL_RDV_QUERY){
 		const veil_payload_rdv_query* query_payload = (const veil_payload_rdv_query*)(vheader+1);
 		uint8_t k = query_payload->bucket;
-		VID gateway;
+		VID gateway[MAX_GW_PER_BUCKET];
 		veil_chatter(printDebugMessages, "[-->ProcessRDV<--][RDV Query] Querying node: |%s| for bucket %d\n", svid.switchVIDString().c_str(), k);
-		if(rdvs->getRdvPoint(k, &svid, &gateway)){
+		uint8_t ngws = rdvs->getRdvPoint(k, &svid, gateway);
+		if(ngws > 0){
 			//construct and send rdv reply
 			//sizeof(rdv_reply) reports a larger size
 			//to account for alignment and padding
 			//hence the split up
-			veil_chatter(printDebugMessages, "[-->ProcessRDV<--][RDV Query Answered] Querying node: |%s| GW node: |%s| for bucket %d\n", svid.switchVIDString().c_str(),gateway.switchVIDString().c_str(), k);
+			veil_chatter(printDebugMessages, "[-->ProcessRDV<--][RDV Query Answered] Querying node: |%s| Default GW node: |%s| for bucket %d\n", svid.switchVIDString().c_str(),gateway[0].switchVIDString().c_str(), k);
 			int packet_length = sizeof(click_ether) + sizeof(veil_sub_header) + sizeof(veil_payload_rdv_reply);
 
 			WritablePacket *q = Packet::make(packet_length);
@@ -104,8 +105,11 @@ VEILProcessRDV::smaction(Packet* p){
 
 			veil_payload_rdv_reply * reply_payload = (veil_payload_rdv_reply*)(reply_vheader + 1);
 			reply_payload->bucket = k;
-			reply_payload->gw_count = 1;
-			memcpy(reply_payload->gw_vid[0], &gateway,4);
+			reply_payload->gw_count = ngws;
+			for (uint8_t ii = 0; ii < ngws; ii++){
+				memcpy(reply_payload->gw_vid[ii], (gateway+ii),4);
+				veil_chatter(printDebugMessages, "[-->ProcessRDV<--][RDV Query] Reply to |%s| Bucket: %d GW: %s\n", svid.switchVIDString().c_str(), k, (gateway+ii)->switchVIDString().c_str());
+			}
 			p->kill();
 			return q;
 		} else {
@@ -133,12 +137,14 @@ VEILProcessRDV::smaction(Packet* p){
 		uint8_t k = reply_payload->bucket;
 		uint8_t gw_count = reply_payload->gw_count;
 		uint8_t j = 0;
+		veil_chatter(printDebugMessages, "[-->ProcessRDV<--][RDV Reply] MyVID: |%s| BucketLevel: %d N_Gateways: %d \n", dvid.switchVIDString().c_str(), k, gw_count);
 		for (j = 0; j < gw_count; j++){
+			//veil_chatter(true, "[-->ProcessRDV<--][RDV Reply] MyVID: |%s| BucketLevel: %d Current_Gateway: %d \n", dvid.switchVIDString().c_str(), k, j);
 			VID gateway,nh,g;
 			bzero(&gateway,6);
 			memcpy(&gateway, reply_payload->gw_vid[j], 4);
 			uint8_t dist_to_gateway = dvid.logical_distance(&gateway);
-
+			//veil_chatter(printDebugMessages, "[-->ProcessRDV<--][RDV Reply] MyVID: |%s| BucketLevel: %d Current_Gateway: %s \n", dvid.switchVIDString().c_str(), k, gateway.switchVIDString().c_str());
 			if (dist_to_gateway > 16){
 				veil_chatter(printDebugMessages, "[-->ProcessRDV<--][RDV Reply][Gateway] MyVID: |%s| GWVID: |%s| BucketLevel: %d \n", dvid.switchVIDString().c_str(),gateway.switchVIDString().c_str(), k);
 				//find nexthop to reach gateway
@@ -146,12 +152,12 @@ VEILProcessRDV::smaction(Packet* p){
 				{
 					// is it the default route entry? (i.e. j == o
 					if (j == 0)
-						{routes->updateEntry(&dvid, k, &nh, &gateway, true);}
+					{routes->updateEntry(&dvid, k, &nh, &gateway, true);}
 					// Add a non-default route entry
 					else{routes->updateEntry(&dvid, k, &nh, &gateway, false);}
 
 				} else {
-					veil_chatter(true, "[-->ProcessRDV<--][RDV Reply][Error!][No Nexthop to GW] MyVID: |%s| GWVID: |%s| BucketLevel: %d \n", dvid.switchVIDString().c_str(),gateway.switchVIDString().c_str(), dist_to_gateway);
+					veil_chatter(true, "[-->ProcessRDV<--][RDV Reply][Error!][No Nexthop to GW] MyVID: |%s| GWVID: |%s| Bucket %d Distance to Gateway: %d, Sender: %s \n", dvid.switchVIDString().c_str(),gateway.switchVIDString().c_str(), k,dist_to_gateway, svid.switchVIDString().c_str());
 				}
 			}
 		}

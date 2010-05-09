@@ -23,7 +23,7 @@ class VEILRendezvousTable : public Element {
 	
 		int configure(Vector<String>&, ErrorHandler*);
 		void updateEntry(VID *src, VID *dest);
-		bool getRdvPoint(int, VID *src, VID *gateway);
+		uint8_t getRdvPoint(int, VID *src, VID *gateway);
 		static void expire(Timer*, void*);
 		static String read_handler(Element*, void*);
 		void add_handlers();	
