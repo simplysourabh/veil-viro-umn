@@ -84,7 +84,7 @@ VEILPublishAccessInfo(hosts, PRINTDEBUG false) -> router;
 c[11] -> Discard;
 
 Script(wait 0s, print interfaces.table, wait 600s, loop);
-Script(wait 1s, print routes.table, wait 615s, loop);
+Script(wait 1s, print routes.table, wait 10s, loop);
 Script(wait 2s, print neighbors.table, wait 615s, loop);
 Script(wait 3s, print rendezvouspoints.table, wait 615s, loop);
 Script(wait 4s, print hosts.table, wait 200s, loop);
