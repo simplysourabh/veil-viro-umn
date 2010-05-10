@@ -1,0 +1,35 @@
+== Motivation ==
+Today’s Internet is increasingly strained to meet the demands and requirements of these Internet services and their users, such as scalability to accommodate the increasing number of network components and host devices, high availability (i.e., “always-on” services), robustness, mobility and security. As the universal “glue” that pieces together various heterogeneous physical networks, the Internet Protocol (IP) suffers certain well-known shortcomings, e.g., it requires careful and extensive network configurations – in particular, the need for address management and configuration, inherently reactive approaches for handling network failures, relatively poor support for mobility, and so forth. In addition, despite the potential benefits offered by a larger address space, transition from IPv4 to IPv6 has been difficult and slow; among a variety of other factors, the tight coupling of addressing, routing and other network layer functions clearly make such transition not an easy task. While Ethernet is largely plug-&-play, as it was originally developed for small, local area networks, this traditional layer-2 technology can hardly meet the scale as well as the demanding efficiency and robustness requirements imposed on today’s large, dynamic networks.
+
+== Goal ==
+VIRO has following two broad goals: 
+# Support – with minimal manual configuration – for (future) large, dynamic networks which connect tens or hundreds of thousands of diverse devices with rich physical topologies;
+# Meet the high availability, robustness, mobility, manageability and security requirements for large-scale networks (such as: data-centers, enterprise networks, metro ethernets etc.)
+
+== Key Ideas ==
+# VIRO provides a more scalable, and yet efficient routing architecture by deploying "DHT-style" routing.
+# It provides Location/Identity split, by inserting a naming layer, solely used for performing the routing between "VIRO-switches". End-device then dynamically mapped to this "Virtual ID" space to exchange the data with each other. Further it provides a freedom from the "identifiers" that can be used to access the network services and data.  Therefore, we can use any namespace such as MAC addresses, DNS names, or URL etc to exchange between hosts. 
+# It provides much better support for mobility by separating Location and Identity.
+# In addition, DHT-style substrate used in VIRO, provides a natural way to support Multi-path Routing, Load-balancing and Fast-Failure Rerouting.
+
+== People ==
+* [Zhi-Li Zhang| http://www.cs.umn.edu/~zhzhang]
+* [Sourabh Jain| http://www.cs.umn.edu/~sourj]
+* Gowri CP
+
+== Publication ==
+* '''VEIL: A ''Plug-&-Play'' Virtual (Ethernet) Id Layer for Below IP Networking''' [http://www-users.cs.umn.edu/~zhzhang/Papers/veil-final-BIPN.pdf pdf]
+[[Sourabh Jain]], Yingying Chen, Zhi-Li Zhang
+Conference Paper: Published at First IEEE Workshop on Below IP Networking in conjunction with '''GLOBECOM''' 2009  
+* '''Virtual Id Routing: A scalable routing framework with support for mobility and routing efficiency''' [http://portal.acm.org/citation.cfm?id=1403007.1403025 Link] to paper on ACM Portal. 
+Guor-Huor Lu, [[Sourabh Jain]], Shanzhen Chen, Zhi-Li Zhang
+Published in “Third International Workshop on Mobility in the Evolving Internet Architecture, '''MobiArch''''08” co-located with '''SIGCOMM''' 2008. Paper (ACM Portal)
+
+== Development ==
+=== Implementation ===
+This is our on-going implementation of VEIL using Click Modular Router. 
+[http://code.google.com/p/veil-viro-umn code repository]
+
+=== Simulation/Emulation ===
+* '''VIROJAVA:''' A JAVA based simulation of VIRO, it includes the most feature rich simulation of VIRO. We simulate various scenarios including Multipath-Routing, Fast Failure Rerouting, Multiple Rendezvous Point. It also contains the scripts to perform the VID assignments using both centralized-graph-partitioning based approach, and also distributed-clustering based approach. [http://networking.cs.umn.edu/veil-viro/virojava_source_code_slimmed_Version_April_15.zip download]
+* '''EmuVEIL:''' A Python based "emulation" of VEIL architecture. Contains two parts i) Host-registration, Look-up, ii) VIRO routing protocol. [http://networking.cs.umn.edu/veil-viro/veil-emulation.zip download]
