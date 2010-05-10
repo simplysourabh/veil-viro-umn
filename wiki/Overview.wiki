@@ -18,9 +18,5 @@ VIRO has following two broad goals:
   * Gowri CP
 
 == Publication ==
-  * '''VEIL: A ''Plug-&-Play'' Virtual (Ethernet) Id Layer for Below IP Networking''' [http://www.users.cs.umn.edu/~zhzhang/Papers/veil-final-BIPN.pdf pdf]
-Sourabh Jain, Yingying Chen, Zhi-Li Zhang
-Conference Paper: Published at First IEEE Workshop on Below IP Networking in conjunction with '''GLOBECOM''' 2009  
-  * '''Virtual Id Routing: A scalable routing framework with support for mobility and routing efficiency''' [http://portal.acm.org/citation.cfm?id=1403007.1403025 Link] to paper on ACM Portal. 
-Guor-Huor Lu, Sourabh Jain, Shanzhen Chen, Zhi-Li Zhang
-Published in “Third International Workshop on Mobility in the Evolving Internet Architecture, '''MobiArch''''08” co-located with _SIGCOMM_ 2008. Paper (ACM Portal)
+  * _VEIL: A ''Plug-&-Play'' Virtual (Ethernet) Id Layer for Below IP Networking_ [http://www.users.cs.umn.edu/~zhzhang/Papers/veil-final-BIPN.pdf pdf] Sourabh Jain, Yingying Chen, Zhi-Li Zhang; Conference Paper: Published at First IEEE Workshop on Below IP Networking in conjunction with '_GLOBECOM_ 2009  
+  * _Virtual Id Routing: A scalable routing framework with support for mobility and routing efficiency_ [http://portal.acm.org/citation.cfm?id=1403007.1403025 Link] to paper on ACM Portal.  Guor-Huor Lu, Sourabh Jain, Shanzhen Chen, Zhi-Li Zhang; Published in Third International Workshop on Mobility in the Evolving Internet Architecture, _MobiArch'08_ co-located with _SIGCOMM_ 2008. Paper (ACM Portal)
