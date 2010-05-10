@@ -148,7 +148,7 @@ VEILProcessRDV::smaction(Packet* p){
 			if (dist_to_gateway > 16){
 				veil_chatter(printDebugMessages, "[-->ProcessRDV<--][RDV Reply][Gateway] MyVID: |%s| GWVID: |%s| BucketLevel: %d \n", dvid.switchVIDString().c_str(),gateway.switchVIDString().c_str(), k);
 				//find nexthop to reach gateway
-				if(routes->getRoute(&gateway, dist_to_gateway, dvid, &nh, &g, true))
+				if(routes->getRoute(&gateway, dvid, &nh, &g, true))
 				{
 					// is it the default route entry? (i.e. j == o
 					if (j == 0)

@@ -53,7 +53,7 @@ class VEILRouteTable : public Element {
 
 		int configure(Vector<String>&, ErrorHandler*);
 		void updateEntry(VID *i, uint8_t b, VID *nh, VID *g, bool isDefault=true);
-		bool getRoute(VID*, uint8_t, VID, VID*, VID*, bool isDefault=true);
+		bool getRoute(VID*, VID, VID*, VID*, bool isDefault=true);
 		bool  getBucket(uint8_t, VID*, VID*);
 		static void expire(Timer*, void*);
 		static String read_handler(Element*, void*);

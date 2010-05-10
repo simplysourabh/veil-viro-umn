@@ -82,14 +82,20 @@ CLICK_DECLS
 // ENCAP_REDIRECTION: A data packet which has been "redirected" by the "old-host-switch".
 #define VEIL_ENCAP_REDIRECTION	0x0603
 
-#define IP_FORWARDING_TYPE			1 // can be 0 or 1 or 2
+// TYPE for the MULTIPATH enabled packet forwarding:
+#define VEIL_ENCAP_MULTIPATH_IP	0x0801
+
+#define IP_FORWARDING_TYPE							2 // can be 0 or 1 or 2
 // set it to 1 if we want to enable the ENACAPSULATION of
-// IP packets as IP packets. else set it to 0:
+// IP packets as IP packets.
+#define IP_FORWARDING_TYPE_ENCAP 					1
+// else set it to 0:
 // When set as 0, We simply overwrite the MAC addresses on the
 // Ethernet header, and it won't allow VEIL_SWITCHES to be interconnected using ETHERNET SWITCHES.
 // i.e. VEIL_SWITCHES must be WIRED directly to each other.
+#define IP_FORWARDING_TYPE_ADD_OVERWRITE 			0
 // if it is set to 2: then "MULTIPATH ROUTING" is enabled for the IP packets.
-
+#define IP_FORWARDING_TYPE_MULTIPATH				2
 // REMOVE THIS LATER START
 struct veil_header {
 	uint16_t packetType;
@@ -170,6 +176,13 @@ struct veil_payload_map_update{
 	EtherAddress mac;
 	VID vid;
 };
+
+// Type: VEIL_ENCAP_MULTIPATH_IP
+// |Fianl VID 6 bytes|
+struct veil_payload_multipath{
+	VID final_dvid;
+};
+
 
 // List of functions that we might be interested in:
 

@@ -39,7 +39,8 @@ VEILRoutePacket::smaction(Packet* p){
 	}
 	int myport = PORT_ANNO(p);
 	VID myVid;
-	interfaces->lookupIntEntry(myport, &myVid);		
+	interfaces->lookupIntEntry(myport, &myVid);
+	veil_chatter(printDebugMessages,"[-x- RoutePacket] ME %s \n",myVid.switchVIDString().c_str() );
 	click_ether *eth = (click_ether *) p->data();
 	bool dstvidChanged = false;
 	uint8_t k;
@@ -57,7 +58,37 @@ VEILRoutePacket::smaction(Packet* p){
 
 		uint16_t veil_type = ntohs(vheader->veil_type);
 		VID nextvid;
-		int port = getPort(dstvid, p,k, nextvid);
+		int port;
+
+		if (veil_type == VEIL_ENCAP_MULTIPATH_IP){
+			port = getPort(dstvid, p,k, nextvid);
+
+			VID finalvid;
+			veil_payload_multipath *veil_payload = (veil_payload_multipath *)(vheader+1);
+			memcpy(&finalvid, &veil_payload->final_dvid, 6);
+
+			// Can I change the destination VID?
+			// 1. vheader->dvid == veil_payload->final_dvid and final destination is not one of my interfaces, I can change the intermediate destination.
+			if (finalvid == dstvid && port < numinterfaces && port >= 0 ){
+				VID newgw;
+				// Now choose an alternate gateway
+				if(routes->getRoute(&dstvid,myVid, &nextvid, &newgw,false)){
+					veil_chatter(printDebugMessages,"[-x- RoutePacket][VEIL_ENCAP_MULTIPATH_IP] New GW: %s to Destination %s at Bucket %d of ME %s \n",newgw.switchVIDString().c_str(), finalvid.switchVIDString().c_str(), k ,myVid.switchVIDString().c_str() );
+					memcpy(&vheader->dvid, &newgw, 6);
+					memcpy(&dstvid, &newgw, 6);
+				}
+			}
+
+			// if dstvid == myvid then make the dstvid = finalvid
+			if (port == numinterfaces){
+				memcpy(&vheader->dvid, &veil_payload->final_dvid, 6);
+				memcpy(&dstvid, &veil_payload->final_dvid, 6);
+			}
+
+		}
+
+
+		port = getPort(dstvid, p,k, nextvid);
 
 		while(('r' == REROUTE_ANNO(p) || veil_type  == VEIL_RDV_QUERY || veil_type  == VEIL_RDV_PUBLISH || veil_type == VEIL_MAP_PUBLISH) && port < 0){
 			dstvid.flip_bit(k);
@@ -171,7 +202,7 @@ VEILRoutePacket::getPort(VID dstvid, Packet *p, uint8_t & k, VID &nexthop){
 	
 	// otherwise lookup route table for kth bucket
 	VID gateway;
-	while(routes->getRoute(&dstvid, k, myVid, &nexthop, &gateway))
+	while(routes->getRoute(&dstvid,myVid, &nexthop, &gateway))
 	{
 		int temp;
 		// see if the nexthop is one of the physical neighbor?

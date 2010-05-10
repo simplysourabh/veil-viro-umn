@@ -137,11 +137,12 @@ VEILRouteTable::updateEntry (
 // return the gateway:g and nexthop:nh for bucket:b
 // returns the default entry if isDefault = true else returns anyone of the entries at random
 bool
-VEILRouteTable::getRoute(VID* dst, uint8_t b, VID i, VID *nh, VID *g,bool isDefault)
+VEILRouteTable::getRoute(VID* dst, VID myinterface, VID *nh, VID *g,bool isDefault)
 {
 	bool found = false;
 	uint8_t j = 0;
-	InnerRouteTable *rt = routes.get_pointer(i);
+	uint8_t b = myinterface.logical_distance(dst);
+	InnerRouteTable *rt = routes.get_pointer(myinterface);
 	Bucket *buck = rt->get_pointer(b);
 	if (buck != NULL){
 		if (isDefault){
