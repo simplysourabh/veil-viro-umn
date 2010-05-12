@@ -12,30 +12,31 @@ cd ~/veil-viro-umn
 #cp confparse.hh /opt/ns-allinone-2.29/click/include/click/confparse.hh 
 
 # copy veil directory to click/elements/
-#cp -r veil /opt/ns-allinone-2.29/click/elements/ 
+cp -r veil /opt/ns-allinone-2.29/click/elements/ 
 
 # now copy the configure.ac and Makefile.in files too.
 #cp configure.ac /opt/ns-allinone-2.29/click/elements/veil/
 #cp Makefile.in /opt/ns-allinone-2.29/click/elements/veil/
+
 cd /opt/ns-allinone-2.29/click/elements/veil
 #sudo ./configure
 #sudo make elemlist
 #sudo make 
-sudo make install 
+#sudo make install 
 
 # now go the click root directory run configure, make, make install
 cd /opt/ns-allinone-2.29/click/
 #sudo ./configure  --enable-analysis --enable-test --enable-userlevel --enable-adaptive --enable-etherswitch --enable-local --enable-radio --enable-simple --enable-wifi --enable-experimental --enable-stats
-#sudo make elemlist
-#sudo make 
+sudo make elemlist
+sudo make 
 sudo make install
 
 # go to veil directory and run configure, make and make install
 cd elements/veil
 #sudo ./configure
-#sudo make elemlist
-#sudo make 
-#sudo make install 
+sudo make elemlist
+sudo make 
+sudo make install 
 
 cd ~/veil-viro-umn 
 #
