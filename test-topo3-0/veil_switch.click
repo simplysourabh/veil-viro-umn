@@ -21,9 +21,9 @@ in1::FromDevice(eth5);
 in2::FromDevice(eth2);
 in3::FromDevice(eth3);
 
-q1::Queue->DelayShaper(.01)->out1;
-q2::Queue->DelayShaper(.01)->out2;
-q3::Queue->DelayShaper(.01)->out3;
+q1::Queue->out1;
+q2::Queue->BandwidthShaper(100KBps)->out2;
+q3::Queue->BandwidthShaper(100KBps)->out3;
 
 //q1::Queue
 //q2::Queue;
@@ -86,7 +86,7 @@ paci::VEILProcessAccessInfo(mapping, interfaces,PRINTDEBUG false) -> router;
 c[5] -> paci;
 c[6] -> paci; 
 
-pip::VEILProcessIP(hosts, mapping, interfaces, PRINTDEBUG false)-> router;
+pip::VEILProcessIP(hosts, mapping, interfaces,FORWARDING_TYPE 2, PRINTDEBUG false)-> router;
 
 c[7]  -> pip;
 c[8]  -> pip;
