@@ -17,12 +17,33 @@ VEILProcessIP::configure (
 		ErrorHandler *errh)
 {
 	printDebugMessages = true;
-	return cp_va_kparse(conf, this, errh,
+	forwarding_type = IP_FORWARDING_TYPE; //click_veil.hh for the documentation
+	int retval =  cp_va_kparse(conf, this, errh,
 			"HOSTTABLE", cpkM+cpkP, cpElementCast, "VEILHostTable", &hosts,
 			"MAPPINGTABLE", cpkM+cpkP, cpElementCast, "VEILMappingTable", &map,
 			"INTERFACETABLE", cpkM+cpkP, cpElementCast, "VEILInterfaceTable", &interfaces,
+			"FORWARDING_TYPE",cpkP, cpByte, &forwarding_type,
 			"PRINTDEBUG", 0, cpBool, &printDebugMessages,
 			cpEnd);
+	switch(forwarding_type){
+		case IP_FORWARDING_TYPE_ADD_OVERWRITE:
+			click_chatter("[ProcessIP]Forwarding Type: Default Address overwriting on Ethernet headers\n");
+			break;
+		case IP_FORWARDING_TYPE_ENCAP:
+			click_chatter("[ProcessIP]Forwarding Type: Insert the VEIL SHIM header\n");
+			break;
+		case IP_FORWARDING_TYPE_MULTIPATH:
+			click_chatter("[ProcessIP]Forwarding Type: Multipath Routing + VEIL SHIM header\n");
+			break;
+		default:
+			click_chatter("[ProcessIP]Forwarding Type: Unknown! Use one of the following values [0: IP_FORWARDING_TYPE_ADD_OVERWRITE,1: IP_FORWARDING_TYPE_ENCAP or 2: IP_FORWARDING_TYPE_MULTIPATH]\n");
+			forwarding_type = IP_FORWARDING_TYPE_ENCAP;
+			click_chatter("[ProcessIP]Using Forwarding Type: Insert the VEIL SHIM header\n");
+			break;
+	}
+
+	return retval;
+
 }
 
 Packet* 
@@ -78,7 +99,7 @@ VEILProcessIP::smaction(Packet* p)
 
 
 		// For every other packet we can simply overwrite the "source mac address" by the corresponding VID.
-		else if (IP_FORWARDING_TYPE == IP_FORWARDING_TYPE_ADD_OVERWRITE){
+		else if (forwarding_type == IP_FORWARDING_TYPE_ADD_OVERWRITE){
 			// do two things:
 			// 1. Overwrite eth->ether_type by the ETHERTYPE_VEIL_IP
 			// 2. overwrite "source mac" eth-> ether_shost by source vid.
@@ -87,16 +108,13 @@ VEILProcessIP::smaction(Packet* p)
 			memcpy(eth->ether_shost, &svid, VID_LEN); 
 			veil_chatter(printDebugMessages,"[... ProcessIP ][EtherTYPE_IP][Encapsulation to VEIL_IP type] From (IP: %s, Mac: %s) to (IP: %s, VID: %s), After add rewriting: From (IP: %s, VID: %s)\n", srcip.s().c_str(), smac.s().c_str(), dstip.s().c_str(),dvid.vid_string().c_str() , srcip.s().c_str(), svid.vid_string().c_str());
 			return p;
-		} else if (IP_FORWARDING_TYPE == IP_FORWARDING_TYPE_ENCAP){
-			int packet_length = p->length() + sizeof(veil_sub_header);
-			int ip_payload = p->length() - sizeof(click_ether);
-			WritablePacket * q = Packet::make(packet_length);
+		} else if (forwarding_type == IP_FORWARDING_TYPE_ENCAP){
+			WritablePacket *q = p->push(sizeof(veil_sub_header));
 
 			// set the ether header
 			click_ether* q_eth = (click_ether*)(q->data());
-			memcpy(q_eth, eth, sizeof(click_ether));
-			// memcpy(q_eth->dhost, .. , 6);
-			memcpy(q_eth->ether_shost,&svid , 6);
+			memcpy(q_eth->ether_dhost,&dvid, 6);
+			memcpy(q_eth->ether_shost,&svid, 6);
 			q_eth->ether_type = htons(ETHERTYPE_VEIL);
 
 			//insert the veil_sub_header
@@ -106,19 +124,47 @@ VEILProcessIP::smaction(Packet* p)
 			q_vheader->veil_type = htons(VEIL_ENCAP_IP);
 			q_vheader->ttl = MAX_TTL;
 
-			memcpy( (q_vheader+1), (eth+1),ip_payload);
-			p->kill();
+			SET_PORT_ANNO(q, myport);
 			return q;
-		}else if(IP_FORWARDING_TYPE == IP_FORWARDING_TYPE_MULTIPATH){
-			int packet_length = p->length() + sizeof(veil_sub_header) + sizeof(veil_payload_multipath);
-			int ip_payload = p->length() - sizeof(click_ether);
-			WritablePacket * q = Packet::make(packet_length);
+		}else if(forwarding_type == IP_FORWARDING_TYPE_MULTIPATH){
 
+			/*
+			 * Create a new packet and copy the contents on to it.
+			 * It was less efficient therefore trying to reuse the same old packet P
+				int packet_length = p->length() + sizeof(veil_sub_header) + sizeof(veil_payload_multipath);
+				int ip_payload = p->length() - sizeof(click_ether);
+				WritablePacket * q = Packet::make(packet_length);
+
+				// set the ether header
+				click_ether* q_eth = (click_ether*)(q->data());
+				memcpy(q_eth, eth, sizeof(click_ether));
+				// memcpy(q_eth->dhost, .. , 6);
+				memcpy(q_eth->ether_shost,&svid , 6);
+				q_eth->ether_type = htons(ETHERTYPE_VEIL);
+
+				//insert the veil_sub_header
+				veil_sub_header *q_vheader = (veil_sub_header*) (q_eth + 1);
+				memcpy(&q_vheader->dvid, &dvid, 6);
+				memcpy(&q_vheader->svid, &svid, 6);
+				q_vheader->veil_type = htons(VEIL_ENCAP_MULTIPATH_IP);
+				q_vheader->ttl = MAX_TTL;
+
+				//insert the veil_multipath_payload
+				veil_payload_multipath *q_veil_payload = (veil_payload_multipath*) (q_vheader + 1);
+				memcpy(&q_veil_payload->final_dvid, &dvid, 6);
+
+				memcpy( (q_veil_payload+1), (eth+1),ip_payload);
+				SET_PORT_ANNO(q, myport);
+				p->kill();
+				return q;
+			 */
+			//veil_chatter(true,"Packet Length Before PUSH: %d Headroom: %d \n", p->length(), p->headroom());
+			WritablePacket *q = p->push(sizeof(veil_sub_header) + sizeof(veil_payload_multipath));
+			//veil_chatter(true,"Packet Length after PUSH: %d Headroom: %d \n", p->length(), p->headroom());
 			// set the ether header
 			click_ether* q_eth = (click_ether*)(q->data());
-			memcpy(q_eth, eth, sizeof(click_ether));
-			// memcpy(q_eth->dhost, .. , 6);
-			memcpy(q_eth->ether_shost,&svid , 6);
+			memcpy(q_eth->ether_dhost,&dvid, 6);
+			memcpy(q_eth->ether_shost,&svid, 6);
 			q_eth->ether_type = htons(ETHERTYPE_VEIL);
 
 			//insert the veil_sub_header
@@ -132,10 +178,10 @@ VEILProcessIP::smaction(Packet* p)
 			veil_payload_multipath *q_veil_payload = (veil_payload_multipath*) (q_vheader + 1);
 			memcpy(&q_veil_payload->final_dvid, &dvid, 6);
 
-			memcpy( (q_veil_payload+1), (eth+1),ip_payload);
 			SET_PORT_ANNO(q, myport);
-			p->kill();
 			return q;
+
+
 		}
 
 		p->kill();
@@ -194,27 +240,45 @@ VEILProcessIP::smaction(Packet* p)
 				// return the modified packet p
 				memcpy(&dvid, &vheader->dvid, 6);
 				if (hosts->lookupVID(&dvid, &dmac)){
-					int ip_payload_size = p->length() - sizeof(veil_sub_header) - sizeof(click_ether);
-					int packetlen = p->length() - sizeof(veil_sub_header);
-					// create a new packet with the length = click_ether + ip payload
-					WritablePacket *q = Packet::make(packetlen);
-					veil_chatter (printDebugMessages, "Process IP : Packet Length1: %d \n", q->length());
-					memset(q->data(), 0, q->length());
-					veil_chatter (printDebugMessages, "Process IP : Packet Length2: %d \n", q->length());
+					/*
+						//int ip_payload_size = p->length() - sizeof(veil_sub_header) - sizeof(click_ether);
+						int packetlen = p->length() - sizeof(veil_sub_header);
+						// create a new packet with the length = click_ether + ip payload
+						WritablePacket *q = Packet::make(packetlen);
+						veil_chatter (printDebugMessages, "Process IP : Packet Length1: %d \n", q->length());
+						memset(q->data(), 0, q->length());
+						veil_chatter (printDebugMessages, "Process IP : Packet Length2: %d \n", q->length());
 
+						// copy the ether_header
+						memcpy(q->data(), p->data(), sizeof(click_ether));
+						// now set up the Ether Header
+						click_ether *q_eth = (click_ether *)q->data();
+						q_eth->ether_type = htons(ETHERTYPE_IP);
+						memcpy(q_eth->ether_dhost, &dmac, VID_LEN);
+						memcpy(q_eth->ether_shost, &vheader->svid,6);
+
+						// copy the ip payload
+						click_ip *q_ip = (click_ip *)(q_eth+1);
+						memcpy(q_ip, i,ntohs(i->ip_len));
+						veil_chatter(printDebugMessages,"[... ProcessIP ][VEIL to EtherTYPE_IP][After decapsulation]From (IP: %s) to (IP: %s)\n", srcip.s().c_str(), dstip.s().c_str());
+						p->kill();return q;
+					 */
+
+					VID svid; memcpy(&svid, &vheader->svid,6);
+					//veil_chatter(true,"Packet Length Before PULL: %d \n", p->length());
+					// remove the shim header
+					p->pull( (sizeof(veil_sub_header)) );
+					//veil_chatter(true,"Packet Length after PULL: %d \n", p->length());
 					// copy the ether_header
-					memcpy(q->data(), p->data(), sizeof(click_ether));
 					// now set up the Ether Header
-					click_ether *q_eth = (click_ether *)q->data();
+					click_ether *q_eth = (click_ether *)p->data();
 					q_eth->ether_type = htons(ETHERTYPE_IP);
 					memcpy(q_eth->ether_dhost, &dmac, VID_LEN);
-					memcpy(q_eth->ether_shost, &vheader->svid,6);
+					memcpy(q_eth->ether_shost, &svid,6);
 
-					// copy the ip payload
-					click_ip *q_ip = (click_ip *)(q_eth+1);
-					memcpy(q_ip, i,ntohs(i->ip_len));
 					veil_chatter(printDebugMessages,"[... ProcessIP ][VEIL to EtherTYPE_IP][After decapsulation]From (IP: %s) to (IP: %s)\n", srcip.s().c_str(), dstip.s().c_str());
-					p->kill();return q;
+					return p;
+
 				}else{
 					// see if packet belongs to one of my interfaces or not:
 					VID intvid;
@@ -239,26 +303,47 @@ VEILProcessIP::smaction(Packet* p)
 				IPAddress dstip = IPAddress(i->ip_dst);
 				memcpy(&dvid, &veil_payload->final_dvid, 6);
 				if (hosts->lookupVID(&dvid, &dmac)){
-					int ip_payload_size = p->length() - sizeof(veil_sub_header) - sizeof(click_ether) - sizeof(veil_payload_multipath);
-					int packetlen = p->length() - sizeof(veil_sub_header)- sizeof(veil_payload_multipath);
 
-					// create a new packet with the length = click_ether + ip payload
-					WritablePacket *q = Packet::make(packetlen);
-					memset(q->data(), 0, q->length());
+					/*
+					 * Create a new packet and copy the contents on to it.
+					 * It was less efficient therefore trying to reuse the same old packet P
+						int ip_payload_size = p->length() - sizeof(veil_sub_header) - sizeof(click_ether) - sizeof(veil_payload_multipath);
+						int packetlen = p->length() - sizeof(veil_sub_header)- sizeof(veil_payload_multipath);
 
+						// create a new packet with the length = click_ether + ip payload
+						WritablePacket *q = Packet::make(packetlen);
+						memset(q->data(), 0, q->length());
+
+						// copy the ether_header
+						memcpy(q->data(), p->data(), sizeof(click_ether));
+						// now set up the Ether Header
+						click_ether *q_eth = (click_ether *)q->data();
+						q_eth->ether_type = htons(ETHERTYPE_IP);
+						memcpy(q_eth->ether_dhost, &dmac, VID_LEN);
+						memcpy(q_eth->ether_shost, &vheader->svid,6);
+
+						// copy the ip payload
+						click_ip *q_ip = (click_ip *)(q_eth+1);
+						memcpy(q_ip, i,ntohs(i->ip_len));
+						veil_chatter(printDebugMessages,"[... ProcessIP ][VEIL to EtherTYPE_IP][After decapsulation]From (IP: %s) to (IP: %s)\n", srcip.s().c_str(), dstip.s().c_str());
+						p->kill();return q;
+					 */
+
+					VID svid; memcpy(&svid, &vheader->svid,6);
+					//veil_chatter(true,"Packet Length Before PULL: %d \n", p->length());
+					// remove the shim header
+					p->pull( (sizeof(veil_sub_header)+sizeof(veil_payload_multipath)) );
+					//veil_chatter(true,"Packet Length after PULL: %d \n", p->length());
 					// copy the ether_header
-					memcpy(q->data(), p->data(), sizeof(click_ether));
 					// now set up the Ether Header
-					click_ether *q_eth = (click_ether *)q->data();
+					click_ether *q_eth = (click_ether *)p->data();
 					q_eth->ether_type = htons(ETHERTYPE_IP);
 					memcpy(q_eth->ether_dhost, &dmac, VID_LEN);
-					memcpy(q_eth->ether_shost, &vheader->svid,6);
+					memcpy(q_eth->ether_shost, &svid,6);
 
-					// copy the ip payload
-					click_ip *q_ip = (click_ip *)(q_eth+1);
-					memcpy(q_ip, i,ntohs(i->ip_len));
 					veil_chatter(printDebugMessages,"[... ProcessIP ][VEIL to EtherTYPE_IP][After decapsulation]From (IP: %s) to (IP: %s)\n", srcip.s().c_str(), dstip.s().c_str());
-					p->kill();return q;
+					return p;
+
 				}else{
 					// see if packet belongs to one of my interfaces or not:
 					VID intvid;

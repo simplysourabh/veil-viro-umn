@@ -31,6 +31,7 @@ class VEILProcessIP : public Element {
 		VEILMappingTable *map;
 		VEILHostTable *hosts;
 		bool printDebugMessages ;
+		uint8_t forwarding_type;
 };
 
 CLICK_ENDDECLS

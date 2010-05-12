@@ -85,7 +85,9 @@ CLICK_DECLS
 // TYPE for the MULTIPATH enabled packet forwarding:
 #define VEIL_ENCAP_MULTIPATH_IP	0x0801
 
-#define IP_FORWARDING_TYPE							2 // can be 0 or 1 or 2
+//Different forwarding options for the IP packets, however it can
+// be over-ridden at command line when VEILProcessIP is instantiated.
+#define IP_FORWARDING_TYPE							1 // can be 0 or 1 or 2
 // set it to 1 if we want to enable the ENACAPSULATION of
 // IP packets as IP packets.
 #define IP_FORWARDING_TYPE_ENCAP 					1
@@ -97,6 +99,7 @@ CLICK_DECLS
 // if it is set to 2: then "MULTIPATH ROUTING" is enabled for the IP packets.
 #define IP_FORWARDING_TYPE_MULTIPATH				2
 // REMOVE THIS LATER START
+
 struct veil_header {
 	uint16_t packetType;
 };
