@@ -28,6 +28,7 @@ CLICK_DECLS
 
 // Intervals are in ms
 #define VEIL_HELLO_INTERVAL		10000
+#define VEIL_PHELLO_INTERVAL	10000
 #define VEIL_PUBLISH_INTERVAL	10000
 #define VEIL_RDV_INTERVAL		10000
 /* value greater than hello/publish interval so entries don't expire just    
@@ -59,7 +60,7 @@ CLICK_DECLS
 // Source and destination fields correspond to "Unique ID" for each interface
 // (just like MAC address), the uniqueness is with in the "veil network".
 #define VEIL_HELLO				0x0000
-
+#define VEIL_PHELLO				0x0001
 
 // RENDEZVOUS PACKETS: PUBLISH, QUERY, REPLY
 #define VEIL_RDV_REPLY			0x0402

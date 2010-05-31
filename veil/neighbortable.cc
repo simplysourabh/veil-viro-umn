@@ -31,7 +31,7 @@ VEILNeighborTable::cp_neighbor(String s, ErrorHandler* errh){
 int
 VEILNeighborTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-click_chatter("[::NeighborTable::][FixME] Its mandagory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
+click_chatter("[::NeighborTable::][FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
 	int res = 0;
 	int i = 0;
 	for (i = 0; i < conf.size()-1; i++) {
