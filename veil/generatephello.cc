@@ -58,7 +58,7 @@ VEILGeneratePHello::run_timer (
 	//TODO: we don't have a shim header to identify VEIL pkts hence this temporary solution. find a better alternative. Instead of type, could we do with just first testing type and if invalid, looking for the right VEIL type in the 2B just after eth header?
 	e->ether_type = htons(ETHERTYPE_VEIL);
 
-	setSrcVID(packet, myVid);
+	setSrcVID(packet, myuid);
 	setVEILType(packet, VEIL_PHELLO);
 	output(0).push(packet);
 	myTimer.schedule_after_msec(VEIL_PHELLO_INTERVAL);

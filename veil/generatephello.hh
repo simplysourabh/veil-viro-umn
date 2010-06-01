@@ -23,7 +23,7 @@ class VEILGeneratePHello : public Element {
 
 	private:
 		Timer myTimer;
-		EtherAddress myuid; // Used to assign a unique id later on. currently same as the myvid.
+		VID myuid; // IT IS ACTUALLY MAC ADDRESS Used to assign a unique id later on. currently same as the myvid.
 		bool printDebugMessages ;
 
 };

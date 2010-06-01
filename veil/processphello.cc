@@ -3,19 +3,19 @@
 #include <click/error.hh>
 #include <clicknet/ip.h>
 #include "click_veil.hh"
-#include "processhello.hh"
+#include "processphello.hh"
 
 //we will only get hello packets if we were someone's neighbor
 //don't foresee any reason why packets should not be destroyed here
 
 CLICK_DECLS
 
-VEILProcessHello::VEILProcessHello () {}
+VEILProcessPHello::VEILProcessPHello () {}
 
-VEILProcessHello::~VEILProcessHello () {}
+VEILProcessPHello::~VEILProcessPHello () {}
 
 int
-VEILProcessHello::configure (
+VEILProcessPHello::configure (
 	Vector<String> &conf,
 	ErrorHandler *errh)
 {
@@ -25,10 +25,13 @@ VEILProcessHello::configure (
 		"INTERFACETABLE", cpkM+cpkP, cpElementCast, "VEILInterfaceTable", &interfaces,
 		"PRINTDEBUG", 0, cpBool, &printDebugMessages,
 		cpEnd);
+
+	neighbor_table->enableUpdatedTopologyWriting("mylocal-topo", true);
+	// this allows to write the topology whenever there is a change
 }
 
 Packet* 
-VEILProcessHello::simple_action(Packet* p)
+VEILProcessPHello::simple_action(Packet* p)
 {
 	assert(p);
 
@@ -39,9 +42,7 @@ VEILProcessHello::simple_action(Packet* p)
 	click_ether *e = (click_ether*) p->data();
 
 	VID nVid = getSrcVID(p);
-	neighbor_table->updateEntry(&nVid, &myVid);
-
-	// write the updated local neighbor list.
+	bool isNew = neighbor_table->updateEntry(&nVid, &myVid);
 
 	p->kill();
 	return NULL;	
@@ -50,5 +51,5 @@ VEILProcessHello::simple_action(Packet* p)
 
 CLICK_ENDDECLS
 
-EXPORT_ELEMENT(VEILProcessHello)
+EXPORT_ELEMENT(VEILProcessPHello)
 

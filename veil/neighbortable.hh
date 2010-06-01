@@ -23,6 +23,7 @@ class VEILNeighborTable : public Element {
 
 		struct TimerData {
 			NeighborTable *neighbors;
+			VEILNeighborTable *ntable;
 			VID *vid;
 		};
 
@@ -35,7 +36,7 @@ class VEILNeighborTable : public Element {
 		int cp_neighbor(String, ErrorHandler*);
 
 		int configure(Vector<String>&, ErrorHandler*);	
-		void updateEntry(VID*, VID*);
+		bool updateEntry(VID*, VID*);
 		bool lookupEntry(VID*, VID*);
 
 		inline const NeighborTable* get_neighbortable_handle(){
@@ -45,11 +46,14 @@ class VEILNeighborTable : public Element {
 		static void expire(Timer*, void*);
 		static String read_handler(Element*, void*);
 		void add_handlers();
+		void enableUpdatedTopologyWriting(String Filename, bool writeToFile);
+		bool writeTopo(); // returns on success, and false on failure
 
 	private:		
 		NeighborTable neighbors;
-		bool printDebugMessages ;
-						
+		bool printDebugMessages;
+		bool writeTopoFlag;
+		String topoFile;
 };
 
 CLICK_ENDDECLS

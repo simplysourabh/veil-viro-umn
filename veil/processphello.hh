@@ -21,7 +21,6 @@ class VEILProcessPHello : public Element {
 		int configure(Vector<String>&, ErrorHandler*);
 		Packet* simple_action(Packet*);		
 
-
 	private:
 		VEILNeighborTable *neighbor_table;		
 		VEILInterfaceTable *interfaces;

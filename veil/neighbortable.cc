@@ -31,14 +31,14 @@ VEILNeighborTable::cp_neighbor(String s, ErrorHandler* errh){
 int
 VEILNeighborTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-click_chatter("[::NeighborTable::][FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
+	click_chatter("[::NeighborTable::][FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
 	int res = 0;
 	int i = 0;
 	for (i = 0; i < conf.size()-1; i++) {
 		res = cp_neighbor(conf[i], errh);
 	}
 	veil_chatter(printDebugMessages,"[::NeighborTable::] Configured the neighbor table!\n");
-	
+
 	cp_shift_spacevec(conf[i]);
 	String printflag = cp_shift_spacevec(conf[i]);
 	if(!cp_bool(printflag, &printDebugMessages))
@@ -46,15 +46,19 @@ click_chatter("[::NeighborTable::][FixME] Its mandatory to have 'PRINTDEBUG valu
 	return res;
 }
 
-void
+bool
 VEILNeighborTable::updateEntry (
-	VID *nvid, VID *myvid)
+		VID *nvid, VID *myvid)
 {
+	bool retval = false; // returns false if a new entry is created
+	// else returns true if the entry already existed.
+
 	TimerData *tdata = new TimerData();
 	VID * nvid1 = new VID(nvid->data());
 	tdata->vid = nvid1;
 	tdata->neighbors = &neighbors;
-	
+	tdata->ntable = this;
+
 	NeighborTableEntry entry;
 
 	memcpy(&entry.myVid, myvid->data(), 6);
@@ -69,10 +73,17 @@ VEILNeighborTable::updateEntry (
 		oldEntry->expiry->unschedule();
 		delete(oldEntry->expiry);
 		veil_chatter(printDebugMessages,"[::NeighborTable::] Neighbor VID: |%s| \n",nvid->switchVIDString().c_str());
+		retval = true;
+		if(writeTopoFlag){
+			writeTopo();
+		}
 	}else{
 		veil_chatter(printDebugMessages,"[::NeighborTable::][New neighbor] Neighbor VID: |%s| MyVID: |%s|\n",nvid->switchVIDString().c_str(),myvid->switchVIDString().c_str());
+		retval = false;
 	}
 	neighbors.set(*nvid, entry);
+
+	return retval;
 }
 
 bool
@@ -93,7 +104,7 @@ VEILNeighborTable::lookupEntry(VID* nvid, VID* myvid)
 void
 VEILNeighborTable::expire(Timer *t, void *data) 	
 {
-	
+
 	TimerData *td = (TimerData *) data;
 	VID* nvid = (VID *) td->vid;
 	// Temporary NOT deleting  entries 
@@ -106,8 +117,32 @@ VEILNeighborTable::expire(Timer *t, void *data)
 	td->neighbors->erase(*nvid);
 	//veil_chatter(printDebugMessages,"[AFTER EXPIRE] %d entries in neighbor table", td->neighbors->size());
 	//click_chatter (read_handler(this, NULL).c_str());
+	td->ntable->writeTopo();
 	delete(td); 
 	delete(t);
+}
+
+void
+VEILNeighborTable::enableUpdatedTopologyWriting(String Filename, bool writeToFile){
+	writeTopoFlag = writeToFile;
+	topoFile = Filename;
+}
+bool
+VEILNeighborTable::writeTopo(){
+	if(writeTopoFlag){
+		FILE *topo = fopen(topoFile.c_str(), "w");
+		NeighborTable::iterator iter;
+		fprintf(topo, "MyInterfaceID NeighborInterfaceID\n");
+		for(iter = neighbors.begin(); iter; ++iter){
+			String vid = static_cast<VID>(iter.key()).switchVIDString();
+			NeighborTableEntry nte = iter.value();
+			String myvid = static_cast<VID>(nte.myVid).switchVIDString();
+			fprintf(topo, "%s", (myvid + " " + vid+"\n").c_str());
+		}
+		fclose(topo);
+		return topo == NULL ? false:true;
+	}
+	return false;
 }
 
 String
@@ -120,7 +155,7 @@ VEILNeighborTable::read_handler(Element *e, void *thunk)
 
 	sa << "\n-----------------Neighbor Table START-----------------\n"<<"[::NeighborTable::]" << '\n';
 	sa << "Neighbor VID" << "\t" << "Myinterface VID" << '\t' << "TTL" << '\n';
-	
+
 	for(iter = neighbors.begin(); iter; ++iter){
 		String vid = static_cast<VID>(iter.key()).switchVIDString();		
 		NeighborTableEntry nte = iter.value();
@@ -137,6 +172,8 @@ VEILNeighborTable::add_handlers()
 {
 	add_read_handler("table", read_handler, (void *)0);
 }
+
+
 
 CLICK_ENDDECLS
 
