@@ -63,6 +63,27 @@ VEILInterfaceTable::lookupIntEntry(int i, VID* ivid)
 	return found;
 }
 
+bool
+getMacAddr(int i, EtherAddress* imacadd){
+	bool found = false;
+	if (!(interfaceIndexToEtherAddr.find(i) == interfaceIndexToEtherAddr.end())) {
+		EtherAddress macadd = interfaceIndexToEtherAddr.get(i);
+		memcpy(imacadd, &macadd, 6);
+		found = true;
+	}
+	return found;
+}
+
+bool
+getIntUsingMac(EtherAddress* macadd, int* i){
+	bool found = false;
+	if (!(etheraddToInterfaceIndex.find(*macadd) == etheraddToInterfaceIndex.end())) {
+		*i = etheraddToInterfaceIndex.get(*macadd);
+		found = true;
+	}
+	return found;
+}
+
 
 String
 VEILInterfaceTable::read_handler(Element *e, void *thunk)
@@ -72,14 +93,15 @@ VEILInterfaceTable::read_handler(Element *e, void *thunk)
 	InterfaceTable::iterator iter;
 	InterfaceTable interfaces = it->interfaces;
 	sa << "\n-----------------Interface Table START-----------------\n"<<"[InterfaceTable]" << '\n';
-	sa << "Interface VID" << '\t' << "interface#\n";
+	sa << "Interface VID" << "\tMAC Address" << "\tinterface#\n";
 	for(iter = interfaces.begin(); iter; ++iter){
-		String vid = static_cast<VID>(iter.key()).switchVIDString();		
+		String vid = static_cast<VID>(iter.key()).switchVIDString();
 		int i = iter.value();
-		sa << vid << '\t' << i << '\n';
+		String macadd = (String)(static_cast<EtherAddress>(interfaceIndexToEtherAddr.get(i)));
+		sa << vid << '\t' << macadd <<'\t'<< i << '\n';
 	}
 	sa<< "----------------- Interface Table END -----------------\n\n";
-	return sa.take_string();	  
+	return sa.take_string();
 }
 
 void

@@ -18,6 +18,12 @@ class VEILInterfaceTable : public Element {
 		//other switches. needed to build the routing table
 		typedef HashTable<VID, int> SwitchInterfaceTable;
 		
+		// it keeps the mapping from the MAC address to interface index
+		typedef HashTable<EtherAddress, int> EtherAddrInterfaceTable;
+
+		// it keeps the mapping from the interface index to the MAC addresss
+		typedef HashTable<int, EtherAddress> InterfaceEtherAddr;
+
 		VEILInterfaceTable();
 		~VEILInterfaceTable();
 
@@ -27,6 +33,8 @@ class VEILInterfaceTable : public Element {
 		int configure(Vector<String> &, ErrorHandler*);
 		bool lookupVidEntry(VID*, int*);
 		bool lookupIntEntry(int, VID*);
+		bool getMacAddr(int, EtherAddress*);
+		bool getIntUsingMac(EtherAddress*, int*);
 		int numInterfaces(){
 			return interfaces.size();
 		}
@@ -42,6 +50,8 @@ class VEILInterfaceTable : public Element {
 		InterfaceTable interfaces;
 		ReverseInterfaceTable rinterfaces;
 		SwitchInterfaceTable switch_interfaces;
+		EtherAddrInterfaceTable etheraddToInterfaceIndex;
+		InterfaceEtherAddr interfaceIndexToEtherAddr;
 		bool printDebugMessages ;	
 };
 
