@@ -31,7 +31,6 @@ VEILGeneratePHello::initialize (
 {
 	myTimer.initialize(this);
 	myTimer.schedule_now();
-
 	return(0);
 }
 

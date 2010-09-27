@@ -16,7 +16,8 @@ class VEILInterfaceTable : public Element {
 		typedef HashTable<int, VID> ReverseInterfaceTable;
 		//we need to keep track of which interfaces are connected to 
 		//other switches. needed to build the routing table
-		typedef HashTable<VID, int> SwitchInterfaceTable;
+		//typedef HashTable<VID, int> SwitchInterfaceTable; //SJ: Since I
+		// don't plan to use it as of now, so commenting it temporarily.
 		
 		// it keeps the mapping from the MAC address to interface index
 		typedef HashTable<EtherAddress, int> EtherAddrInterfaceTable;
@@ -38,18 +39,32 @@ class VEILInterfaceTable : public Element {
 		int numInterfaces(){
 			return interfaces.size();
 		}
+		bool isVIDassigned(){
+			return isVIDAssignmentDone;
+		}
 		static String read_handler(Element*, void*);
 		void add_handlers();
 	
 		//void deleteHostInterface(VID*);
-		inline const SwitchInterfaceTable* get_switchinterfacetable_handle(){
+		//SJ: commenting the follwoing for the time being.
+		/*inline const SwitchInterfaceTable* get_switchinterfacetable_handle(){
 			return &switch_interfaces;
+		}*/
+
+		inline const InterfaceTable* get_InterfaceTable_handle(){
+			return &interfaces;
 		}
 
+		inline const EtherAddrInterfaceTable* get_EtherAddrInterfaceTable_handle(){
+			return &etheraddToInterfaceIndex;
+		}
+		bool isVIDAssignmentDone;
 	private:		
 		InterfaceTable interfaces;
 		ReverseInterfaceTable rinterfaces;
-		SwitchInterfaceTable switch_interfaces;
+		//SwitchInterfaceTable switch_interfaces; //SJ: commenting it.
+		EtherAddrInterfaceTable etheraddToInterfaceIndex;
+		InterfaceEtherAddr interfaceIndexToEtherAddr;
 		EtherAddrInterfaceTable etheraddToInterfaceIndex;
 		InterfaceEtherAddr interfaceIndexToEtherAddr;
 		bool printDebugMessages ;	

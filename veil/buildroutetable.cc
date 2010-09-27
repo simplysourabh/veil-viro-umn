@@ -46,8 +46,9 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 	
 	for(iter = nt->begin(); iter; ++iter){
 		VEILNeighborTable::NeighborTableEntry nte = iter.value();
-		VID neighbor = iter.key();
+		EtherAddress macadd = iter.key();
 		VID myInterface = nte.myVid;
+		VID neighbor = nte.neighborVID;
 		uint8_t ldist = neighbor.logical_distance(&myInterface);
 		if (ldist == 0){continue;}
 		
@@ -57,8 +58,8 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 		rdv_publish(myInterface, neighbor,ldist);	
 	}
 
-	const VEILInterfaceTable::InterfaceTable *it = interfaces->get_switchinterfacetable_handle();
-	VEILInterfaceTable::SwitchInterfaceTable::const_iterator iiter, iiter1, iiter2;
+	const VEILInterfaceTable::InterfaceTable *it = interfaces->get_InterfaceTable_handle();
+	VEILInterfaceTable::InterfaceTable::const_iterator iiter, iiter1, iiter2;
 	
 	// First go through the interface list, and see if these interfaces
 	// can be used by other interfaces to forward the packets for ceratain buckets. 

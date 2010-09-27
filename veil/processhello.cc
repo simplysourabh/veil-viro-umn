@@ -33,13 +33,17 @@ VEILProcessHello::simple_action(Packet* p)
 	assert(p);
 
 	int myport = PORT_ANNO(p);
-	VID myVid;
-	interfaces->lookupIntEntry(myport, &myVid);		
+	VID myvid;
+	interfaces->lookupIntEntry(myport, &myvid);
+	EtherAddress mymac;
+	interfaces->getMacAddr(myport, &mymac);
 
 	click_ether *e = (click_ether*) p->data();
+	EtherAddress nmac;
+	memcpy(&nmac, e->ether_shost,6);
 
-	VID nVid = getSrcVID(p);
-	neighbor_table->updateEntry(&nVid, &myVid);
+	VID nvid = getSrcVID(p);
+	neighbor_table->updateEntry(&nmac, &nvid, &mymac, &myvid);
 
 	p->kill();
 	return NULL;	

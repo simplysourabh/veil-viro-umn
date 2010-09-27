@@ -15,16 +15,18 @@ class VEILNeighborTable : public Element {
                 //the interface the neighbor is connected to
 		struct NeighborTableEntry {
 			VID myVid;
-			//String interface;
+			EtherAddress myMac;
+			VID neighborVID;
 			Timer *expiry;
 		};
 
-		typedef HashTable<VID, NeighborTableEntry> NeighborTable;
+		// we keep the mapping from the neighbor mac address to neighbor table entry.
+		typedef HashTable<EtherAddress, NeighborTableEntry> NeighborTable;
 
 		struct TimerData {
 			NeighborTable *neighbors;
 			VEILNeighborTable *ntable;
-			VID *vid;
+			EtherAddress *neighbormac;
 		};
 
 		VEILNeighborTable();
@@ -36,8 +38,9 @@ class VEILNeighborTable : public Element {
 		int cp_neighbor(String, ErrorHandler*);
 
 		int configure(Vector<String>&, ErrorHandler*);	
-		bool updateEntry(VID*, VID*);
-		bool lookupEntry(VID*, VID*);
+		bool updateEntry(EtherAddress *neighrbormac, VID* neighborvid, EtherAddress* mymac, VID* myvid);
+		bool lookupEntry(EtherAddress neighbormac, NeighborTableEntry* entry);
+		bool lookupEntry(VID *nvid, VID* myvid);
 
 		inline const NeighborTable* get_neighbortable_handle(){
 			return &neighbors;
@@ -49,8 +52,9 @@ class VEILNeighborTable : public Element {
 		void enableUpdatedTopologyWriting(String Filename, bool writeToFile);
 		bool writeTopo(); // returns on success, and false on failure
 
+		NeighborTable neighbors; // making it public to allow easy manipulations.
+		// however, in future we'd like to make it a private member.
 	private:		
-		NeighborTable neighbors;
 		bool printDebugMessages;
 		bool writeTopoFlag;
 		String topoFile;

@@ -17,14 +17,25 @@ VEILNeighborTable::~VEILNeighborTable () {}
 int
 VEILNeighborTable::cp_neighbor(String s, ErrorHandler* errh){
 	VID nvid, myvid;
+	EtherAddress nmac, mymac;
 
 	String nvid_str = cp_shift_spacevec(s);
 	if(!cp_vid(nvid_str, &nvid))
 		return errh->error("[::NeighborTable::] neighbor VID is not in expected format");
+
+	String nmac_str = cp_shift_spacevec(s);
+	if(!cp_ethernet_address(nmac_str, &nmac))
+		return errh->error("[::NeighborTable::] neighbor MAC is not in expected format");
+
 	String myvid_str = cp_shift_spacevec(s);
 	if(!cp_vid(myvid_str, &myvid))
 		return errh->error("[::NeighborTable::] interface VID is not in expected format");
-	updateEntry(&nvid, &myvid);
+
+	String mymac_str = cp_shift_spacevec(s);
+	if(!cp_ethernet_address(mymac_str, &mymac))
+		return errh->error("[::NeighborTable::] interface MAC is not in expected format");
+
+	updateEntry(&nmac, &nvid, &mymac, &myvid);
 	return 0;
 }
 
@@ -46,75 +57,98 @@ VEILNeighborTable::configure(Vector<String> &conf, ErrorHandler *errh)
 	return res;
 }
 
+
 bool
-VEILNeighborTable::updateEntry (
-		VID *nvid, VID *myvid)
+VEILNeighborTable::updateEntry(EtherAddress *neigh_mac, VID* neighborvid, EtherAddress* mymac, VID* myvid)
 {
 	bool retval = false; // returns false if a new entry is created
 	// else returns true if the entry already existed.
 
 	TimerData *tdata = new TimerData();
-	VID * nvid1 = new VID(nvid->data());
-	tdata->vid = nvid1;
+	EtherAddress * neighbormac = new EtherAddress(*neigh_mac);
+	tdata->neighbormac = neighbormac;
 	tdata->neighbors = &neighbors;
 	tdata->ntable = this;
 
 	NeighborTableEntry entry;
 
 	memcpy(&entry.myVid, myvid->data(), 6);
+	memcpy(&entry.myMac, mymac, 6);
+	memcpy(&entry.neighborVID, neighborvid, 6);
+
 	Timer *expiry = new Timer(&VEILNeighborTable::expire, tdata);
 	expiry->initialize(this);
 	expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
 	entry.expiry  = expiry;
 	// First see if the key is already present?
 	NeighborTableEntry * oldEntry;
-	oldEntry = neighbors.get_pointer(*nvid);
+	oldEntry = neighbors.get_pointer(*neighbormac);
 	if (oldEntry != NULL){
 		oldEntry->expiry->unschedule();
 		delete(oldEntry->expiry);
-		veil_chatter(printDebugMessages,"[::NeighborTable::] Neighbor VID: |%s| \n",nvid->switchVIDString().c_str());
+		veil_chatter(printDebugMessages,"[::NeighborTable::] Neighbor VID: |%s| \n",neighborvid->switchVIDString().c_str());
+		retval = true;
+		if(writeTopoFlag){
+			writeTopo();
+		}
 		retval = true;
 		if(writeTopoFlag){
 			writeTopo();
 		}
 	}else{
-		veil_chatter(printDebugMessages,"[::NeighborTable::][New neighbor] Neighbor VID: |%s| MyVID: |%s|\n",nvid->switchVIDString().c_str(),myvid->switchVIDString().c_str());
+		veil_chatter(printDebugMessages,"[::NeighborTable::][New neighbor] Neighbor VID: |%s| MyVID: |%s|\n",neighborvid->switchVIDString().c_str(),myvid->switchVIDString().c_str());
+		retval = false;
 		retval = false;
 	}
-	neighbors.set(*nvid, entry);
+	neighbors.set(*neighbormac, entry);
+
+	return retval;
 
 	return retval;
 }
 
+
 bool
-VEILNeighborTable::lookupEntry(VID* nvid, VID* myvid)
-{
+VEILNeighborTable::lookupEntry(EtherAddress neighbormac, NeighborTableEntry* entry){
 	bool found = false;
-	if (neighbors.find(*nvid) == neighbors.end()) {
+	if (neighbors.find(neighbormac) == neighbors.end()) {
 		found = false;
 	} else {
-		NeighborTableEntry nte = neighbors.get(*nvid);
-		VID myVid = nte.myVid;
-		memcpy(myvid, &myVid, 6);
+		entry = neighbors.get_pointer(neighbormac);
 		found = true;
 	}
 	return found;
 }
+
+bool
+VEILNeighborTable::lookupEntry(VID *nvid, VID* myvid){
+	bool found = false;
+	NeighborTable::iterator iter;
+	for(iter = neighbors.begin(); iter; ++iter){
+		NeighborTableEntry nte = iter.value();
+		if (nte.neighborVID == *nvid){
+			memcpy(myvid, &nte.myVid, 6);
+			return true;
+		}
+	}
+	return found;
+}
+
 
 void
 VEILNeighborTable::expire(Timer *t, void *data) 	
 {
 
 	TimerData *td = (TimerData *) data;
-	VID* nvid = (VID *) td->vid;
+	EtherAddress* nmac = (EtherAddress *) td->neighbormac;
 	// Temporary NOT deleting  entries 
 	//  Just for debugging
-	veil_chatter(true,"[::NeighborTable::] [Timer Expired] VID: |%s|\n",nvid->switchVIDString().c_str());
+	veil_chatter(true,"[::NeighborTable::] [Timer Expired] MAC: |%s|\n",nmac->s().c_str());
 	//veil_chatter(printDebugMessages,"[BEFORE EXPIRE] %d entries in neighbor table", td->neighbors->size());
-	if (td->neighbors->get_pointer(*nvid) == NULL){
-		veil_chatter(true,"[::NeighborTable::] [ERROR: Entry NOT FOUND] Key: |%s| \n",nvid->switchVIDString().c_str());
+	if (td->neighbors->get_pointer(*nmac) == NULL){
+		veil_chatter(true,"[::NeighborTable::] [ERROR: Entry NOT FOUND] Key: |%s| \n",nmac->s().c_str());
 	}
-	td->neighbors->erase(*nvid);
+	td->neighbors->erase(*nmac);
 	//veil_chatter(printDebugMessages,"[AFTER EXPIRE] %d entries in neighbor table", td->neighbors->size());
 	//click_chatter (read_handler(this, NULL).c_str());
 	td->ntable->writeTopo();
@@ -132,12 +166,15 @@ VEILNeighborTable::writeTopo(){
 	if(writeTopoFlag){
 		FILE *topo = fopen(topoFile.c_str(), "w");
 		NeighborTable::iterator iter;
-		fprintf(topo, "MyInterfaceID NeighborInterfaceID\n");
+		fprintf(topo, "MyInterfaceID MyMac NeighborInterfaceID MyNeighborMac\n");
 		for(iter = neighbors.begin(); iter; ++iter){
-			String vid = static_cast<VID>(iter.key()).switchVIDString();
+			String nmac = static_cast<EtherAddress>(iter.key()).s();
 			NeighborTableEntry nte = iter.value();
+
+			String nvid = static_cast<VID>(nte.neighborVID).switchVIDString();
+			String mymac = static_cast<EtherAddress>(nte.myMac).s();
 			String myvid = static_cast<VID>(nte.myVid).switchVIDString();
-			fprintf(topo, "%s", (myvid + " " + vid+"\n").c_str());
+			fprintf(topo, "%s", (myvid + " " + mymac + " "  + nvid+ " " + nmac+ "\n").c_str());
 		}
 		fclose(topo);
 		return topo == NULL ? false:true;
@@ -154,14 +191,18 @@ VEILNeighborTable::read_handler(Element *e, void *thunk)
 	NeighborTable neighbors = nt->neighbors;
 
 	sa << "\n-----------------Neighbor Table START-----------------\n"<<"[::NeighborTable::]" << '\n';
-	sa << "Neighbor VID" << "\t" << "Myinterface VID" << '\t' << "TTL" << '\n';
+	sa << "Neighbor VID,MAC" << "\t" << "Myinterface VID,MAC" << '\t' << "TTL" << '\n';
 
 	for(iter = neighbors.begin(); iter; ++iter){
-		String vid = static_cast<VID>(iter.key()).switchVIDString();		
+		String nmac = static_cast<EtherAddress>(iter.key()).s();
 		NeighborTableEntry nte = iter.value();
-		String myvid = static_cast<VID>(nte.myVid).switchVIDString();		
+
+		String nvid = static_cast<VID>(nte.neighborVID).switchVIDString();
+		String mymac = static_cast<EtherAddress>(nte.myMac).s();
+		String myvid = static_cast<VID>(nte.myVid).switchVIDString();
+
 		Timer *t = nte.expiry;
-		sa << vid << '\t' << myvid << "\t"<<t->expiry().sec() - time(NULL) << " sec\n";
+		sa << nvid <<","<<nmac<< '\t' << myvid <<","<<mymac<< "\t"<<t->expiry().sec() - time(NULL) << " sec\n";
 	}
 	sa<< "----------------- Neighbor Table END -----------------\n\n";
 	return sa.take_string();	  

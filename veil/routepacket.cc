@@ -193,10 +193,10 @@ VEILRoutePacket::getPort(VID dstvid, Packet *p, uint8_t & k, VID &nexthop){
 	// lookup neighbor table
 	// SJ: IMPORTANT: See if the first 32 bits are same or not!!! for the neighbor lookup
 	VID swvid = dstvid.getSwitchVID();
-	VID myinterface;
-	if(neighbors->lookupEntry(&swvid, &myinterface)){
+	VID myInterfacevid;
+	if(neighbors->lookupEntry(&swvid, &myInterfacevid)){
 		memcpy(&nexthop, &swvid,6);
-		interfaces->lookupVidEntry(&myinterface, &port);
+		interfaces->lookupVidEntry(&myInterfacevid, &port);
 		return port;
 	}
 	
@@ -206,10 +206,12 @@ VEILRoutePacket::getPort(VID dstvid, Packet *p, uint8_t & k, VID &nexthop){
 	{
 		int temp;
 		// see if the nexthop is one of the physical neighbor?
-		if (neighbors->lookupEntry(&nexthop, &myinterface)){
-			interfaces->lookupVidEntry(&myinterface, &port);
+		if (neighbors->lookupEntry(&nexthop, &myInterfacevid)){
+			interfaces->lookupVidEntry(&myInterfacevid, &port);
 			return port;
-		} // otherwise it should be one of the local interfaces at the veil switch,
+		}
+
+		// otherwise it should be one of the local interfaces at the veil switch,
 		// check it:
 		else if (interfaces->lookupVidEntry(&nexthop, &temp)){
 			memcpy(&myVid, &nexthop,6);
