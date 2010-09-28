@@ -45,9 +45,9 @@ VEILNeighborTable::configure(Vector<String> &conf, ErrorHandler *errh)
 	click_chatter("[::NeighborTable::][FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
 	int res = 0;
 	int i = 0;
-	for (i = 0; i < conf.size()-1; i++) {
+	/*for (i = 0; i < conf.size()-1; i++) {
 		res = cp_neighbor(conf[i], errh);
-	}
+	}*/
 	veil_chatter(printDebugMessages,"[::NeighborTable::] Configured the neighbor table!\n");
 
 	cp_shift_spacevec(conf[i]);
@@ -88,21 +88,15 @@ VEILNeighborTable::updateEntry(EtherAddress *neigh_mac, VID* neighborvid, EtherA
 		delete(oldEntry->expiry);
 		veil_chatter(printDebugMessages,"[::NeighborTable::] Neighbor VID: |%s| \n",neighborvid->switchVIDString().c_str());
 		retval = true;
-		if(writeTopoFlag){
+		/* SJ: No topology writing as of now.
+		 * if(writeTopoFlag){
 			writeTopo();
-		}
-		retval = true;
-		if(writeTopoFlag){
-			writeTopo();
-		}
+		}*/
 	}else{
 		veil_chatter(printDebugMessages,"[::NeighborTable::][New neighbor] Neighbor VID: |%s| MyVID: |%s|\n",neighborvid->switchVIDString().c_str(),myvid->switchVIDString().c_str());
 		retval = false;
-		retval = false;
 	}
 	neighbors.set(*neighbormac, entry);
-
-	return retval;
 
 	return retval;
 }

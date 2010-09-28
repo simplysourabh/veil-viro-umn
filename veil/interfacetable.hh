@@ -65,8 +65,6 @@ class VEILInterfaceTable : public Element {
 		//SwitchInterfaceTable switch_interfaces; //SJ: commenting it.
 		EtherAddrInterfaceTable etheraddToInterfaceIndex;
 		InterfaceEtherAddr interfaceIndexToEtherAddr;
-		EtherAddrInterfaceTable etheraddToInterfaceIndex;
-		InterfaceEtherAddr interfaceIndexToEtherAddr;
 		bool printDebugMessages ;	
 };
 
