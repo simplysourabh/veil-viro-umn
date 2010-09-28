@@ -12,7 +12,8 @@ cd ~/veil-viro-umn
 #cp confparse.hh /opt/ns-allinone-2.29/click/include/click/confparse.hh 
 
 # copy veil directory to click/elements/
-#cp -r veil /opt/ns-allinone-2.29/click/elements/ 
+cp veil/*.hh /opt/ns-allinone-2.29/click/elements/veil/ 
+cp veil/*.cc /opt/ns-allinone-2.29/click/elements/veil/
 
 # now copy the configure.ac and Makefile.in files too.
 #cp configure.ac /opt/ns-allinone-2.29/click/elements/veil/
