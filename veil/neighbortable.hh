@@ -12,7 +12,7 @@ CLICK_DECLS
 class VEILNeighborTable : public Element {
 	public:
 		//each entry will keep track of neighbor's VID and VID of 
-                //the interface the neighbor is connected to
+        //the interface the neighbor is connected to
 		struct NeighborTableEntry {
 			VID myVid;
 			EtherAddress myMac;

@@ -1,5 +1,5 @@
-#ifndef CLICK_VEILNEIGHBORTABLE_HH
-#define CLICK_VEILNEIGHBORTABLE_HH
+#ifndef CLICK_VEIL_SPANNINGTREESTATE_HH
+#define CLICK_VEIL_SPANNINGTREESTATE_HH
 
 #include <click/element.hh>
 #include <click/timer.hh>
@@ -9,55 +9,63 @@
 
 CLICK_DECLS
 
-class VEILNeighborTable : public Element {
+class VEILSpanningTreeState : public Element {
 	public:
-		//each entry will keep track of neighbor's VID and VID of 
-                //the interface the neighbor is connected to
-		struct NeighborTableEntry {
-			VID myVid;
-			EtherAddress myMac;
-			VID neighborVID;
+		// each entry will have the form:
+		// VCC MAC -> ParentMAC (forwarding node), cost to reach VCC
+		struct ParentEntry {
+			EtherAddress ParentMac; // MAC address of the forwarding node
+			uint16_t hopsToVcc;
 			Timer *expiry;
 		};
 
-		// we keep the mapping from the neighbor mac address to neighbor table entry.
-		typedef HashTable<EtherAddress, NeighborTableEntry> NeighborTable;
+		// VCC MAC -> ParentMAC (forwarding node), cost to reach VCC
+		typedef HashTable<EtherAddress, ParentEntry> ForwardingTableToVCC;
 
 		struct TimerData {
-			NeighborTable *neighbors;
-			VEILNeighborTable *ntable;
-			EtherAddress *neighbormac;
+			void *ftable;
+			VEILSpanningTreeState *ststate;
+			EtherAddress mac;
+			bool isParentEntry;
 		};
 
-		VEILNeighborTable();
-		~VEILNeighborTable();
+		struct ChildEntry {
+			EtherAddress VccMac;
+			Timer *expiry;
+		};
 
-		const char* class_name() const { return "VEILNeighborTable"; }
+		// ChildMAC -> VCC MAC (forwarding node)
+		typedef HashTable<EtherAddress, ChildEntry> ForwardingTableFromVCC;
+
+		VEILSpanningTreeState();
+		~VEILSpanningTreeState();
+
+		const char* class_name() const { return "VEILSpanningTreeState"; }
 		const char* port_count() const { return PORTS_0_0; }
 
 		int cp_neighbor(String, ErrorHandler*);
+		int configure(Vector<String>&, ErrorHandler*);
 
-		int configure(Vector<String>&, ErrorHandler*);	
-		bool updateEntry(EtherAddress *neighrbormac, VID* neighborvid, EtherAddress* mymac, VID* myvid);
-		bool lookupEntry(EtherAddress neighbormac, NeighborTableEntry* entry);
-		bool lookupEntry(VID *nvid, VID* myvid);
+		bool updateCostToVCC(EtherAddress neighbormac, EtherAddress vccmac, uint16_t cost);
+		bool updateChild(EtherAddress childmac, EtherAddress vccmac);
 
-		inline const NeighborTable* get_neighbortable_handle(){
-			return &neighbors;
+		inline const ForwardingTableToVCC* get_ForwardingTableToVCC_handle(){
+			return &forwardingTableToVCC;
 		}		
+
+		inline const ForwardingTableFromVCC* get_ForwardingTableFromVCC_handle(){
+			return &forwardingTableFromVCC;
+		}
 
 		static void expire(Timer*, void*);
 		static String read_handler(Element*, void*);
 		void add_handlers();
-		void enableUpdatedTopologyWriting(String Filename, bool writeToFile);
-		bool writeTopo(); // returns on success, and false on failure
 
-		NeighborTable neighbors; // making it public to allow easy manipulations.
+		ForwardingTableToVCC forwardingTableToVCC; // making it public to allow easy manipulations.
 		// however, in future we'd like to make it a private member.
+		ForwardingTableFromVCC forwardingTableFromVCC;
 	private:		
 		bool printDebugMessages;
-		bool writeTopoFlag;
-		String topoFile;
 };
 
 CLICK_ENDDECLS

@@ -38,6 +38,10 @@ CLICK_DECLS
 #define VEIL_TBL_ENTRY_EXPIRY	20000
 #define MAX_TTL 				0x0f
 
+#define VEIL_SPANNING_TREE_ENTRY_EXPIRY 20000 // an entry for the veil spanning tree will expire after
+// 20 seconds.
+#define VEIL_SPANNING_TREE_COST_BROADCAST 10000 // update the cost every 10 seconds.
+
 // Maximum number of gateways stored in each Bucket
 #define MAX_GW_PER_BUCKET		4
 

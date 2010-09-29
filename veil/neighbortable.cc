@@ -150,32 +150,6 @@ VEILNeighborTable::expire(Timer *t, void *data)
 	delete(t);
 }
 
-void
-VEILNeighborTable::enableUpdatedTopologyWriting(String Filename, bool writeToFile){
-	writeTopoFlag = writeToFile;
-	topoFile = Filename;
-}
-bool
-VEILNeighborTable::writeTopo(){
-	if(writeTopoFlag){
-		FILE *topo = fopen(topoFile.c_str(), "w");
-		NeighborTable::iterator iter;
-		fprintf(topo, "MyInterfaceID MyMac NeighborInterfaceID MyNeighborMac\n");
-		for(iter = neighbors.begin(); iter; ++iter){
-			String nmac = static_cast<EtherAddress>(iter.key()).s();
-			NeighborTableEntry nte = iter.value();
-
-			String nvid = static_cast<VID>(nte.neighborVID).switchVIDString();
-			String mymac = static_cast<EtherAddress>(nte.myMac).s();
-			String myvid = static_cast<VID>(nte.myVid).switchVIDString();
-			fprintf(topo, "%s", (myvid + " " + mymac + " "  + nvid+ " " + nmac+ "\n").c_str());
-		}
-		fclose(topo);
-		return topo == NULL ? false:true;
-	}
-	return false;
-}
-
 String
 VEILNeighborTable::read_handler(Element *e, void *thunk)
 {

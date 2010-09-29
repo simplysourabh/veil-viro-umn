@@ -2,51 +2,25 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
-#include "neighbortable.hh"
+#include "spanningtreestate.hh"
 #include <time.h>
 
 //TODO: make reads and writes atomic
 
 CLICK_DECLS
 
-VEILNeighborTable::VEILNeighborTable () {}
+VEILSpanningTreeState::VEILSpanningTreeState () {}
 
-VEILNeighborTable::~VEILNeighborTable () {}
-
-//String is of the form: neighborVID interfaceVID 
-int
-VEILNeighborTable::cp_neighbor(String s, ErrorHandler* errh){
-	VID nvid, myvid;
-	EtherAddress nmac, mymac;
-
-	String nvid_str = cp_shift_spacevec(s);
-	if(!cp_vid(nvid_str, &nvid))
-		return errh->error("[::NeighborTable::] neighbor VID is not in expected format");
-
-	String nmac_str = cp_shift_spacevec(s);
-	if(!cp_ethernet_address(nmac_str, &nmac))
-		return errh->error("[::NeighborTable::] neighbor MAC is not in expected format");
-
-	String myvid_str = cp_shift_spacevec(s);
-	if(!cp_vid(myvid_str, &myvid))
-		return errh->error("[::NeighborTable::] interface VID is not in expected format");
-
-	String mymac_str = cp_shift_spacevec(s);
-	if(!cp_ethernet_address(mymac_str, &mymac))
-		return errh->error("[::NeighborTable::] interface MAC is not in expected format");
-
-	updateEntry(&nmac, &nvid, &mymac, &myvid);
-	return 0;
-}
+VEILSpanningTreeState::~VEILSpanningTreeState () {}
 
 int
-VEILNeighborTable::configure(Vector<String> &conf, ErrorHandler *errh)
+VEILSpanningTreeState::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 	click_chatter("[::NeighborTable::][FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
 	int res = 0;
 	int i = 0;
 	/*for (i = 0; i < conf.size()-1; i++) {
-		res = cp_neighbor(conf[i], errh);
+		res = xxxx(conf[i], errh);
 	}*/
 	veil_chatter(printDebugMessages,"[::NeighborTable::] Configured the neighbor table!\n");
 
@@ -59,157 +33,112 @@ VEILNeighborTable::configure(Vector<String> &conf, ErrorHandler *errh)
 
 
 bool
-VEILNeighborTable::updateEntry(EtherAddress *neigh_mac, VID* neighborvid, EtherAddress* mymac, VID* myvid)
+VEILSpanningTreeState::updateCostToVCC(EtherAddress neighbormac, EtherAddress vccmac, uint16_t cost)
 {
+	// caller is assumed to make sure if the entry here is a valid one.
+	// the cost is the cost advertised by the neighbor.
+
 	bool retval = false; // returns false if a new entry is created
 	// else returns true if the entry already existed.
 
-	TimerData *tdata = new TimerData();
-	EtherAddress * neighbormac = new EtherAddress(*neigh_mac);
-	tdata->neighbormac = neighbormac;
-	tdata->neighbors = &neighbors;
-	tdata->ntable = this;
+	ParentEntry* pentry = forwardingTableToVCC.get_pointer(vccmac);
+	if (pentry != NULL){
+		if(pentry->hopsToVcc >= cost + 1){
+			pentry->hopsToVcc = cost + 1;
+			if (pentry->ParentMac != neighbormac){
+				// just update the timer value.
+				memcpy(&pentry->ParentMac, &neighbormac, 6);
+			}
 
-	NeighborTableEntry entry;
-
-	memcpy(&entry.myVid, myvid->data(), 6);
-	memcpy(&entry.myMac, mymac, 6);
-	memcpy(&entry.neighborVID, neighborvid, 6);
-
-	Timer *expiry = new Timer(&VEILNeighborTable::expire, tdata);
-	expiry->initialize(this);
-	expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
-	entry.expiry  = expiry;
-	// First see if the key is already present?
-	NeighborTableEntry * oldEntry;
-	oldEntry = neighbors.get_pointer(*neighbormac);
-	if (oldEntry != NULL){
-		oldEntry->expiry->unschedule();
-		delete(oldEntry->expiry);
-		veil_chatter(printDebugMessages,"[::NeighborTable::] Neighbor VID: |%s| \n",neighborvid->switchVIDString().c_str());
-		retval = true;
-		/* SJ: No topology writing as of now.
-		 * if(writeTopoFlag){
-			writeTopo();
-		}*/
-	}else{
-		veil_chatter(printDebugMessages,"[::NeighborTable::][New neighbor] Neighbor VID: |%s| MyVID: |%s|\n",neighborvid->switchVIDString().c_str(),myvid->switchVIDString().c_str());
-		retval = false;
+			pentry->expiry->unschedule();
+			pentry->expiry->schedule_after_msec(VEIL_SPANNING_TREE_ENTRY_EXPIRY);
+			veil_chatter(printDebugMessages,"[::-SpanningTreeState-::][Refreshed Parent MAC: %s] to VCC: %s with cost %d \n",pentry->ParentMac.s().c_str(),vccmac.s().c_str(), cost+1);
+			return true;
+		}
 	}
-	neighbors.set(*neighbormac, entry);
+
+	TimerData *tdata = new TimerData();
+	tdata->ftable = &forwardingTableToVCC;
+	tdata->ststate = this;
+	memcpy(&tdata->mac, &vccmac, 6);
+	tdata->isParentEntry = true;
+
+	ParentEntry newentry;
+	memcpy(&newentry.ParentMac, &neighbormac, 6);
+	newentry.hopsToVcc = cost + 1;
+
+	Timer *expiry = new Timer(&VEILSpanningTreeState::expire, tdata);
+	expiry->initialize(this);
+	expiry->schedule_after_msec(VEIL_SPANNING_TREE_ENTRY_EXPIRY);
+	newentry.expiry  = expiry;
+
+	veil_chatter(printDebugMessages,"[::-SpanningTreeState-::][New Parent MAC: %s] to VCC: %s with cost %d \n",newentry.ParentMac.s().c_str(),vccmac.s().c_str(), cost+1);
+	forwardingTableToVCC.set(vccmac, newentry);
 
 	return retval;
 }
 
 
-bool
-VEILNeighborTable::lookupEntry(EtherAddress neighbormac, NeighborTableEntry* entry){
-	bool found = false;
-	if (neighbors.find(neighbormac) == neighbors.end()) {
-		found = false;
-	} else {
-		entry = neighbors.get_pointer(neighbormac);
-		found = true;
-	}
-	return found;
-}
 
 bool
-VEILNeighborTable::lookupEntry(VID *nvid, VID* myvid){
-	bool found = false;
-	NeighborTable::iterator iter;
-	for(iter = neighbors.begin(); iter; ++iter){
-		NeighborTableEntry nte = iter.value();
-		if (nte.neighborVID == *nvid){
-			memcpy(myvid, &nte.myVid, 6);
-			return true;
+VEILSpanningTreeState::updateChild(EtherAddress childmac, EtherAddress vccmac){
+	// caller is assumed to make sure if the entry here is a valid one.
+	// the cost is the cost advertised by the neighbor.
+
+	bool retval = false; // returns false if a new entry is created
+	// else returns true if the entry already existed.
+
+	ChildEntry* centry = forwardingTableFromVCC.get_pointer(childmac);
+	if (centry != NULL){
+		if (centry->VccMac != vccmac){
+			// just update the timer value.
+			memcpy(&centry->VccMac, &vccmac, 6);
 		}
-	}
-	return found;
-}
 
+		centry->expiry->unschedule();
+		centry->expiry->schedule_after_msec(VEIL_SPANNING_TREE_ENTRY_EXPIRY);
+		veil_chatter(printDebugMessages,"[::-SpanningTreeState-::][Refreshed Child MAC: %s] to VCC: %s\n",childmac.s().c_str(),centry->VccMac.s().c_str());
+		return true;
+	}
+
+	TimerData *tdata = new TimerData();
+	tdata->ftable = &forwardingTableFromVCC;
+	tdata->ststate = this;
+	memcpy(&tdata->mac, &childmac, 6);
+	tdata->isParentEntry = false;
+
+	ChildEntry newentry;
+	memcpy(&newentry.VccMac, &vccmac, 6);
+
+	Timer *expiry = new Timer(&VEILSpanningTreeState::expire, tdata);
+	expiry->initialize(this);
+	expiry->schedule_after_msec(VEIL_SPANNING_TREE_ENTRY_EXPIRY);
+	newentry.expiry  = expiry;
+
+	veil_chatter(printDebugMessages,"[::-SpanningTreeState-::][New Child MAC: %s] to VCC: %s\n",childmac.s().c_str(),newentry.VccMac.s().c_str());
+	forwardingTableFromVCC.set(childmac, newentry);
+
+	return retval;
+}
 
 void
-VEILNeighborTable::expire(Timer *t, void *data) 	
+VEILSpanningTreeState::expire(Timer *t, void *data)
 {
-
 	TimerData *td = (TimerData *) data;
-	EtherAddress* nmac = (EtherAddress *) td->neighbormac;
-	// Temporary NOT deleting  entries 
-	//  Just for debugging
-	veil_chatter(true,"[::NeighborTable::] [Timer Expired] MAC: |%s|\n",nmac->s().c_str());
-	//veil_chatter(printDebugMessages,"[BEFORE EXPIRE] %d entries in neighbor table", td->neighbors->size());
-	if (td->neighbors->get_pointer(*nmac) == NULL){
-		veil_chatter(true,"[::NeighborTable::] [ERROR: Entry NOT FOUND] Key: |%s| \n",nmac->s().c_str());
+
+	if (td->isParentEntry){
+		ForwardingTableToVCC * ftable = (ForwardingTableToVCC *) td->ftable;
+		ftable->erase(td->mac);
+		veil_chatter(true,"[::-SpanningTreeState-::] [Timer Expired] ParentEntry for VCC MAC: |%s|\n",td->mac.s().c_str());
+	}else{
+		ForwardingTableFromVCC * ftable = (ForwardingTableFromVCC *) td->ftable;
+		ftable->erase(td->mac);
+		veil_chatter(true,"[::-SpanningTreeState-::] [Timer Expired] Child MAC: |%s|\n",td->mac.s().c_str());
 	}
-	td->neighbors->erase(*nmac);
-	//veil_chatter(printDebugMessages,"[AFTER EXPIRE] %d entries in neighbor table", td->neighbors->size());
-	//click_chatter (read_handler(this, NULL).c_str());
-	td->ntable->writeTopo();
-	delete(td); 
+	delete(td);
 	delete(t);
 }
 
-void
-VEILNeighborTable::enableUpdatedTopologyWriting(String Filename, bool writeToFile){
-	writeTopoFlag = writeToFile;
-	topoFile = Filename;
-}
-bool
-VEILNeighborTable::writeTopo(){
-	if(writeTopoFlag){
-		FILE *topo = fopen(topoFile.c_str(), "w");
-		NeighborTable::iterator iter;
-		fprintf(topo, "MyInterfaceID MyMac NeighborInterfaceID MyNeighborMac\n");
-		for(iter = neighbors.begin(); iter; ++iter){
-			String nmac = static_cast<EtherAddress>(iter.key()).s();
-			NeighborTableEntry nte = iter.value();
-
-			String nvid = static_cast<VID>(nte.neighborVID).switchVIDString();
-			String mymac = static_cast<EtherAddress>(nte.myMac).s();
-			String myvid = static_cast<VID>(nte.myVid).switchVIDString();
-			fprintf(topo, "%s", (myvid + " " + mymac + " "  + nvid+ " " + nmac+ "\n").c_str());
-		}
-		fclose(topo);
-		return topo == NULL ? false:true;
-	}
-	return false;
-}
-
-String
-VEILNeighborTable::read_handler(Element *e, void *thunk)
-{
-	StringAccum sa;
-	VEILNeighborTable *nt = (VEILNeighborTable *) e;
-	NeighborTable::iterator iter;
-	NeighborTable neighbors = nt->neighbors;
-
-	sa << "\n-----------------Neighbor Table START-----------------\n"<<"[::NeighborTable::]" << '\n';
-	sa << "Neighbor VID,MAC" << "\t" << "Myinterface VID,MAC" << '\t' << "TTL" << '\n';
-
-	for(iter = neighbors.begin(); iter; ++iter){
-		String nmac = static_cast<EtherAddress>(iter.key()).s();
-		NeighborTableEntry nte = iter.value();
-
-		String nvid = static_cast<VID>(nte.neighborVID).switchVIDString();
-		String mymac = static_cast<EtherAddress>(nte.myMac).s();
-		String myvid = static_cast<VID>(nte.myVid).switchVIDString();
-
-		Timer *t = nte.expiry;
-		sa << nvid <<","<<nmac<< '\t' << myvid <<","<<mymac<< "\t"<<t->expiry().sec() - time(NULL) << " sec\n";
-	}
-	sa<< "----------------- Neighbor Table END -----------------\n\n";
-	return sa.take_string();	  
-}
-
-void
-VEILNeighborTable::add_handlers()
-{
-	add_read_handler("table", read_handler, (void *)0);
-}
-
-
-
 CLICK_ENDDECLS
 
-EXPORT_ELEMENT(VEILNeighborTable)
+EXPORT_ELEMENT(VEILSpanningTreeState)
