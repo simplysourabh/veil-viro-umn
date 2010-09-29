@@ -145,10 +145,10 @@ VEILNeighborTable::expire(Timer *t, void *data)
 	td->neighbors->erase(*nmac);
 	//veil_chatter(printDebugMessages,"[AFTER EXPIRE] %d entries in neighbor table", td->neighbors->size());
 	//click_chatter (read_handler(this, NULL).c_str());
-	td->ntable->writeTopo();
 	delete(td); 
 	delete(t);
 }
+
 
 String
 VEILNeighborTable::read_handler(Element *e, void *thunk)

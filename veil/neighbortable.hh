@@ -49,15 +49,10 @@ class VEILNeighborTable : public Element {
 		static void expire(Timer*, void*);
 		static String read_handler(Element*, void*);
 		void add_handlers();
-		void enableUpdatedTopologyWriting(String Filename, bool writeToFile);
-		bool writeTopo(); // returns on success, and false on failure
-
 		NeighborTable neighbors; // making it public to allow easy manipulations.
 		// however, in future we'd like to make it a private member.
 	private:		
 		bool printDebugMessages;
-		bool writeTopoFlag;
-		String topoFile;
 };
 
 CLICK_ENDDECLS
