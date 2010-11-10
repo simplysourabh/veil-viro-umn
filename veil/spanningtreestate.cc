@@ -16,18 +16,18 @@ VEILSpanningTreeState::~VEILSpanningTreeState () {}
 int
 VEILSpanningTreeState::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-	click_chatter("[::NeighborTable::][FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
+	click_chatter("[::-SpanningTreeState-::] [FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
 	int res = 0;
 	int i = 0;
 	/*for (i = 0; i < conf.size()-1; i++) {
 		res = xxxx(conf[i], errh);
 	}*/
-	veil_chatter(printDebugMessages,"[::NeighborTable::] Configured the neighbor table!\n");
+	veil_chatter(printDebugMessages,"[::-SpanningTreeState-::] Configured the neighbor table!\n");
 
 	cp_shift_spacevec(conf[i]);
 	String printflag = cp_shift_spacevec(conf[i]);
 	if(!cp_bool(printflag, &printDebugMessages))
-		return errh->error("[::NeighborTable::][Error] PRINTDEBUG FLAG should be either true or false");	
+		return errh->error("[::-SpanningTreeState-::] [Error] PRINTDEBUG FLAG should be either true or false");
 	return res;
 }
 
@@ -138,6 +138,45 @@ VEILSpanningTreeState::expire(Timer *t, void *data)
 	delete(td);
 	delete(t);
 }
+
+
+String
+VEILSpanningTreeState::read_handler(Element *e, void *thunk)
+{
+	StringAccum sa;
+	VEILSpanningTreeState *st = (VEILSpanningTreeState *) e;
+	ForwardingTableToVCC::iterator iterTo;
+	ForwardingTableFromVCC::iterator iterFrom;
+
+	sa << "\n-----------------SpanningTreeState START-----------------\n"<<"[::-SpanningTreeState-::]" << '\n';
+	sa << "VCC MAC" << "\t" << "Parent(forwarder)MAC" << "\tCost(#hops)"<<'\t' << "TTL" << '\n';
+	for (iterTo = st->forwardingTableToVCC.begin(); iterTo; ++iterTo){
+		String vccmac = static_cast <EtherAddress> (iterTo.key()).s();
+		ParentEntry pe = iterTo.value();
+		String parentmac = pe.ParentMac.s();
+		Timer *t = pe.expiry;
+		sa << vccmac <<"\t"<<parentmac<<"\t"<<pe.hopsToVcc<<"\t"<<t->expiry().sec() - time(NULL) << " Sec\n";
+	}
+	sa <<"\n";
+	sa << "Child MAC\tVCC MAC\tTTL\n";
+	for (iterFrom = st->forwardingTableFromVCC.begin(); iterFrom; ++iterFrom){
+		String childmac = static_cast <EtherAddress> (iterFrom.key()).s();
+		ChildEntry ce = iterFrom.value();
+		String vccmac = ce.VccMac;
+		Timer *t = ce.expiry;
+		sa << vccmac <<"\t"<<childmac<<"\t"<<t->expiry().sec() - time(NULL) << " Sec\n";
+	}
+
+	sa<< "----------------- SpanningTreeState END -----------------\n\n";
+	return sa.take_string();
+}
+
+void
+VEILSpanningTreeState::add_handlers()
+{
+	add_read_handler("state", read_handler, (void *)0);
+}
+
 
 CLICK_ENDDECLS
 

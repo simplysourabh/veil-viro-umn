@@ -66,6 +66,30 @@ CLICK_DECLS
 #define VEIL_HELLO				0x0000
 #define VEIL_PHELLO				0x0001
 
+//[VEIL-Type = 0x0101] SP_AD (Spanning Tree Advertisement) : This is the packet
+// broadcasted by a switch on all its outgoing interfaces. It contains the following
+// information: svid = 0...0, dvid = 0...0, ttl = 1, payload contains:
+// vcc_mac = mac address of the veil centralized controller,
+// cost (2-bytes long) : integer containing number of physical hops to reach the vcc.
+#define VEIL_VCC_SPANNING_TREE_AD 		0x0101
+
+// [VEIL-Type = 0x0102] SP_SUB (Spanning Tree Subscription) : The veil-payload for
+// this type of packet will contain the following: vcc_mac.
+#define VEIL_VCC_SPANNING_TREE_SUBS 	0x0102
+
+// [VEIL-Type = 0x0103] LTOPO (Local topology information): If the packet is
+// divided into multiple chunks then "optional" field will contain the chunk id.
+// The veil-payload will contain the following info: vcc_mac (the destination of
+		//the packet) number of neighbors in the payload, as 2 byte short integer,
+//		and then followed by the mac ids for all those interfaces.
+#define VEIL_LOCAL_TOPO_TO_VCC 			0x0103
+
+// [VEIL-Type = 0x0104] SVID_LIST (List of Switch VIDs for the all switches
+// in the network: Just like other 0x08xx packets, we'll ignore the svid, dvid
+// fields in the headers. The payload consists of the following info: # of
+// mappings (2 bytes), <mac,vid> pairs.
+#define VEIL_SWITCH_VID_LIST_FROM_VCC 	0x0104
+
 // RENDEZVOUS PACKETS: PUBLISH, QUERY, REPLY
 #define VEIL_RDV_REPLY			0x0402
 #define VEIL_RDV_PUBLISH		0x0403
@@ -190,6 +214,32 @@ struct veil_payload_map_update{
 struct veil_payload_multipath{
 	VID final_dvid;
 };
+
+// payload structure for the VEIL_VCC_SPANNING_TREE_AD
+// |MAC 6 bytes : # of hops to VCC 2 bytes|
+struct veil_payload_vcc_sp_tree_ad{
+	EtherAddress vccmac;
+	uint16_t cost;
+};
+
+// payload structure for the VEIL_VCC_SPANNING_TREE_SUBS
+// |MAC 6 bytes|
+struct veil_payload_vcc_sp_tree_sub{
+	EtherAddress vccmac;
+};
+
+// payload structure for the VEIL_LOCAL_TOPO_TO_VCC
+// |# of neighbors. : neighbor 1: neighbor 2: ... : neighbor n|
+struct veil_payload_ltopo_to_vcc{
+	uint16_t neighbor_count;
+};
+
+// payload structure for the VEIL_SWITCH_VID_LIST_FROM_VCC
+// |# of mappings : neighbor 1: vid 1: neighbor 2: vid 2:  ... : neighbor n : vid n|
+struct veil_payload_svid_mappings{
+	uint16_t n_mappings;
+};
+
 
 
 // List of functions that we might be interested in:

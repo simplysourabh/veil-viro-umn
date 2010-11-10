@@ -170,7 +170,7 @@ VEILNeighborTable::read_handler(Element *e, void *thunk)
 		String myvid = static_cast<VID>(nte.myVid).switchVIDString();
 
 		Timer *t = nte.expiry;
-		sa << nvid <<","<<nmac<< '\t' << myvid <<","<<mymac<< "\t"<<t->expiry().sec() - time(NULL) << " sec\n";
+		sa << nvid <<","<<nmac<< '\t' << myvid <<","<<mymac<< "\t"<<t->expiry().sec() - time(NULL) << " Sec\n";
 	}
 	sa<< "----------------- Neighbor Table END -----------------\n\n";
 	return sa.take_string();	  

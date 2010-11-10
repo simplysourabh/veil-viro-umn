@@ -59,12 +59,13 @@ class VEILInterfaceTable : public Element {
 			return &etheraddToInterfaceIndex;
 		}
 		bool isVIDAssignmentDone;
-	private:		
+
 		InterfaceTable interfaces;
 		ReverseInterfaceTable rinterfaces;
 		//SwitchInterfaceTable switch_interfaces; //SJ: commenting it.
 		EtherAddrInterfaceTable etheraddToInterfaceIndex;
 		InterfaceEtherAddr interfaceIndexToEtherAddr;
+	private:
 		bool printDebugMessages ;	
 };
 

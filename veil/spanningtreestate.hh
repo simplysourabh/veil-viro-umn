@@ -7,6 +7,7 @@
 #include <click/vid.hh>
 #include "click_veil.hh"
 
+
 CLICK_DECLS
 
 class VEILSpanningTreeState : public Element {
