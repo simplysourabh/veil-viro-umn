@@ -45,9 +45,9 @@ VEILNeighborTable::configure(Vector<String> &conf, ErrorHandler *errh)
 	click_chatter("[::NeighborTable::][FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
 	int res = 0;
 	int i = 0;
-	/*for (i = 0; i < conf.size()-1; i++) {
+	for (i = 0; i < conf.size()-1; i++) {
 		res = cp_neighbor(conf[i], errh);
-	}*/
+	}
 	veil_chatter(printDebugMessages,"[::NeighborTable::] Configured the neighbor table!\n");
 
 	cp_shift_spacevec(conf[i]);
@@ -103,12 +103,12 @@ VEILNeighborTable::updateEntry(EtherAddress *neigh_mac, VID* neighborvid, EtherA
 
 
 bool
-VEILNeighborTable::lookupEntry(EtherAddress neighbormac, NeighborTableEntry* entry){
+VEILNeighborTable::lookupEntry(EtherAddress neighbormac, NeighborTableEntry** entry){
 	bool found = false;
 	if (neighbors.find(neighbormac) == neighbors.end()) {
 		found = false;
 	} else {
-		entry = neighbors.get_pointer(neighbormac);
+		(*entry) = neighbors.get_pointer(neighbormac);
 		found = true;
 	}
 	return found;

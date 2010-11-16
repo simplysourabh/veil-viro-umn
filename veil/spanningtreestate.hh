@@ -44,12 +44,12 @@ class VEILSpanningTreeState : public Element {
 		const char* class_name() const { return "VEILSpanningTreeState"; }
 		const char* port_count() const { return PORTS_0_0; }
 
-		int cp_neighbor(String, ErrorHandler*);
+		int cp_spanning_tree_state(String s, ErrorHandler* errh);
 		int configure(Vector<String>&, ErrorHandler*);
 
 		bool updateCostToVCC(EtherAddress neighbormac, EtherAddress vccmac, uint16_t cost);
 		bool updateChild(EtherAddress childmac, EtherAddress vccmac);
-
+		bool getParentNodeToVCC(EtherAddress vccmac, EtherAddress *parent);
 		inline const ForwardingTableToVCC* get_ForwardingTableToVCC_handle(){
 			return &forwardingTableToVCC;
 		}		

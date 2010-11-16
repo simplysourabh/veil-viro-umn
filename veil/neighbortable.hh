@@ -39,7 +39,7 @@ class VEILNeighborTable : public Element {
 
 		int configure(Vector<String>&, ErrorHandler*);	
 		bool updateEntry(EtherAddress *neighrbormac, VID* neighborvid, EtherAddress* mymac, VID* myvid);
-		bool lookupEntry(EtherAddress neighbormac, NeighborTableEntry* entry);
+		bool lookupEntry(EtherAddress neighbormac, NeighborTableEntry** entry);
 		bool lookupEntry(VID *nvid, VID* myvid);
 
 		inline const NeighborTable* get_neighbortable_handle(){

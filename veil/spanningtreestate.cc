@@ -5,7 +5,12 @@
 #include "spanningtreestate.hh"
 #include <time.h>
 
-//TODO: make reads and writes atomic
+//TODO: make reads and writes atomic#include <click/config.h>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <clicknet/ip.h>
+#include "click_veil.hh"
+#include "processip.hh"
 
 CLICK_DECLS
 
@@ -13,16 +18,47 @@ VEILSpanningTreeState::VEILSpanningTreeState () {}
 
 VEILSpanningTreeState::~VEILSpanningTreeState () {}
 
+//String is of the form: VCCMAC parentVCCMac nhops
+int
+VEILSpanningTreeState::cp_spanning_tree_state(String s, ErrorHandler* errh){
+	EtherAddress vcc,parent;
+	uint16_t nhops;
+	unsigned int n;
+	String vccmac_str = cp_shift_spacevec(s);
+	if(!cp_ethernet_address(vccmac_str, &vcc)){
+		veil_chatter(printDebugMessages,"[::-SpanningTreeState-::] [Error] VCC MAC ADD is not in expected format. Entered string: %s\n",vccmac_str);
+		return errh->error("[::-SpanningTreeState-::] [Error] VCC MAC ADD is not in expected format.");
+	}
+
+	String parentmac_str = cp_shift_spacevec(s);
+	if(!cp_ethernet_address(parentmac_str, &parent)){
+		veil_chatter(printDebugMessages,"[::-SpanningTreeState-::] [Error] PARENT MAC ADD is not in expected format. Entered string: %s\n",parentmac_str);
+		return errh->error("[::-SpanningTreeState-::] [Error] PARENT MAC ADD is not in expected format.");
+	}
+	String nhops_str = cp_shift_spacevec(s);
+	if(!cp_unsigned(nhops_str, &n)){
+		veil_chatter(printDebugMessages,"[::-SpanningTreeState-::] [Error] Cost is not in correct format. Entered string: %s\n",nhops_str);
+		return errh->error("[::-SpanningTreeState-::] [Error] Cost is not in correct format.");
+	}
+
+	updateCostToVCC(parent, vcc, (uint16_t)n );
+	return 0;
+}
+
+
 int
 VEILSpanningTreeState::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 	click_chatter("[::-SpanningTreeState-::] [FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
 	int res = 0;
 	int i = 0;
-	/*for (i = 0; i < conf.size()-1; i++) {
-		res = xxxx(conf[i], errh);
-	}*/
-	veil_chatter(printDebugMessages,"[::-SpanningTreeState-::] Configured the neighbor table!\n");
+	for (i = 0; i < conf.size()-1; i++) {
+		res = cp_spanning_tree_state(conf[i], errh);
+		if (res != 0){
+			veil_chatter(printDebugMessages,"[::-SpanningTreeState-::] Error occurred while parsing the string:'%s'!\n",conf[i]);
+		}
+	}
+	veil_chatter(printDebugMessages,"[::-SpanningTreeState-::] Configured the initial SpanningTreeState table!\n");
 
 	cp_shift_spacevec(conf[i]);
 	String printflag = cp_shift_spacevec(conf[i]);
@@ -42,6 +78,7 @@ VEILSpanningTreeState::updateCostToVCC(EtherAddress neighbormac, EtherAddress vc
 	// else returns true if the entry already existed.
 
 	ParentEntry* pentry = forwardingTableToVCC.get_pointer(vccmac);
+	// if the entry already exists in the table.
 	if (pentry != NULL){
 		if(pentry->hopsToVcc >= cost + 1){
 			pentry->hopsToVcc = cost + 1;
@@ -54,8 +91,13 @@ VEILSpanningTreeState::updateCostToVCC(EtherAddress neighbormac, EtherAddress vc
 			pentry->expiry->schedule_after_msec(VEIL_SPANNING_TREE_ENTRY_EXPIRY);
 			veil_chatter(printDebugMessages,"[::-SpanningTreeState-::][Refreshed Parent MAC: %s] to VCC: %s with cost %d \n",pentry->ParentMac.s().c_str(),vccmac.s().c_str(), cost+1);
 			return true;
+		}else{
+			return false;
 		}
 	}
+
+	// else if entry for vccmac is not already there.
+	// in this case create a new entry.
 
 	TimerData *tdata = new TimerData();
 	tdata->ftable = &forwardingTableToVCC;
@@ -175,6 +217,17 @@ void
 VEILSpanningTreeState::add_handlers()
 {
 	add_read_handler("state", read_handler, (void *)0);
+}
+
+bool
+VEILSpanningTreeState::getParentNodeToVCC(EtherAddress vccmac, EtherAddress *parent){
+	bool neigh_found = false;
+	ParentEntry* pe = forwardingTableToVCC.get_pointer(vccmac);
+	if (pe != NULL){
+		memcpy(parent, &pe->ParentMac, 6);
+		neigh_found = true;
+	}
+	return neigh_found;
 }
 
 
