@@ -31,6 +31,8 @@ CLICK_DECLS
 #define VEIL_PHELLO_INTERVAL	10000
 #define VEIL_PUBLISH_INTERVAL	10000
 #define VEIL_RDV_INTERVAL		10000
+
+
 /* value greater than hello/publish interval so entries don't expire just    
  * when hello/publish pkts need to be resent. risking temporarily invalid    
  * routes. 
@@ -41,7 +43,9 @@ CLICK_DECLS
 #define VEIL_SPANNING_TREE_ENTRY_EXPIRY 20000 // an entry for the veil spanning tree will expire after
 // 20 seconds.
 #define VEIL_SPANNING_TREE_COST_BROADCAST 10000 // update the cost every 10 seconds.
+#define VEIL_VID_BROADCAST_TIME 20000
 
+#define MAX_PACKET_SIZE	1000 // maximum packet size in bytes.
 // Maximum number of gateways stored in each Bucket
 #define MAX_GW_PER_BUCKET		4
 
@@ -88,7 +92,7 @@ CLICK_DECLS
 // in the network: Just like other 0x08xx packets, we'll ignore the svid, dvid
 // fields in the headers. The payload consists of the following info: # of
 // mappings (2 bytes), <mac,vid> pairs.
-#define VEIL_SWITCH_VID_LIST_FROM_VCC 	0x0104
+#define VEIL_SWITCH_VID_FROM_VCC 	0x0104
 
 // RENDEZVOUS PACKETS: PUBLISH, QUERY, REPLY
 #define VEIL_RDV_REPLY			0x0402
@@ -234,10 +238,10 @@ struct veil_payload_ltopo_to_vcc{
 	uint16_t neighbor_count;
 };
 
-// payload structure for the VEIL_SWITCH_VID_LIST_FROM_VCC
-// |# of mappings : neighbor 1: vid 1: neighbor 2: vid 2:  ... : neighbor n : vid n|
+// payload structure for the VEIL_SWITCH_VID_FROM_VCC
+// |vid|
 struct veil_payload_svid_mappings{
-	uint16_t n_mappings;
+	VID vid;
 };
 
 
@@ -283,6 +287,12 @@ struct veil_payload_svid_mappings{
 		uint16_t type1 = htons(type);
 		eth->ether_type = type1;
 		return p;
+	}
+
+	inline bool isZeroVID(VID vid){
+		VID zerovid;
+		memset(&zerovid,0,6);
+		return zerovid == vid;
 	}
 
 // ETHER HEADER END -----------------------------------------

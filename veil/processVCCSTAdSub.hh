@@ -12,6 +12,7 @@
 #include "spanningtreestate.hh"
 #include "interfacetable.hh"
 #include "neighbortable.hh"
+#include "networkTopoVIDAssignment.hh"
 #include "click_veil.hh"
 
 #include <click/hashmap.hh>
@@ -42,13 +43,14 @@ class VEILProcessVCCSTAdSub : public Element {
 	 	void processAD(Packet*p);
 	 	void processSUBS(Packet*p);
 	 	int processLocalTopo(Packet*p);
-	 	int processSwitchVIDList(Packet*p);
+	 	int processSwitchVID(Packet*p);
 
 	private:
 
 		VEILInterfaceTable *interfaces;
 		VEILSpanningTreeState *ststate;
 		VEILNeighborTable *neighbors;
+		VEILNetworkTopoVIDAssignment *topo;
 		bool printDebugMessages;
 
 };

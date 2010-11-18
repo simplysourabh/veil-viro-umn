@@ -97,6 +97,10 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 
 void
 VEILBuildRouteTable::rdv_publish (VID &myinterface, VID &nexthop, uint8_t i ){
+	if (isZeroVID(myinterface)){
+		veil_chatter(printDebugMessages, "[** BuildRouteTable **] No VID assignment yet.");
+		return;
+	}
 	VID rdvpt;
 	myinterface.calculate_rdv_point(i, &rdvpt);
 	int packet_length = sizeof(click_ether) + sizeof(veil_sub_header) + sizeof(veil_payload_rdv_publish);
@@ -133,6 +137,10 @@ VEILBuildRouteTable::rdv_publish (VID &myinterface, VID &nexthop, uint8_t i ){
 
 void
 VEILBuildRouteTable::rdv_query (VID &myinterface, uint8_t i){
+	if (isZeroVID(myinterface)){
+		veil_chatter(printDebugMessages, "[** BuildRouteTable **] No VID assignment yet.");
+		return;
+	}
 	VID rdvpt;
 	myinterface.calculate_rdv_point(i, &rdvpt);
 	int packet_length = sizeof(click_ether) + sizeof(veil_sub_header) + sizeof(veil_payload_rdv_query);
