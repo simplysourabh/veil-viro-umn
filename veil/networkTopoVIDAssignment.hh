@@ -31,6 +31,8 @@ class VEILNetworkTopoVIDAssignment : public Element {
 		bool addAMap(VID vid, EtherAddress mac); // adds a mapping from vid to mac and reverse mapping
 		int removeNode(EtherAddress mac); //removes a node from the topology.
 
+		bool performVIDAssignment(); // performs the vid assignment, and return true or false
+		// if the assignment has changed from the existing assignment.
 
 		static String read_handler(Element*, void*);
 		void add_handlers();

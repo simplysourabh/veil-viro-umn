@@ -133,6 +133,9 @@ CLICK_DECLS
 #define IP_FORWARDING_TYPE_MULTIPATH				2
 // REMOVE THIS LATER START
 
+#define min(x,y) (x < y ? x : y)
+#define max(x,y) (x > y ? x : y)
+
 struct veil_header {
 	uint16_t packetType;
 };
@@ -380,7 +383,8 @@ struct veil_payload_svid_mappings{
 		va_list val;
 		va_start(val, fmt);
 		vsprintf(buf,fmt,val);
-		printf("\nAt %s:: %s", ctime(&myt), buf);
+		//printf("\nAt %s:: %s", ctime(&myt), buf);
+		printf("%s", buf);
 		va_end(val);
 	}
 

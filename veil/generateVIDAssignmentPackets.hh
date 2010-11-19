@@ -35,7 +35,7 @@ class VEILGenerateVIDAssignmentPackets : public Element {
 
 		void run_timer(Timer *);
 		void dispatch_vid();
-
+		void dispatch_one_vid_mac_pair(EtherAddress dstmac, VID dstvid);
 
 	private:
 		Timer myTimer;
