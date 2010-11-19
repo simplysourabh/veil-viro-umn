@@ -1,0 +1,16 @@
+TODO:
+
+[Key = Neighbor MAC address in neighbortable]
+I changed the structure for hte neighbortable.hh a bit, so I will have to accordingly change,
+the logic in other dependent elements.
+The basic change is that key is the mac address of the neighbor in the table now.
+
+[We are using a flag "usestatic" in interface table. We need to add the logic to do this.]
+
+[In generatehello input is interface table, and the output connects to each physical interface]
+
+[VCC will also need to run VEILHelloGenerator, neighrbortable, hello processor etc.]
+
+[we assume that there will not be more than one MAC interface on veil_router which connects to same "foreign MAC" addresses.]
+
+[we have reserved the vid/mac 00:00:00:00:00:00 for some special purpose.]
