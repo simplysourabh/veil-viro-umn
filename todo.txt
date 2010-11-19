@@ -5,7 +5,8 @@ I changed the structure for hte neighbortable.hh a bit, so I will have to accord
 the logic in other dependent elements.
 The basic change is that key is the mac address of the neighbor in the table now.
 
-[We are using a flag "usestatic" in interface table. We need to add the logic to do this.]
+[We are using a flag "usestatic" in interface table. We should get rid of this, and 
+use a better input arugment list management for interfacetable.cc]
 
 [In generatehello input is interface table, and the output connects to each physical interface]
 

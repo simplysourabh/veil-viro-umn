@@ -6,7 +6,7 @@ require(veil);
 // however if it is false, then the routing table construction module waits till the 
 // vid assignment is done.
 
-interfaces::VEILInterfaceTable(000000010000,08:00:27:7b:bb:b3,000000020000,08:00:27:60:cb:86,000000030000,08:00:27:8e:51:cd,000000040000,08:00:27:6e:7d:bd,UseStatic true, PRINTDEBUG false);
+interfaces::VEILInterfaceTable(000000010000,08:00:27:7b:bb:b3,000000020000,08:00:27:60:cb:86,000000030000,08:00:27:8e:51:cd,000000040000,08:00:27:6e:7d:bd,UseStatic false, PRINTDEBUG false);
 
 topo::VEILNetworkTopoVIDAssignment(VCCMAC 08:00:27:6e:7d:bd, PRINTDEBUG true);
 
