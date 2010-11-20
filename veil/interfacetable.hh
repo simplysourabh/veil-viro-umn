@@ -14,6 +14,11 @@ class VEILInterfaceTable : public Element {
 		//store more info in the future	
 		typedef HashTable<VID, int> InterfaceTable;
 		typedef HashTable<int, VID> ReverseInterfaceTable;
+
+		// the following hashtable is for keeping the map
+		// of for which interfaces the vid has been assigned.
+		// key = interface_index, value = true if vid is assigned else false.
+		typedef HashTable<int, bool> IsVIDset;
 		//we need to keep track of which interfaces are connected to 
 		//other switches. needed to build the routing table
 		//typedef HashTable<VID, int> SwitchInterfaceTable; //SJ: Since I
@@ -37,11 +42,9 @@ class VEILInterfaceTable : public Element {
 		bool getMacAddr(int, EtherAddress*);
 		bool getIntUsingMac(EtherAddress*, int*);
 		int numInterfaces(){
-			return interfaces.size();
+			return etheraddToInterfaceIndex.size();
 		}
-		bool isVIDassigned(){
-			return isVIDAssignmentDone;
-		}
+
 		static String read_handler(Element*, void*);
 		void add_handlers();
 	
@@ -65,6 +68,7 @@ class VEILInterfaceTable : public Element {
 		//SwitchInterfaceTable switch_interfaces; //SJ: commenting it.
 		EtherAddrInterfaceTable etheraddToInterfaceIndex;
 		InterfaceEtherAddr interfaceIndexToEtherAddr;
+		IsVIDset isvidset;
 	private:
 		bool printDebugMessages ;	
 };

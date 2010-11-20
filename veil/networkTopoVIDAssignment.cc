@@ -139,6 +139,10 @@ VEILNetworkTopoVIDAssignment::performVIDAssignment(){
 	NetworkTopo::iterator iter;
 	veil_chatter(printDebugMessages,"[VEIL-Network-topo-VID-Assignment] in performVIDAssignment: Generating the duplicate topo map.\n");
 
+	if (networktopo.size() <= 1){
+		veil_chatter(printDebugMessages,"[VEIL-Network-topo-VID-Assignment] in performVIDAssignment: No topology is learned yet!\n");
+		return false;
+	}
 	// initialize the data structures.
 	for (iter = networktopo.begin(); iter; iter++){
 		EtherAddress node = static_cast<EtherAddress>(iter.key());
@@ -372,7 +376,6 @@ VEILNetworkTopoVIDAssignment::performVIDAssignment(){
 		}
 		veil_chatter(printDebugMessages,"EtherAddress: %s MAC:%s \n", vid.vid_string().c_str(), mac.s().c_str());
 	}
-
 
 	return vid_changed;
 }

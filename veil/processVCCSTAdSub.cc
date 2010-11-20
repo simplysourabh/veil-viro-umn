@@ -176,6 +176,7 @@ VEILProcessVCCSTAdSub::processLocalTopo(Packet*p){
 			memcpy(&neighmac, neighbor_addr, 6);
 			neighbor_addr += 6;
 			topo->addAnEdge(srcmac, neighmac);
+			topo->addAnEdge(neighmac,srcmac); // assumes that its a symmetric
 		}
 
 		return -1;
@@ -193,7 +194,7 @@ VEILProcessVCCSTAdSub::processLocalTopo(Packet*p){
 
 				veil_sub_header *veil_sub = (veil_sub_header *) (e+1);
 				// ttl check
-				if (veil_sub->ttl <= 1){
+				if (veil_sub->ttl < 1){
 					veil_chatter(true, "-o [VEIL_Process_VCC_ST_Ad_Sub]  ERROR: in processLocalTopo: TTL expired.");
 					return -1;
 				}
@@ -222,6 +223,11 @@ VEILProcessVCCSTAdSub::processSwitchVID(Packet*p){
 	veil_sub_header *veil_sub = (veil_sub_header *) (e+1);
 	memcpy(&dstmac, &veil_sub->dvid,6);
 	memcpy(&vccmac, &veil_sub->svid,6);
+	if (veil_sub->ttl < 1){
+		veil_chatter(true, "-o [VEIL_Process_VCC_ST_Ad_Sub]  ERROR: in processLocalTopo: TTL expired.");
+		return -1;
+	}
+	veil_sub->ttl = veil_sub->ttl -1;
 
 	// it is destined to one of my interfaces.
 	if(interfaces->etheraddToInterfaceIndex.get_pointer(dstmac) != NULL){
@@ -239,6 +245,7 @@ VEILProcessVCCSTAdSub::processSwitchVID(Packet*p){
 		veil_chatter(printDebugMessages, "-o [VEIL_Process_VCC_ST_Ad_Sub] VID for interface %d is %s! \n",myintindex, myvid.vid_string().c_str());
 		interfaces->rinterfaces.set(myintindex, myvid);
 		interfaces->interfaces.set(myvid,myintindex);
+		interfaces->isvidset[myintindex] = true;
 	}
 	else{
 		VEILSpanningTreeState::ForwardingTableFromVCC::const_iterator it;

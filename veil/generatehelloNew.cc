@@ -63,7 +63,7 @@ VEILGenerateHelloNew::run_timer (
 			//TODO: we don't have a shim header to identify VEIL pkts hence this temporary solution. find a better alternative. Instead of type, could we do with just first testing type and if invalid, looking for the right VEIL type in the 2B just after eth header?
 			e->ether_type = htons(ETHERTYPE_VEIL);
 
-			if (interfaces->isVIDassigned()){
+			if (interfaces->isvidset[i]){
 				setSrcVID(packet, vid);
 			}else{
 				setSrcVID(packet, zerovid); // puts zeros if the vid assignment is not done yet.

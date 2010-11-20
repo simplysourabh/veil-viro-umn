@@ -48,6 +48,7 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 		VEILNeighborTable::NeighborTableEntry nte = iter.value();
 		EtherAddress macadd = iter.key();
 		VID myInterface = nte.myVid;
+		if (interfaces->isvidset[interfaces->interfaces[myInterface]] == false){ continue;}
 		VID neighbor = nte.neighborVID;
 		uint8_t ldist = neighbor.logical_distance(&myInterface);
 		if (ldist == 0){continue;}
@@ -66,6 +67,7 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 	VID int1, int2, nexthop1, gateway1; 
 	for (iiter1 = it->begin(); iiter1; ++iiter1){
 		int1 = iiter1.key();
+		if (interfaces->isvidset[interfaces->interfaces[int1]] == false){ continue;}
 		//click_chatter("BuildRouteTable: For Interface %s ", int1.switchVIDString().c_str());
 		for (iiter2 = it->begin(); iiter2; ++iiter2){
 			int2 = iiter2.key();
@@ -83,6 +85,7 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 	//check for each interface
 	for(iiter = it->begin(); iiter; ++iiter){
 		VID myinterface = iiter.key();
+		if (interfaces->isvidset[interfaces->interfaces[myinterface]] == false){ continue;}
 		// ACTIVE_VID_LEN is set to avoid sending queries for the 
 		// non-existant levels in the tree. 
 		for(uint8_t i = HOST_LEN*8 + 1; i <= ACTIVE_VID_LEN*8; i++){
@@ -97,7 +100,7 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 
 void
 VEILBuildRouteTable::rdv_publish (VID &myinterface, VID &nexthop, uint8_t i ){
-	if (isZeroVID(myinterface)){
+	if (interfaces->isvidset[interfaces->interfaces[myinterface]] == false){
 		veil_chatter(printDebugMessages, "[** BuildRouteTable **] No VID assignment yet.");
 		return;
 	}
@@ -137,7 +140,7 @@ VEILBuildRouteTable::rdv_publish (VID &myinterface, VID &nexthop, uint8_t i ){
 
 void
 VEILBuildRouteTable::rdv_query (VID &myinterface, uint8_t i){
-	if (isZeroVID(myinterface)){
+	if (interfaces->isvidset[interfaces->interfaces[myinterface]] == false){
 		veil_chatter(printDebugMessages, "[** BuildRouteTable **] No VID assignment yet.");
 		return;
 	}

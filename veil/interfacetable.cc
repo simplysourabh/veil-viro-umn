@@ -23,6 +23,7 @@ VEILInterfaceTable::configure(Vector<String> &conf, ErrorHandler *errh)
 			interfaces.set(interface, index);
 			//switch_interfaces.set(interface, i);
 			rinterfaces.set(index, interface);
+			isvidset.set(index,false);
 		} else {
 			errh->error("[InterfaceTable][Error!]error in processing VID argument in VEILInterfaceTable, the format is <VID 0>, <MAC 0>, <VID 1>, <MAC 1> and so on!");
 			r = -EINVAL;
@@ -41,6 +42,10 @@ VEILInterfaceTable::configure(Vector<String> &conf, ErrorHandler *errh)
 	String flag = cp_shift_spacevec(conf[i]);
 	if(!cp_bool(flag, &isVIDAssignmentDone))
 		return errh->error("[## InterfaceTable **] [Error] UseStatic FLAG should be either true or false");
+
+	if (isVIDAssignmentDone){
+		for (int i = 0; i < isvidset.size(); i++){isvidset[i] = true;}
+	}
 
 	i++;
 	cp_shift_spacevec(conf[i]);

@@ -152,7 +152,10 @@ VEILGenerateVCCSTAdSub::sendVCCAdandSubPackets(){
 
 			// find out the physical interface corresponding to the nte.myMac
 			int interface2parent = interfaces->etheraddToInterfaceIndex.get(nte->myMac);
-			if (interface2parent >= 0 && interface2parent < interfaces->numInterfaces()){
+			if (interfaces->etheraddToInterfaceIndex.get_pointer(vccmac) != NULL){
+				interface2parent = interfaces->numInterfaces();
+			}
+			if (interface2parent >= 0 && interface2parent <= interfaces->numInterfaces()){
 				veil_chatter(printDebugMessages, "-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendVCCAdandSubPackets: Sending Sub packet from %s to %s vcc %s at interface %d!\n",nte->myMac.s().c_str(),pe.ParentMac.s().c_str(),vccmac.s().c_str(),interface2parent);
 				output(interface2parent).push(packet);
 			}else{
@@ -208,28 +211,19 @@ VEILGenerateVCCSTAdSub::sendNeighborInfotoVCC(){
 	// now construct the Local topology packets, to be sent to VCC.
 	// extract the neighbors for each of my interfaces.
 	HashTable<EtherAddress, Vector<EtherAddress> > myinterface_neighbors;
+	for (int i = 0; i < ninterfaces; i++){
+		Vector<EtherAddress> vec;
+		EtherAddress mymac = interfaces->interfaceIndexToEtherAddr[i];
+		myinterface_neighbors.set(mymac,vec);
+	}
 	VEILNeighborTable::NeighborTable::iterator it1;
 	for (it1 = neighbors->neighbors.begin(); it1; ++it1){
 		EtherAddress neigh = it1.key();
 		VEILNeighborTable::NeighborTableEntry nte = it1.value();
 		Vector <EtherAddress> *vector = myinterface_neighbors.get_pointer(nte.myMac);
 		if(vector == NULL){
-			vector = new Vector<EtherAddress> ();
-			if (vector == NULL){
-				veil_chatter(printDebugMessages,"-o [VCC_AD_SUB_LTOPO_GENERATOR] ERROR: in sendNeighborInfotoVCC: Couldnt create the vector!!\n");
-			}
-
-			//veil_chatter(printDebugMessages,"-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendNeighborInfotoVCC: vector has the value: %s \n",(vector->front()).s().c_str());
-			if(myinterface_neighbors.set(nte.myMac, *vector)){
-				veil_chatter(printDebugMessages,"-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendNeighborInfotoVCC: Added nte.mymac %s to table!\n", nte.myMac.s().c_str());
-			}else{
-				veil_chatter(printDebugMessages,"-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendNeighborInfotoVCC: Failed to add nte.mymac %s to table!\n", nte.myMac.s().c_str());
-			}
-			veil_chatter(printDebugMessages,"-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendNeighborInfotoVCC: size of the myinterface_neighbors table is %d!\n", myinterface_neighbors.size());
-			vector = myinterface_neighbors.get_pointer(nte.myMac);
-			if (vector == NULL){
-				veil_chatter(printDebugMessages,"-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendNeighborInfotoVCC: vector is NULL!\n");
-			}
+			veil_chatter(true,"-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendNeighborInfotoVCC: vector is NULL for my interface %s!\n", nte.myMac.s().c_str());
+			return;
 		}
 
 		if(neigh == parentToVcc){
@@ -239,8 +233,11 @@ VEILGenerateVCCSTAdSub::sendNeighborInfotoVCC(){
 		vector->push_back(neigh);
 	}
 
-	if (interface2parent < 0 || interface2parent >= ninterfaces){
-		veil_chatter(true, "-o [VCC_AD_SUB_LTOPO_GENERATOR] Dont know which of my interface %s connects to parentToVCC %s, interfaceindex is %d !\n", myLocalMac.s().c_str(), parentToVcc.s().c_str(), interface2parent);
+	if (interfaces->etheraddToInterfaceIndex.get_pointer(vccmac) != NULL){
+		interface2parent = ninterfaces;
+		veil_chatter(printDebugMessages,"-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendNeighborInfotoVCC: the vccmac %s is me at interface index %d!\n", vccmac.s().c_str(), ninterfaces);
+	}if (interface2parent < 0 || interface2parent > ninterfaces){
+		veil_chatter(true, "-o [VCC_AD_SUB_LTOPO_GENERATOR] Dont know which of my interface connects to parentToVCC %s, interfaceindex is %d !\n", parentToVcc.s().c_str(), interface2parent);
 	}
 
 	for (int i = 0; i < ninterfaces; i++){
@@ -248,12 +245,12 @@ VEILGenerateVCCSTAdSub::sendNeighborInfotoVCC(){
 		EtherAddress ethsrc = interfaces->interfaceIndexToEtherAddr.get(i);
 		Vector <EtherAddress> *vector = myinterface_neighbors.get_pointer(ethsrc);
 		if(vector == NULL){continue;}
-		if (vector->size() == 0){
+		/*if (vector->size() == 0){
 			myinterface_neighbors.erase(ethsrc);
 			//todo need to erase the vector cleanly before exitting.
 			//delete(vector);
 			continue;
-		}
+		}*/
 		uint16_t n_neigh = ninterfaces - 1 + vector->size();
 		// now create the outputpacket with appropriate length
 		veil_chatter(printDebugMessages,"-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendNeighborInfotoVCC: %s has %d neighbors. \n", ethsrc.s().c_str(), n_neigh);
@@ -307,7 +304,9 @@ VEILGenerateVCCSTAdSub::sendNeighborInfotoVCC(){
 
 		// now send the packet out from the interface.
 		veil_chatter(printDebugMessages,"-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendNeighborInfotoVCC: Pushing the LTOPO packet for interface %s!\n",ethsrc.s().c_str());
-		if (interface2parent < 0 || interface2parent >= ninterfaces){
+		// if vccmac corresponds to one of my interfaces then forward the packet
+		// on interface = ninterfaces, it goes back to the classifier.
+		if (interface2parent < 0 || interface2parent > ninterfaces){
 			veil_chatter(true, "-o [VCC_AD_SUB_LTOPO_GENERATOR] Dont know which of my interface %s connects to parentToVCC %s, interfaceindex is %d !\n", myLocalMac.s().c_str(), parentToVcc.s().c_str(), interface2parent);
 		}else{
 			output(interface2parent).push(packet);

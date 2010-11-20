@@ -71,14 +71,16 @@ router[3] -> q3;
 router[4] -> c;
 router[5] -> Print(<--RoutePacketERROR-->) -> Discard;
 
+datasAd::TimedSource(DATA \<ffffffff ffff 0800 276e 7dbd 9876 0800 276e 7dbd 000000000000 0101 0200 0800 276e7dbd 0000>, INTERVAL 5) -> c;
 vccstate::VEILSpanningTreeState(08:00:27:6e:7d:bd 08:00:27:6e:7d:bd 0, PRINTDEBUG false);
-vccgenerator::VEILGenerateVCCSTAdSub(interfaces, neighbors, vccstate, PRINTDEBUG false);
-vccprocessor::VEILProcessVCCSTAdSub(INTERFACETABLE interfaces, NEIGHBORTABLE neighbors, SPANNINGTREESTATE vccstate, NETWORKTOPO topo, PRINTDEBUG false);
+vccgenerator::VEILGenerateVCCSTAdSub(interfaces, neighbors, vccstate, PRINTDEBUG true);
+vccprocessor::VEILProcessVCCSTAdSub(INTERFACETABLE interfaces, NEIGHBORTABLE neighbors, SPANNINGTREESTATE vccstate, NETWORKTOPO topo, PRINTDEBUG true);
 vidgenerator::VEILGenerateVIDAssignmentPackets(INTERFACETABLE interfaces, NEIGHBORTABLE neighbors, SPANNINGTREESTATE vccstate, NETWORKTOPO topo, PRINTDEBUG true);
 vccgenerator[0] -> q0;
 vccgenerator[1] -> q1;
 vccgenerator[2] -> q2;
 vccgenerator[3] -> q3;
+vccgenerator[4] -> Print(PACKETISFORME) -> c;
 
 vidgenerator[0] -> q0;
 vidgenerator[1] -> q1;
@@ -123,7 +125,7 @@ VEILPublishAccessInfo(hosts, PRINTDEBUG false) -> router;
 
 c[13] -> Discard;
 
-Script(wait 0s, print interfaces.table, wait 600s, loop);
+Script(wait 0s, print interfaces.table, wait 10s, loop);
 Script(wait 1s, print routes.table, wait 600s, loop);
 Script(wait 2s, print neighbors.table, wait 615s, loop);
 Script(wait 3s, print rendezvouspoints.table, wait 580s, loop);
