@@ -86,6 +86,7 @@ vidgenerator[0] -> q0;
 vidgenerator[1] -> q1;
 vidgenerator[2] -> q2;
 vidgenerator[3] -> q3;
+vidgenerator[4] -> Print(PACKETISFORMEFromVIDGenerator, MAXLENGTH 50) -> c;
 
 vccprocessor[0] -> q0;
 vccprocessor[1] -> q1;
@@ -119,7 +120,7 @@ c[9]  -> pip;
 c[11] -> pip;
 
 
-VEILBuildRouteTable(neighbors, routes, interfaces,PRINTDEBUG false) -> router;
+//VEILBuildRouteTable(neighbors, routes, interfaces,PRINTDEBUG false) -> router;
 
 VEILPublishAccessInfo(hosts, PRINTDEBUG false) -> router;
 

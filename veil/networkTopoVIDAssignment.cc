@@ -24,11 +24,11 @@ VEILNetworkTopoVIDAssignment::cp_an_edge(String s, ErrorHandler* errh){
 		EtherAddress from, to;
 		String from_str = cp_shift_spacevec(s);
 		if(!cp_ethernet_address(from_str, &from))
-			return errh->error("[VEIL-Network-topo-VID-Assignment] From EtherAddress is not in expected format!");
+			return errh->error(" From EtherAddress is not in expected format!");
 
 		String to_str = cp_shift_spacevec(s);
 		if(!cp_ethernet_address(to_str, &to))
-			return errh->error("[VEIL-Network-topo-VID-Assignment] From EtherAddress is not in expected format!");
+			return errh->error(" From EtherAddress is not in expected format!");
 
 		addAnEdge(from, to);
 	}else if(type.lower() == "ether2vid"){
@@ -36,18 +36,18 @@ VEILNetworkTopoVIDAssignment::cp_an_edge(String s, ErrorHandler* errh){
 		VID vid;
 		String mac_str = cp_shift_spacevec(s);
 		if(!cp_ethernet_address(mac_str, &mac))
-			return errh->error("[VEIL-Network-topo-VID-Assignment] in Ether2VID map EtherAddress is not in expected format!");
+			return errh->error(" in Ether2VID map EtherAddress is not in expected format!");
 
 		String vid_str = cp_shift_spacevec(s);
 		if(!cp_vid(vid_str, &vid))
-			return errh->error("[VEIL-Network-topo-VID-Assignment] in Ether2VID map VID is not in expected format!");
+			return errh->error(" in Ether2VID map VID is not in expected format!");
 
 		addAMap(vid, mac);
 	}
 	else if(type.lower() == "vccmac"){
 			String mac_str = cp_shift_spacevec(s);
 			if(!cp_ethernet_address(mac_str, &vccmac))
-				return errh->error("[VEIL-Network-topo-VID-Assignment] in VCCMAC EtherAddress is not in expected format!");
+				return errh->error(" in VCCMAC EtherAddress is not in expected format!");
 
 		}
 	return 0;
@@ -56,18 +56,18 @@ VEILNetworkTopoVIDAssignment::cp_an_edge(String s, ErrorHandler* errh){
 int
 VEILNetworkTopoVIDAssignment::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-	click_chatter("[VEIL-Network-topo-VID-Assignment] [FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
+	veil_chatter_new(true,class_name()," [FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!");
 	int res = 0;
 	int i = 0;
 	for (i = 0; i < conf.size()-1; i++) {
 		res = cp_an_edge(conf[i], errh);
 	}
-	veil_chatter(printDebugMessages,"[VEIL-Network-topo-VID-Assignment] Configured the initial Network topology and vid assignments.\n");
+	veil_chatter_new(printDebugMessages, class_name()," Configured the initial Network topology and vid assignments.");
 
 	cp_shift_spacevec(conf[i]);
 	String printflag = cp_shift_spacevec(conf[i]);
 	if(!cp_bool(printflag, &printDebugMessages))
-		return errh->error("[VEIL-Network-topo-VID-Assignment] [Error] PRINTDEBUG FLAG should be either true or false");
+		return errh->error(" [Error] PRINTDEBUG FLAG should be either true or false");
 	return res;
 }
 
@@ -79,16 +79,16 @@ VEILNetworkTopoVIDAssignment::removeNode(EtherAddress mac){
 bool
 VEILNetworkTopoVIDAssignment::addAnEdge(EtherAddress fromMac, EtherAddress toMac){ // adds a directed edge frommac -> tomac
 	bool added = false;
-	veil_chatter(printDebugMessages,"[VEIL-Network-topo-VID-Assignment] Adding the edge %s -> %s \n", fromMac.s().c_str(), toMac.s().c_str());
+	veil_chatter_new(printDebugMessages, class_name()," Adding the edge %s -> %s ", fromMac.s().c_str(), toMac.s().c_str());
 	if (networktopo.get_pointer(fromMac) == NULL){
-		veil_chatter(printDebugMessages,"[VEIL-Network-topo-VID-Assignment] Creating neighbor vector for %s \n", fromMac.s().c_str());
+		veil_chatter_new(printDebugMessages, class_name()," Creating neighbor vector for %s ", fromMac.s().c_str());
 		Vector<EtherAddress> v;
 		networktopo[fromMac] = v;
 	}
 	int i = 0;
 	for (i = 0; i < networktopo[fromMac].size(); i++){
 		if (networktopo[fromMac][i] == toMac){
-			veil_chatter(printDebugMessages,"[VEIL-Network-topo-VID-Assignment] Duplicate edge %s -> %s \n", fromMac.s().c_str(), toMac.s().c_str());
+			veil_chatter_new(printDebugMessages, class_name()," Duplicate edge %s -> %s ", fromMac.s().c_str(), toMac.s().c_str());
 			return false;
 		}
 	}
@@ -100,18 +100,18 @@ VEILNetworkTopoVIDAssignment::addAnEdge(EtherAddress fromMac, EtherAddress toMac
 bool
 VEILNetworkTopoVIDAssignment::addAMap(VID vid, EtherAddress mac){ // adds a mapping from vid to mac and reverse mapping
 	bool added = false;
-	veil_chatter(printDebugMessages,"[VEIL-Network-topo-VID-Assignment] Adding the mapping MAC %s <-> VID %s \n", mac.s().c_str(), vid.vid_string().c_str());
+	veil_chatter_new(printDebugMessages, class_name()," Adding the mapping MAC %s <-> VID %s ", mac.s().c_str(), vid.vid_string().c_str());
 
 	if (ether2vid[mac] != ether2vid.default_value()){
 		if (ether2vid[mac] != vid){
-			veil_chatter(printDebugMessages,"[VEIL-Network-topo-VID-Assignment] Warning already have a mapping MAC %s -> VID %s \n", mac.s().c_str(), ether2vid[mac].vid_string().c_str());
+			veil_chatter_new(printDebugMessages, class_name()," Warning already have a mapping MAC %s -> VID %s ", mac.s().c_str(), ether2vid[mac].vid_string().c_str());
 		}
 	}
 	ether2vid[mac] = vid;
 
 	if (vid2ether[vid] != vid2ether.default_value()){
 		if (vid2ether[vid] != mac){
-			veil_chatter(printDebugMessages,"[VEIL-Network-topo-VID-Assignment] Warning already have a mapping VID %s -> MAC %s \n", vid.vid_string().c_str(), vid2ether[vid].s().c_str());
+			veil_chatter_new(printDebugMessages, class_name()," Warning already have a mapping VID %s -> MAC %s ", vid.vid_string().c_str(), vid2ether[vid].s().c_str());
 		}
 	}
 	vid2ether[vid] = mac;
@@ -137,10 +137,10 @@ VEILNetworkTopoVIDAssignment::performVIDAssignment(){
 	int n_cluster = 0;
 
 	NetworkTopo::iterator iter;
-	veil_chatter(printDebugMessages,"[VEIL-Network-topo-VID-Assignment] in performVIDAssignment: Generating the duplicate topo map.\n");
+	veil_chatter_new(printDebugMessages, class_name()," in performVIDAssignment: Generating the duplicate topo map.");
 
 	if (networktopo.size() <= 1){
-		veil_chatter(printDebugMessages,"[VEIL-Network-topo-VID-Assignment] in performVIDAssignment: No topology is learned yet!\n");
+		veil_chatter_new(printDebugMessages, class_name()," in performVIDAssignment: No topology is learned yet!");
 		return false;
 	}
 	// initialize the data structures.
@@ -171,11 +171,11 @@ VEILNetworkTopoVIDAssignment::performVIDAssignment(){
 			sa <<" "<< neighid;
 		}
 	}
-	veil_chatter(printDebugMessages,"Initial Topology: %s\n", sa.c_str());
+	veil_chatter_new(printDebugMessages, class_name(),"Initial Topology: %s", sa.c_str());
 	sa.clear();
 
 	// create a cluster topology, store which clusterid is connected to which clusterid
-	veil_chatter(printDebugMessages,"[VEIL-Network-topo-VID-Assignment] in performVIDAssignment: Creating the initial cluster topology\n");
+	veil_chatter_new(printDebugMessages, class_name()," in performVIDAssignment: Creating the initial cluster topology");
 	HashTable<int, HashTable<int,int> > clusterTopo;
 	for (int i = 0; i < node_n; i++){
 		HashTable<int, int>::iterator it;
@@ -193,7 +193,7 @@ VEILNetworkTopoVIDAssignment::performVIDAssignment(){
 	int c_iter = 0;
 
 	while (c_iter++ < MAXITER && n_cluster > 1){
-		veil_chatter(printDebugMessages,"[VEIL-Network-topo-VID-Assignment] in performVIDAssignment: Iteration %d\n", c_iter);
+		veil_chatter_new(printDebugMessages, class_name()," in performVIDAssignment: Iteration %d", c_iter);
 		if (n_cluster == 1){break;} // done. we have only one cluster now.
 
 		// find the smallest clsuter and see if it can be clustered with other nodes.
@@ -217,7 +217,7 @@ VEILNetworkTopoVIDAssignment::performVIDAssignment(){
 			// todo what if the size is same? which one to keep. leaving it for now.
 		}
 
-		veil_chatter(printDebugMessages,"[VEIL-Network-topo-VID-Assignment] in performVIDAssignment: Smallest Cluster label %d, size %d\n", smallestClusterLabel, smallestClusterSize);
+		veil_chatter_new(printDebugMessages, class_name()," in performVIDAssignment: Smallest Cluster label %d, size %d", smallestClusterLabel, smallestClusterSize);
 		// now find the smallest cluster that we can cluster with our earlier cluster.
 		int secondCluster = -1;
 		int secondClusterSize = -1;
@@ -248,7 +248,7 @@ VEILNetworkTopoVIDAssignment::performVIDAssignment(){
 			}
 		}
 		int len3 = max(len1,len2);
-		veil_chatter(printDebugMessages,"[VEIL-Network-topo-VID-Assignment] in performVIDAssignment: secondcluster %d, size %d, len1 %d, len2 %d, len3 %d\n", secondCluster, secondClusterSize, len1, len2, len3);
+		veil_chatter_new(printDebugMessages, class_name()," in performVIDAssignment: secondcluster %d, size %d, len1 %d, len2 %d, len3 %d", secondCluster, secondClusterSize, len1, len2, len3);
 		// make sure that nodes in both clusters have same number of bits in their vids
 		if (len1 != len2){
 			for (int i = 0; i < node_n; i++){
@@ -260,7 +260,7 @@ VEILNetworkTopoVIDAssignment::performVIDAssignment(){
 			}
 		}
 		if(len1 == -1 || len2 == -1 || secondCluster == -1 || secondClusterSize < 1 || smallestClusterSize < 1){
-			veil_chatter(printDebugMessages,"[VEIL-Network-topo-VID-Assignment] in performVIDAssignment: breaking out of the loop.\n");
+			veil_chatter_new(printDebugMessages, class_name()," in performVIDAssignment: breaking out of the loop.");
 			break;
 		}
 		// update the cluster labels and vids
@@ -303,15 +303,15 @@ VEILNetworkTopoVIDAssignment::performVIDAssignment(){
 		clusterTopo.erase(clusterid2remove);
 
 		n_cluster = clusterTopo.size();
-		veil_chatter(printDebugMessages,"[VEIL-Network-topo-VID-Assignment] in performVIDAssignment: n_cluster %d at the end of iteration %d\n", n_cluster, c_iter);
+		veil_chatter_new(printDebugMessages, class_name()," in performVIDAssignment: n_cluster %d at the end of iteration %d", n_cluster, c_iter);
 	}
-	veil_chatter(printDebugMessages,"[VEIL-Network-topo-VID-Assignment] Assigned VIDS:\nEther Address \t VID \t Index\n");
+	veil_chatter_new(printDebugMessages, class_name()," Assigned VIDS:\nEther Address \t VID \t Index");
 	int vidlen = node2vid[0].length();
 
 	// adding enough room at the prefix and suffix levels
 	int prefixlen = (32-vidlen)/2;
 	int suffixlen = 32 - vidlen - prefixlen;
-	veil_chatter(printDebugMessages,"[VEIL-Network-topo-VID-Assignment] Adding a prefix of len %d, suffix of len %d to current vidlen %d\n", prefixlen,suffixlen, vidlen);
+	veil_chatter_new(printDebugMessages, class_name()," Adding a prefix of len %d, suffix of len %d to current vidlen %d", prefixlen,suffixlen, vidlen);
 	while (vidlen < 32){
 		for (int i = 0; i < node_n; i++){
 			if(prefixlen > 0){
@@ -325,14 +325,14 @@ VEILNetworkTopoVIDAssignment::performVIDAssignment(){
 	}
 
 	for (int i = 0; i < node_n; i++){
-		veil_chatter(printDebugMessages,"%s \t %s \t %d\n", ids2node[i].s().c_str(), node2vid[i].c_str(), i);
+		veil_chatter_new(printDebugMessages, class_name(),"%s \t %s \t %d", ids2node[i].s().c_str(), node2vid[i].c_str(), i);
 	}
 
 	if (vidlen > 32){
-		veil_chatter(true, "[VEIL-Network-topo-VID-Assignment] ERROR: vid_len %d > 31, exceeds the limit of 31!! \n", vidlen);
+		veil_chatter_new(true, class_name(), " ERROR: vid_len %d > 31, exceeds the limit of 31!! ", vidlen);
 		return true;
 	}else if (vidlen == 0){
-		veil_chatter(true, "[VEIL-Network-topo-VID-Assignment] ERROR: vid_len %d, is ZERO!! \n", vidlen);
+		veil_chatter_new(true, class_name(), " ERROR: vid_len %d, is ZERO!! ", vidlen);
 		return true;
 	}
 
@@ -365,7 +365,7 @@ VEILNetworkTopoVIDAssignment::performVIDAssignment(){
 		EtherAddress mac = ids2node[i];
 		if (ether2vid.get_pointer(mac) != NULL){
 			if (ether2vid[mac] != vid){
-				veil_chatter(true,"[VEIL-Network-topo-VID-Assignment] VID CHANGED! New VID %s for MAC %s from old VID %s\n",vid.vid_string().c_str(), mac.s().c_str(),ether2vid[mac].vid_string().c_str() );
+				veil_chatter_new(true, class_name()," VID CHANGED! New VID %s for MAC %s from old VID %s",vid.vid_string().c_str(), mac.s().c_str(),ether2vid[mac].vid_string().c_str() );
 				vid_changed = true;
 				ether2vid[mac] = vid;
 				vid2ether[vid] = mac;
@@ -374,7 +374,7 @@ VEILNetworkTopoVIDAssignment::performVIDAssignment(){
 			ether2vid[mac] = vid;
 			vid2ether[vid] = mac;
 		}
-		veil_chatter(printDebugMessages,"EtherAddress: %s MAC:%s \n", vid.vid_string().c_str(), mac.s().c_str());
+		veil_chatter_new(printDebugMessages, class_name(),"EtherAddress: %s MAC:%s ", vid.vid_string().c_str(), mac.s().c_str());
 	}
 
 	return vid_changed;

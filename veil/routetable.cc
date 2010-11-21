@@ -23,16 +23,16 @@ VEILRouteTable::cp_viro_route(String s, ErrorHandler* errh){
 
 	String ivid_str = cp_shift_spacevec(s);
 	if(!cp_vid(ivid_str, &ivid))
-		return errh->error("[++RouteTable] [Error] interface VID is not in expected format");
+		return errh->error(" [Error] interface VID is not in expected format");
 	String bucket_str = cp_shift_spacevec(s);
 	if(!cp_integer(bucket_str, &bucket))
-		return errh->error("[++RouteTable] [Error] invalid integer");
+		return errh->error(" [Error] invalid integer");
 	String nhvid_str = cp_shift_spacevec(s);
 	if(!cp_vid(nhvid_str, &nhvid))
-		return errh->error("[++RouteTable] [Error] nexthop VID is not in expected format");
+		return errh->error(" [Error] nexthop VID is not in expected format");
 	String gvid_str = cp_shift_spacevec(s);
 	if(!cp_vid(gvid_str, &gvid))
-		return errh->error("[++RouteTable] [Error] gateway VID is not in expected format");
+		return errh->error(" [Error] gateway VID is not in expected format");
 	updateEntry(&ivid, bucket, &nhvid, &gvid);
 	return 0;
 }
@@ -40,8 +40,8 @@ VEILRouteTable::cp_viro_route(String s, ErrorHandler* errh){
 int
 VEILRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {	
-	click_chatter("[++RouteTable][FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
-	click_chatter("[++RouteTable][FixME] Updating default routing entry for a bucket purges all the other routing entries, also default entry is always added in the beginning of the list of routing entries.\n");
+	veil_chatter_new(true,class_name(),"[FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!");
+	veil_chatter_new(true,class_name(),"[FixME] Updating default routing entry for a bucket purges all the other routing entries, also default entry is always added in the beginning of the list of routing entries.");
 	int res = 0;
 	int i = 0;
 	for (i = 0; i < conf.size()-1; i++) {
@@ -50,7 +50,7 @@ VEILRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 	cp_shift_spacevec(conf[i]);
 	String printflag = cp_shift_spacevec(conf[i]);
 	if(!cp_bool(printflag, &printDebugMessages))
-		return errh->error("[++RouteTable] [Error] PRINTDEBUG FLAG should be either true or false");	
+		return errh->error(" [Error] PRINTDEBUG FLAG should be either true or false");	
 	return res;
 }
 
@@ -113,7 +113,7 @@ VEILRouteTable::updateEntry (
 		buck->buckets[0].isDefault = true;
 		buck->expiry->unschedule();
 		buck->expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
-		veil_chatter(printDebugMessages,"[++RouteTable] Updated Default and \" purged\" all the other Bucket %d for Interface |%s| \n",b, i->switchVIDString().c_str());
+		veil_chatter_new(printDebugMessages, class_name()," Updated Default and \" purged\" all the other Bucket %d for Interface |%s| ",b, i->switchVIDString().c_str());
 		for (j = 1; j < MAX_GW_PER_BUCKET; j++){
 			buck->buckets[j].isValid = false;
 		}
@@ -127,7 +127,7 @@ VEILRouteTable::updateEntry (
 			buck->buckets[j].isDefault = false;
 			buck->expiry->unschedule();
 			buck->expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
-			veil_chatter(printDebugMessages,"[++RouteTable] Bucket %d for Interface |%s| \n",b, i->switchVIDString().c_str());
+			veil_chatter_new(printDebugMessages, class_name()," Bucket %d for Interface |%s| ",b, i->switchVIDString().c_str());
 			return;
 		}
 	}
@@ -218,13 +218,13 @@ VEILRouteTable::expire(Timer *t, void *data)
 	uint8_t bucket = td->bucket;
 	VID interface;
 	memcpy(&interface, td->interface, VID_LEN);
-	veil_chatter(true,"[++RouteTable] [Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.switchVIDString().c_str(), bucket);
+	veil_chatter_new(true,"VEILRouteTable", " [Timer Expired] on Interface VID: |%s| for bucket %d ",interface.switchVIDString().c_str(), bucket);
 	delete(td->interface);
 	InnerRouteTable* irt = td->routes->get_pointer(interface);
 	Bucket* buck = irt->get_pointer(bucket);
 	// Erase returns the number of elements deleted, so if it is 0, then it means that corresponding entry was not deleted.
 	if (irt->find(bucket) == irt->end()){
-		veil_chatter(true,"[++RouteTable][Delete ERROR!!][Timer Expired] on Interface VID: |%s| for bucket %d \n",interface.switchVIDString().c_str(), bucket);
+		veil_chatter_new(true, "VEILRouteTable" ,"[Delete ERROR!!][Timer Expired] on Interface VID: |%s| for bucket %d ",interface.switchVIDString().c_str(), bucket);
 	}else{
 		for (uint8_t i = 0; i < MAX_GW_PER_BUCKET; i++){
 			buck->buckets[i].isValid = false;

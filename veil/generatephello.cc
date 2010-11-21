@@ -44,7 +44,7 @@ VEILGeneratePHello::run_timer (
 	WritablePacket *packet = Packet::make(packet_length);
 
         if (packet == 0) {
-                veil_chatter(true, "-o-o- [ GeneratePHello ]in %s: cannot make packet!", name().c_str());
+                veil_chatter_new(true,class_name(), "in %s: cannot make packet!", name().c_str());
                 return;
         }
 

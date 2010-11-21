@@ -58,13 +58,14 @@ VEILProcessVCCSTAdSub::smaction(Packet* p){
 	click_ether *e = (click_ether *) p->data();
 	uint16_t ethtype = ntohs(e->ether_type);
 	if (ethtype != ETHERTYPE_VEIL){
-		veil_chatter(true, "-o [VEIL_Process_VCC_ST_Ad_Sub] ERROR: ETHER_TYPE must be ETHERTYPE_VEIL(%d), but found %d!\n",ETHERTYPE_VEIL, ethtype);
+		veil_chatter_new(true, class_name(), " ERROR: ETHER_TYPE must be ETHERTYPE_VEIL(%d), but found %d!",ETHERTYPE_VEIL, ethtype);
 		p->kill();
 		p = NULL;
 		return -1;
 	}
 	veil_sub_header *veil_sub = (veil_sub_header *) (e+1);
 	uint16_t  veiltype = ntohs(veil_sub->veil_type);
+	veil_chatter_new(printDebugMessages, class_name(),"Processing the packet type: %s", get_packet_type_str(veiltype));
 	switch(veiltype){
 		case VEIL_VCC_SPANNING_TREE_AD:
 			processAD(p);
@@ -83,14 +84,14 @@ VEILProcessVCCSTAdSub::smaction(Packet* p){
 			outport = processSwitchVID(p);
 			break;
 		default:
-			veil_chatter(true, "-o [VEIL_Process_VCC_ST_Ad_Sub] ERROR: VEIL_TYPE must be VEIL_VCC_SPANNING_TREE_AD/SUBS/LOCAL_TOPO/VID(%d,%d,%d,%d), but found %d!\n",VEIL_VCC_SPANNING_TREE_AD,VEIL_VCC_SPANNING_TREE_SUBS,VEIL_LOCAL_TOPO_TO_VCC,VEIL_SWITCH_VID_FROM_VCC, veiltype);
+			veil_chatter_new(true, class_name(), "ERROR: VEIL_TYPE must be VEIL_VCC_SPANNING_TREE_AD/SUBS/LOCAL_TOPO/VID(%d,%d,%d,%d), but found %d!",VEIL_VCC_SPANNING_TREE_AD,VEIL_VCC_SPANNING_TREE_SUBS,VEIL_LOCAL_TOPO_TO_VCC,VEIL_SWITCH_VID_FROM_VCC, veiltype);
 			p->kill();
 			p = NULL;
 			return -1;
 	}
 
 	if (outport == -1 && p != NULL){
-		veil_chatter(true, "-o [VEIL_Process_VCC_ST_Ad_Sub] ERROR: While processing the packet!\n");
+		veil_chatter_new(printDebugMessages, class_name(), "Outport is %d or packet is NULL.", outport);
 		p->kill();
 		p = NULL;
 		return -1;
@@ -124,7 +125,7 @@ VEILProcessVCCSTAdSub::processAD(Packet*p){
 	cost = ntohs(veil_payload->cost);
 
 	ststate->updateCostToVCC(parent, vcc, cost);
-	veil_chatter(printDebugMessages, "-o [VEIL_Process_VCC_ST_Ad_Sub] received st ad packet from parent %s to vcc %s with cost %d\n", parent.s().c_str(), vcc.s().c_str(),cost);
+	veil_chatter_new(printDebugMessages, class_name(), "received st ad packet from parent %s to vcc %s with cost %d", parent.s().c_str(), vcc.s().c_str(),cost);
 }
 
 void
@@ -141,7 +142,7 @@ VEILProcessVCCSTAdSub::processSUBS(Packet*p){
 
 	ststate->updateChild(child, vcc);
 
-	veil_chatter(printDebugMessages, "-o [VEIL_Process_VCC_ST_Ad_Sub] Added children %s in the list to reach vcc %s\n", child.s().c_str(), vcc.s().c_str());
+	veil_chatter_new(printDebugMessages, class_name(), "Added children %s in the list to reach vcc %s", child.s().c_str(), vcc.s().c_str());
 }
 
 int
@@ -153,18 +154,18 @@ VEILProcessVCCSTAdSub::processLocalTopo(Packet*p){
 	veil_sub_header *veil_sub = (veil_sub_header *) (e+1);
 	memcpy(&dstVCC, &veil_sub->dvid,6);
 	memcpy(&srcmac, &veil_sub->svid,6);
-	veil_chatter(printDebugMessages, "-o [VEIL_Process_VCC_ST_Ad_Sub] Received LTOPO packet from %s to VCC %s\n", srcmac.s().c_str(), dstVCC.s().c_str());
+	veil_chatter_new(printDebugMessages, class_name(), "Received LTOPO packet from %s to VCC %s", srcmac.s().c_str(), dstVCC.s().c_str());
 	/*
 	 * TODO: if I am vcc then take care of it accordingly.
 	 */
 	if (interfaces->etheraddToInterfaceIndex.get_pointer(dstVCC) != NULL){
-		veil_chatter(printDebugMessages, "-o [VEIL_Process_VCC_ST_Ad_Sub]  Received processLocalTopo for my interface %s as VCC from %s as sourcemac.", dstVCC.s().c_str(), srcmac.s().c_str());
+		veil_chatter_new(printDebugMessages, class_name(), "Received processLocalTopo for my interface %s as VCC from %s as sourcemac.", dstVCC.s().c_str(), srcmac.s().c_str());
 		// extract the neighbor list for this interface and update the topology information.
 		uint16_t n_neigh;
 		veil_payload_ltopo_to_vcc *veil_payload = (veil_payload_ltopo_to_vcc *) (veil_sub+1);
 		n_neigh = ntohs(veil_payload->neighbor_count);
 
-		veil_chatter(printDebugMessages, "-o [VEIL_Process_VCC_ST_Ad_Sub] # of neighbors for %s = %d\n", srcmac.s().c_str(), n_neigh);
+		veil_chatter_new(printDebugMessages, class_name(), " # of neighbors for %s = %d", srcmac.s().c_str(), n_neigh);
 		char * neighbor_addr = (char *)(veil_payload+1);
 
 		// now extract all the neighbor addresses one by one.
@@ -195,17 +196,16 @@ VEILProcessVCCSTAdSub::processLocalTopo(Packet*p){
 				veil_sub_header *veil_sub = (veil_sub_header *) (e+1);
 				// ttl check
 				if (veil_sub->ttl < 1){
-					veil_chatter(true, "-o [VEIL_Process_VCC_ST_Ad_Sub]  ERROR: in processLocalTopo: TTL expired.");
+					veil_chatter_new(true, class_name(), "ERROR: in processLocalTopo: TTL expired.");
 					return -1;
 				}
 				veil_sub->ttl = veil_sub->ttl -1;
-
 				// find out the physical interface corresponding to the nte.myMac
 				int interface2parent = interfaces->etheraddToInterfaceIndex.get(nte->myMac);
 				if (interface2parent >= 0 && interface2parent < interfaces->numInterfaces()){
 					outport = interface2parent;
 				}else{
-					veil_chatter(true, "-o [VEIL_Process_VCC_ST_Ad_Sub]  ERROR: in processLocalTopo: can't find the index for interface: %s, failed index: %d !\n", nte->myMac.s().c_str(), interface2parent);
+					veil_chatter_new(true, class_name(), "ERROR: in processLocalTopo: can't find the index for interface: %s, failed index: %d !", nte->myMac.s().c_str(), interface2parent);
 					outport = -1;
 				}
 			}
@@ -224,13 +224,19 @@ VEILProcessVCCSTAdSub::processSwitchVID(Packet*p){
 	memcpy(&dstmac, &veil_sub->dvid,6);
 	memcpy(&vccmac, &veil_sub->svid,6);
 	if (veil_sub->ttl < 1){
-		veil_chatter(true, "-o [VEIL_Process_VCC_ST_Ad_Sub]  ERROR: in processLocalTopo: TTL expired.");
+		veil_chatter_new(true, class_name(), "ERROR: in processLocalTopo: TTL expired.");
 		return -1;
 	}
+	printf("TTL is : %d ", veil_sub->ttl);
 	veil_sub->ttl = veil_sub->ttl -1;
+	printf("Updated TTL is : %d\n", veil_sub->ttl);
+
+	veil_chatter_new(printDebugMessages, class_name(), "Packet of type: switch vid assignment, coming from vccmac %s dstmac %s", vccmac.s().c_str(), dstmac.s().c_str());
 
 	// it is destined to one of my interfaces.
 	if(interfaces->etheraddToInterfaceIndex.get_pointer(dstmac) != NULL){
+		bool vidset = true;
+		veil_chatter_new(printDebugMessages, class_name(), "Packet of type: switch vid assignment, destination %s is me!", dstmac.s().c_str());
 		veil_payload_svid_mappings *veil_payload = (veil_payload_svid_mappings *) (veil_sub+1);
 		VID myvid;
 		memcpy(&myvid, &veil_payload->vid, 6);
@@ -239,13 +245,14 @@ VEILProcessVCCSTAdSub::processSwitchVID(Packet*p){
 		if (interfaces->rinterfaces.get_pointer(myintindex) != NULL){
 			//duplicate
 			VID cvid = interfaces->rinterfaces.get(myintindex);
-			if (cvid != myvid) veil_chatter(true, "-o [VEIL_Process_VCC_ST_Ad_Sub] Warning: Changed vid for interface %d, from %s to %s! \n",myintindex, cvid.vid_string().c_str(), myvid.vid_string().c_str());
+			if (cvid != myvid) veil_chatter_new(true, class_name(), "Warning: Changed vid for interface %d, from %s to %s! ",myintindex, cvid.vid_string().c_str(), myvid.vid_string().c_str());
 		}
 		// now update.
-		veil_chatter(printDebugMessages, "-o [VEIL_Process_VCC_ST_Ad_Sub] VID for interface %d is %s! \n",myintindex, myvid.vid_string().c_str());
+		veil_chatter_new(printDebugMessages, class_name(), "VID for interface %d is %s! ",myintindex, myvid.vid_string().c_str());
 		interfaces->rinterfaces.set(myintindex, myvid);
 		interfaces->interfaces.set(myvid,myintindex);
-		interfaces->isvidset[myintindex] = true;
+		//return -1;
+		interfaces->isvidset.set(myintindex, vidset);
 	}
 	else{
 		VEILSpanningTreeState::ForwardingTableFromVCC::const_iterator it;
@@ -267,13 +274,15 @@ VEILProcessVCCSTAdSub::processSwitchVID(Packet*p){
 					if (interfaces->etheraddToInterfaceIndex.get_pointer(mymac) != NULL){
 						myinterfaceid = interfaces->etheraddToInterfaceIndex.get(mymac);
 						output(myinterfaceid).push(pkt);
+						veil_chatter_new(printDebugMessages, class_name(), "Packet of type: switch vid assignment, sending out from %s to %s at interfaceid %d", mymac.s().c_str(), vccmac.s().c_str(), myinterfaceid);
 					}else{
 						//error
-						veil_chatter(true, "-o [VEIL_Process_VCC_ST_Ad_Sub] Error: Couldn't retrieve the interface id for %s! \n", mymac.s().c_str());
+						veil_chatter_new(true, class_name(), "Error: Couldn't retrieve the interface id for %s! ", mymac.s().c_str());
+						veil_chatter_new(printDebugMessages, class_name(), "Packet of type: switch vid assignment, sending out from %s to %s at interfaceid %d", mymac.s().c_str(), vccmac.s().c_str(), myinterfaceid);
 					}
 				}else{
 					// error!
-					veil_chatter(true, "-o [VEIL_Process_VCC_ST_Ad_Sub] Error: Couldn't retrieve the my local interface connected to %s! \n", childmac.s().c_str());
+					veil_chatter_new(true, class_name(), "Error: Couldn't retrieve the my local interface connected to %s! ", childmac.s().c_str());
 				}
 			}
 		}

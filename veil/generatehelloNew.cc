@@ -45,7 +45,7 @@ VEILGenerateHelloNew::run_timer (
 		WritablePacket *packet = Packet::make(packet_length);
 
 			if (packet == 0) {
-					veil_chatter(true, "-o-o- [ GenerateHello ]in %s: cannot make packet!\n", name().c_str());
+					veil_chatter_new(true, class_name(),"in %s: cannot make packet!", name().c_str());
 					return;
 			}
 
@@ -77,7 +77,7 @@ VEILGenerateHelloNew::run_timer (
 			//Send HELLO packets to neighbors
 			output(i).push(packet);
 		}else{
-			veil_chatter(true, "-o-o- [ GenerateHello ]in %s: cannot retrieve MAC/VID information for the interface '%d'.\n", name().c_str(),i);
+			veil_chatter_new(true, class_name(),"in %s: cannot retrieve MAC/VID information for the interface '%d'.", name().c_str(),i);
 			// print the error message.
 		}
 	}

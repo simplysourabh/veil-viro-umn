@@ -26,19 +26,19 @@ VEILSpanningTreeState::cp_spanning_tree_state(String s, ErrorHandler* errh){
 	unsigned int n;
 	String vccmac_str = cp_shift_spacevec(s);
 	if(!cp_ethernet_address(vccmac_str, &vcc)){
-		veil_chatter(printDebugMessages,"[::-SpanningTreeState-::] [Error] VCC MAC ADD is not in expected format. Entered string: %s\n",vccmac_str);
-		return errh->error("[::-SpanningTreeState-::] [Error] VCC MAC ADD is not in expected format.");
+		veil_chatter_new(printDebugMessages, class_name()," [Error] VCC MAC ADD is not in expected format. Entered string: %s",vccmac_str);
+		return errh->error(" [Error] VCC MAC ADD is not in expected format.");
 	}
 
 	String parentmac_str = cp_shift_spacevec(s);
 	if(!cp_ethernet_address(parentmac_str, &parent)){
-		veil_chatter(printDebugMessages,"[::-SpanningTreeState-::] [Error] PARENT MAC ADD is not in expected format. Entered string: %s\n",parentmac_str);
-		return errh->error("[::-SpanningTreeState-::] [Error] PARENT MAC ADD is not in expected format.");
+		veil_chatter_new(printDebugMessages, class_name()," [Error] PARENT MAC ADD is not in expected format. Entered string: %s",parentmac_str);
+		return errh->error(" [Error] PARENT MAC ADD is not in expected format.");
 	}
 	String nhops_str = cp_shift_spacevec(s);
 	if(!cp_unsigned(nhops_str, &n)){
-		veil_chatter(printDebugMessages,"[::-SpanningTreeState-::] [Error] Cost is not in correct format. Entered string: %s\n",nhops_str);
-		return errh->error("[::-SpanningTreeState-::] [Error] Cost is not in correct format.");
+		veil_chatter_new(printDebugMessages, class_name()," [Error] Cost is not in correct format. Entered string: %s",nhops_str);
+		return errh->error(" [Error] Cost is not in correct format.");
 	}
 
 	updateCostToVCC(parent, vcc, (uint16_t)n );
@@ -49,21 +49,21 @@ VEILSpanningTreeState::cp_spanning_tree_state(String s, ErrorHandler* errh){
 int
 VEILSpanningTreeState::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-	click_chatter("[::-SpanningTreeState-::] [FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
+	veil_chatter_new(true,class_name()," [FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!");
 	int res = 0;
 	int i = 0;
 	for (i = 0; i < conf.size()-1; i++) {
 		res = cp_spanning_tree_state(conf[i], errh);
 		if (res != 0){
-			veil_chatter(printDebugMessages,"[::-SpanningTreeState-::] Error occurred while parsing the string:'%s'!\n",conf[i]);
+			veil_chatter_new(printDebugMessages, class_name()," Error occurred while parsing the string:'%s'!",conf[i]);
 		}
 	}
-	veil_chatter(printDebugMessages,"[::-SpanningTreeState-::] Configured the initial SpanningTreeState table!\n");
+	veil_chatter_new(printDebugMessages, class_name()," Configured the initial SpanningTreeState table!");
 
 	cp_shift_spacevec(conf[i]);
 	String printflag = cp_shift_spacevec(conf[i]);
 	if(!cp_bool(printflag, &printDebugMessages))
-		return errh->error("[::-SpanningTreeState-::] [Error] PRINTDEBUG FLAG should be either true or false");
+		return errh->error(" [Error] PRINTDEBUG FLAG should be either true or false");
 	return res;
 }
 
@@ -89,7 +89,7 @@ VEILSpanningTreeState::updateCostToVCC(EtherAddress neighbormac, EtherAddress vc
 
 			pentry->expiry->unschedule();
 			pentry->expiry->schedule_after_msec(VEIL_SPANNING_TREE_ENTRY_EXPIRY);
-			veil_chatter(printDebugMessages,"[::-SpanningTreeState-::][Refreshed Parent MAC: %s] to VCC: %s with cost %d \n",pentry->ParentMac.s().c_str(),vccmac.s().c_str(), cost+1);
+			veil_chatter_new(printDebugMessages, class_name(),"[Refreshed Parent MAC: %s] to VCC: %s with cost %d ",pentry->ParentMac.s().c_str(),vccmac.s().c_str(), cost+1);
 			return true;
 		}else{
 			return false;
@@ -114,7 +114,7 @@ VEILSpanningTreeState::updateCostToVCC(EtherAddress neighbormac, EtherAddress vc
 	expiry->schedule_after_msec(VEIL_SPANNING_TREE_ENTRY_EXPIRY);
 	newentry.expiry  = expiry;
 
-	veil_chatter(printDebugMessages,"[::-SpanningTreeState-::][New Parent MAC: %s] to VCC: %s with cost %d \n",newentry.ParentMac.s().c_str(),vccmac.s().c_str(), cost+1);
+	veil_chatter_new(printDebugMessages, class_name(),"[New Parent MAC: %s] to VCC: %s with cost %d ",newentry.ParentMac.s().c_str(),vccmac.s().c_str(), cost+1);
 	forwardingTableToVCC.set(vccmac, newentry);
 
 	return retval;
@@ -139,7 +139,7 @@ VEILSpanningTreeState::updateChild(EtherAddress childmac, EtherAddress vccmac){
 
 		centry->expiry->unschedule();
 		centry->expiry->schedule_after_msec(VEIL_SPANNING_TREE_ENTRY_EXPIRY);
-		veil_chatter(printDebugMessages,"[::-SpanningTreeState-::][Refreshed Child MAC: %s] to VCC: %s\n",childmac.s().c_str(),centry->VccMac.s().c_str());
+		veil_chatter_new(printDebugMessages, class_name(),"[Refreshed Child MAC: %s] to VCC: %s",childmac.s().c_str(),centry->VccMac.s().c_str());
 		return true;
 	}
 
@@ -157,7 +157,7 @@ VEILSpanningTreeState::updateChild(EtherAddress childmac, EtherAddress vccmac){
 	expiry->schedule_after_msec(VEIL_SPANNING_TREE_ENTRY_EXPIRY);
 	newentry.expiry  = expiry;
 
-	veil_chatter(printDebugMessages,"[::-SpanningTreeState-::][New Child MAC: %s] to VCC: %s\n",childmac.s().c_str(),newentry.VccMac.s().c_str());
+	veil_chatter_new(printDebugMessages, class_name(),"[New Child MAC: %s] to VCC: %s",childmac.s().c_str(),newentry.VccMac.s().c_str());
 	forwardingTableFromVCC.set(childmac, newentry);
 
 	return retval;
@@ -171,11 +171,11 @@ VEILSpanningTreeState::expire(Timer *t, void *data)
 	if (td->isParentEntry){
 		ForwardingTableToVCC * ftable = (ForwardingTableToVCC *) td->ftable;
 		ftable->erase(td->mac);
-		veil_chatter(true,"[::-SpanningTreeState-::] [Timer Expired] ParentEntry for VCC MAC: |%s|\n",td->mac.s().c_str());
+		veil_chatter_new(true, "VEILSpanningTreeState"," [Timer Expired] ParentEntry for VCC MAC: |%s|",td->mac.s().c_str());
 	}else{
 		ForwardingTableFromVCC * ftable = (ForwardingTableFromVCC *) td->ftable;
 		ftable->erase(td->mac);
-		veil_chatter(true,"[::-SpanningTreeState-::] [Timer Expired] Child MAC: |%s|\n",td->mac.s().c_str());
+		veil_chatter_new(true, "VEILSpanningTreeState"," [Timer Expired] Child MAC: |%s|",td->mac.s().c_str());
 	}
 	delete(td);
 	delete(t);
@@ -190,7 +190,7 @@ VEILSpanningTreeState::read_handler(Element *e, void *thunk)
 	ForwardingTableToVCC::iterator iterTo;
 	ForwardingTableFromVCC::iterator iterFrom;
 
-	sa << "\n-----------------SpanningTreeState START-----------------\n"<<"[::-SpanningTreeState-::]" << '\n';
+	sa << "\n-----------------SpanningTreeState START-----------------\n"<<"" << '\n';
 	sa << "VCC MAC" << "\t" << "Parent(forwarder)MAC" << "\tCost(#hops)"<<'\t' << "TTL" << '\n';
 	for (iterTo = st->forwardingTableToVCC.begin(); iterTo; ++iterTo){
 		String vccmac = static_cast <EtherAddress> (iterTo.key()).s();

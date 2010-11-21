@@ -41,7 +41,7 @@ VEILMappingTable::cp_mapping(String s, ErrorHandler *errh)
 int
 VEILMappingTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-	click_chatter("[-:MAPPINGTABLE:-][FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
+	veil_chatter_new(true, class_name(),"[FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!");
 	int res = 0;
 	int i = 0;
 	for (i = 0; i < conf.size()-1; i++) {
@@ -50,7 +50,7 @@ VEILMappingTable::configure(Vector<String> &conf, ErrorHandler *errh)
 	cp_shift_spacevec(conf[i]);
 	String printflag = cp_shift_spacevec(conf[i]);
 	if(!cp_bool(printflag, &printDebugMessages))
-		return errh->error("[-:MAPPINGTABLE:-][Error] PRINTDEBUG FLAG should be either true or false");	
+		return errh->error("[Error] PRINTDEBUG FLAG should be either true or false");	
 	return res;
 }
 
@@ -65,7 +65,7 @@ VEILMappingTable::updateEntry (IPAddress *ip, VID *ipvid, VID *myvid, EtherAddre
 		ent_pointer->expiry->unschedule();
 
 		if((*ipvid) != entry.ipVid || (*myvid) != entry.myVid || (*ipmac) != entry.ipmac){
-			veil_chatter(printDebugMessages,"[-:MAPPINGTABLE:-] New mapping for IP: %s to VID: %s, old vid: %s \n", ip->s().c_str(), ipvid->vid_string().c_str(), entry.ipVid.vid_string().c_str());
+			veil_chatter_new(printDebugMessages, class_name()," New mapping for IP: %s to VID: %s, old vid: %s ", ip->s().c_str(), ipvid->vid_string().c_str(), entry.ipVid.vid_string().c_str());
 			// TODO: Send a VEIL_MAP_UPDATE to original switch, so that it can update its host table.
 			memcpy(&(ent_pointer->ipVid), ipvid->data(),6);
 			memcpy(&(ent_pointer->myVid), myvid->data(),6);

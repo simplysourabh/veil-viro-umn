@@ -40,7 +40,7 @@ VEILHostTable::cp_host(String s, ErrorHandler* errh)
 int
 VEILHostTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-	click_chatter("[^^ HOST TABLE ^^][FixME] Its mandagory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
+	veil_chatter_new(true,class_name(),"[FixME] Its mandagory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!");
 	int res = 0;
 	int i = 0;
 	for ( i = 0; i < conf.size()-1; i++) {
@@ -163,14 +163,14 @@ VEILHostTable::read_handler(Element *e, void *thunk)
 		}
 		return sa.take_string();
 	case table:
-		sa << "\n----------------- Host Table START-----------------\n"<<"[^^ HOST TABLE ^^]" << '\n';
+		sa << "\n----------------- Host Table START-----------------\n" << '\n';
 		sa << "Host IP   " << "\t" << "Host MAC        " << '\t' << "Host VID" << '\n';
 		for(iiter = iphosts.begin(); iiter; ++iiter){
 			IPAddress ipa = iiter.key();
 			VID v = static_cast<VID>(iiter.value());
 			EtherAddress ea;
 			if(!ht->lookupVID(&v, &ea)){
-				veil_chatter(true, "[^^ HOST TABLE ^^][Error] No IP to VID mapping for : %s\n", ipa.s().c_str());
+				veil_chatter_new(true, ht->class_name(), "[Error] No IP to VID mapping for : %s", ipa.s().c_str());
 			}				
 			sa << ipa << '\t' << ea << '\t' << v.vid_string()<<'\n';
 		}

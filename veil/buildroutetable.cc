@@ -101,7 +101,7 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 void
 VEILBuildRouteTable::rdv_publish (VID &myinterface, VID &nexthop, uint8_t i ){
 	if (interfaces->isvidset[interfaces->interfaces[myinterface]] == false){
-		veil_chatter(printDebugMessages, "[** BuildRouteTable **] No VID assignment yet.");
+		veil_chatter_new(printDebugMessages, class_name(),"No VID assignment yet.");
 		return;
 	}
 	VID rdvpt;
@@ -109,7 +109,7 @@ VEILBuildRouteTable::rdv_publish (VID &myinterface, VID &nexthop, uint8_t i ){
 	int packet_length = sizeof(click_ether) + sizeof(veil_sub_header) + sizeof(veil_payload_rdv_publish);
 	WritablePacket *p = Packet::make(packet_length);
 	if (p == 0) {
-		veil_chatter(true, "[** BuildRouteTable **] [Error!] cannot make packet in buildroutetable");
+		veil_chatter_new(true, class_name(),"[Error!] cannot make packet in buildroutetable");
 		return;
 	}
 
@@ -134,14 +134,14 @@ VEILBuildRouteTable::rdv_publish (VID &myinterface, VID &nexthop, uint8_t i ){
 	vpayload->bucket = i;
 	memcpy(&vpayload->neighbor_vid, &nexthop, 4);
 
-	veil_chatter(printDebugMessages,"[** BuildRouteTable **] [RDV PUBLISH] |%s| --> |%s| to RDV node at |%s|\n", myinterface.switchVIDString().c_str(), nexthop.switchVIDString().c_str(), rdvpt.switchVIDString().c_str());
+	veil_chatter_new(printDebugMessages,class_name(),"[RDV PUBLISH] |%s| --> |%s| to RDV node at |%s|", myinterface.switchVIDString().c_str(), nexthop.switchVIDString().c_str(), rdvpt.switchVIDString().c_str());
 	output(0).push(p);
 }
 
 void
 VEILBuildRouteTable::rdv_query (VID &myinterface, uint8_t i){
 	if (interfaces->isvidset[interfaces->interfaces[myinterface]] == false){
-		veil_chatter(printDebugMessages, "[** BuildRouteTable **] No VID assignment yet.");
+		veil_chatter_new(printDebugMessages, class_name(),"No VID assignment yet.");
 		return;
 	}
 	VID rdvpt;
@@ -150,7 +150,7 @@ VEILBuildRouteTable::rdv_query (VID &myinterface, uint8_t i){
 	WritablePacket *p = Packet::make(packet_length);
 
 	if (p == 0) {
-		veil_chatter(true, "[** BuildRouteTable **] [Error!] cannot make packet in buildroutetable");
+		veil_chatter_new(true, class_name(),"[Error!] cannot make packet in buildroutetable");
 		return;
 	}
 
@@ -174,7 +174,7 @@ VEILBuildRouteTable::rdv_query (VID &myinterface, uint8_t i){
 	veil_payload_rdv_query *vpayload = (veil_payload_rdv_query*)(vheader+1);
 	vpayload->bucket = i;
 	
-	veil_chatter(printDebugMessages, "[** BuildRouteTable **] [RDV QUERY] For |%s| at level %d to RDV node at |%s|\n", myinterface.switchVIDString().c_str(), i, rdvpt.switchVIDString().c_str());
+	veil_chatter_new(printDebugMessages, class_name(),"[RDV QUERY] For |%s| at level %d to RDV node at |%s|", myinterface.switchVIDString().c_str(), i, rdvpt.switchVIDString().c_str());
 	output(0).push(p);
 }
 

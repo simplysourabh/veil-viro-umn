@@ -42,7 +42,7 @@ VEILGenerateVIDAssignmentPackets::initialize (
 {
 	myTimer.initialize(this);
 	myTimer.schedule_now();
-	veil_chatter(printDebugMessages, "-o [VID_Dispatcher] in initialize: done!\n");
+	veil_chatter_new(printDebugMessages, class_name(), "in initialize: done!");
 	return(0);
 }
 
@@ -51,7 +51,7 @@ VEILGenerateVIDAssignmentPackets::run_timer (
 		Timer *timer)
 {
 	assert(timer == &myTimer);
-	veil_chatter(printDebugMessages, "-o [VID_Dispatcher] in run_timer: Preparing to dispatch VID assignments!\n");
+	veil_chatter_new(printDebugMessages, class_name(), "in run_timer: Preparing to dispatch VID assignments!");
 	/* There are a number of things we do inside this.
 	 * 1. Compute the physically topology to virtual binary tree embedding.
 	 * for now, the logic is very simple and dumb. Every time, run-timer is called,
@@ -73,6 +73,7 @@ VEILGenerateVIDAssignmentPackets::dispatch_vid(){
 		EtherAddress dstmac = iter.key();
 		VID dstvid = iter.value();
 		dispatch_one_vid_mac_pair(dstmac, dstvid);
+		veil_chatter_new(printDebugMessages, class_name(),"Dispatched vid assignment for %s", dstmac.s().c_str());
 	}
 }
 
@@ -82,7 +83,7 @@ VEILGenerateVIDAssignmentPackets::dispatch_one_vid_mac_pair(EtherAddress dstmac,
 	int packet_length = sizeof(click_ether) + sizeof(veil_sub_header) + sizeof(veil_payload_svid_mappings);
 	WritablePacket *packet = Packet::make(packet_length);
 	if (packet == 0) {
-		veil_chatter(true, "-o [VID_Dispatcher] in %s: cannot make packet for 'VID Assignment' for % with vid %s!\n", dstmac.s().c_str(), dstvid.vid_string().c_str());
+		veil_chatter_new(true, class_name(), "in %s: cannot make packet for 'VID Assignment' for % with vid %s!", dstmac.s().c_str(), dstvid.vid_string().c_str());
 		return;
 	}
 	memset(packet->data(), 0, packet->length());
@@ -91,15 +92,20 @@ VEILGenerateVIDAssignmentPackets::dispatch_one_vid_mac_pair(EtherAddress dstmac,
 	e->ether_type = htons(ETHERTYPE_VEIL);
 
 	setVEILType(packet, VEIL_SWITCH_VID_FROM_VCC);
-
 	veil_sub_header *veil_sub = (veil_sub_header *) (e+1);
 	memcpy(&veil_sub->svid, &topo->vccmac, 6);
 	memcpy(&veil_sub->dvid, &dstmac, 6);
+	veil_sub->ttl = MAX_TTL;
 	veil_payload_svid_mappings *veil_payload = (veil_payload_svid_mappings *) (veil_sub+1);
 	memcpy(&veil_payload->vid, &dstvid, 6);
 
 	// do I have dstmac in the children ?
-	if (ststate->forwardingTableFromVCC.get_pointer(dstmac) != NULL){
+	if (interfaces->etheraddToInterfaceIndex.get_pointer(dstmac) != NULL){
+		printf("Packet is for me. sending out on interface: %d\n", interfaces->numInterfaces());
+		output(interfaces->numInterfaces()).push(packet);
+		veil_chatter_new(printDebugMessages,class_name(), "in sendNeighborInfotoVCC: VID assignment is for my interface %s at %d!", dstmac.s().c_str(),interfaces->numInterfaces());
+	}
+	else if (ststate->forwardingTableFromVCC.get_pointer(dstmac) != NULL){
 		memcpy(e->ether_dhost, &dstmac,6);
 		// check on which interface this child is directly connected?
 
@@ -113,11 +119,11 @@ VEILGenerateVIDAssignmentPackets::dispatch_one_vid_mac_pair(EtherAddress dstmac,
 				output(myinterfaceid).push(packet);
 			}else{
 				//error
-				veil_chatter(true, "-o [VID_Dispatcher] Error: Couldn't retrieve the interface id for %s! \n", mymac.s().c_str());
+				veil_chatter_new(true, class_name(), "Error: Couldn't retrieve the interface id for %s! ", mymac.s().c_str());
 			}
 		}else{
 			// error!
-			veil_chatter(true, "-o [VID_Dispatcher] Error: Couldn't retrieve the my local interface connected to %s! \n", dstmac.s().c_str());
+			veil_chatter_new(true, class_name(), "Error: Couldn't retrieve the my local interface connected to %s! ", dstmac.s().c_str());
 		}
 
 	}
@@ -145,11 +151,11 @@ VEILGenerateVIDAssignmentPackets::dispatch_one_vid_mac_pair(EtherAddress dstmac,
 						output(myinterfaceid).push(pkt);
 					}else{
 						//error
-						veil_chatter(true, "-o [VID_Dispatcher] Error: Couldn't retrieve the interface id for %s! \n", mymac.s().c_str());
+						veil_chatter_new(true, class_name(), "Error: Couldn't retrieve the interface id for %s! ", mymac.s().c_str());
 					}
 				}else{
 					// error!
-					veil_chatter(true, "-o [VID_Dispatcher] Error: Couldn't retrieve the my local interface connected to %s! \n", childmac.s().c_str());
+					veil_chatter_new(true, class_name(), "Error: Couldn't retrieve the my local interface connected to %s! ", childmac.s().c_str());
 				}
 			}
 		}

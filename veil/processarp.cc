@@ -58,7 +58,7 @@ VEILProcessARP::smaction(Packet* p){
 		//host_table->updateIPEntry(&src, &hvid);
 		host_table->updateEntry(&hvid, &esrc, &src);
 
-		veil_chatter(printDebugMessages,"[  ProcessARP  ][ARP] From ip=%s(mac=%s,vid=%s) to ip=%s(mac=%s),\n", src.s().c_str(), esrc.s().c_str(), hvid.vid_string().c_str(),dst.s().c_str(),edest.s().c_str());
+		veil_chatter_new(printDebugMessages, class_name(),"g[ARP] From ip=%s(mac=%s,vid=%s) to ip=%s(mac=%s),", src.s().c_str(), esrc.s().c_str(), hvid.vid_string().c_str(),dst.s().c_str(),edest.s().c_str());
 
 		//Gratuitous ARP request or reply
 		//update host table
@@ -70,11 +70,11 @@ VEILProcessARP::smaction(Packet* p){
 			//interfaces->deleteHostInterface(&myVid);
 			// IF both src IP and dst IP are same then, exit!
 			if (src == dst) {
-				veil_chatter(printDebugMessages,"[  ProcessARP  ][Gratuitous ARP] IP: %s MAC: %s,\n", src.s().c_str(), esrc.s().c_str());
+				veil_chatter_new(printDebugMessages, class_name(),"g[Gratuitous ARP] IP: %s MAC: %s,", src.s().c_str(), esrc.s().c_str());
 				p->kill();
 				return NULL;
 			}else{
-				veil_chatter(printDebugMessages,"[  ProcessARP  ][HOST UPDATE] IP: %s MAC: %s,\n", src.s().c_str(), esrc.s().c_str());
+				veil_chatter_new(printDebugMessages, class_name(),"g[HOST UPDATE] IP: %s MAC: %s,", src.s().c_str(), esrc.s().c_str());
 			}
 		}
 
@@ -87,7 +87,7 @@ VEILProcessARP::smaction(Packet* p){
 		 */
 		if(host_table->lookupIP(&dst, &hvid))
 		{
-			veil_chatter(printDebugMessages,"[  ProcessARP  ][DestIP-IsMyHost] Dest IP: %s SrcVID: %s, packet came on Interface: %s,\n", dst.s().c_str(), hvid.vid_string().c_str(), myVid.switchVIDString().c_str());
+			veil_chatter_new(printDebugMessages, class_name(),"g[DestIP-IsMyHost] Dest IP: %s SrcVID: %s, packet came on Interface: %s,", dst.s().c_str(), hvid.vid_string().c_str(), myVid.switchVIDString().c_str());
 			if(ntohs(ap->ea_hdr.ar_op) == ARPOP_REQUEST){
 				VID dest_int;
 				hvid.extract_switch_vid(&dest_int);
@@ -95,11 +95,11 @@ VEILProcessARP::smaction(Packet* p){
 				//if both hosts are not connect thru
 				//the same switch interface, send reply
 				if(dest_int != myVid) {
-					veil_chatter(printDebugMessages,"[  ProcessARP  ][ARP Reply] Sending Reply for IP: %s SrcVID: %s, packet came on Interface: %s,\n", dst.s().c_str(), hvid.vid_string().c_str(), myVid.switchVIDString().c_str());
+					veil_chatter_new(printDebugMessages, class_name(),"g[ARP Reply] Sending Reply for IP: %s SrcVID: %s, packet came on Interface: %s,", dst.s().c_str(), hvid.vid_string().c_str(), myVid.switchVIDString().c_str());
 					//send ARP reply
 					WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
 					if (q == 0) {
-						veil_chatter(true,"[  ProcessARP  ][Error!] in processarp: cannot make packet!");
+						veil_chatter_new(true, class_name(),"g[Error!] in processarp: cannot make packet!");
 						return 0;
 					}
 					click_ether *e = (click_ether *) q->data();
@@ -131,9 +131,9 @@ VEILProcessARP::smaction(Packet* p){
 			VID ipvid, interfacevid;
 			//found MAC in mapping table
 			//construct ARP reply
-			veil_chatter(printDebugMessages,"[  ProcessARP  ][ARP Req] Looking into my MAPPING TABLE for IP: %s SrcVID: %s, packet came on Interface: %s,\n", dst.s().c_str(), hvid.vid_string().c_str(), myVid.switchVIDString().c_str());
+			veil_chatter_new(printDebugMessages, class_name(),"g[ARP Req] Looking into my MAPPING TABLE for IP: %s SrcVID: %s, packet came on Interface: %s,", dst.s().c_str(), hvid.vid_string().c_str(), myVid.switchVIDString().c_str());
 			if(map->lookupIP(&dst, &ipvid, &interfacevid)){
-				veil_chatter(printDebugMessages,"[  ProcessARP  ][ARP Req] Found!! Mapping for IP: %s SrcVID: %s in my MAPPING TABLE mapped to: %s \n", dst.s().c_str(), hvid.vid_string().c_str(), ipvid.vid_string().c_str());
+				veil_chatter_new(printDebugMessages, class_name(),"g[ARP Req] Found!! Mapping for IP: %s SrcVID: %s in my MAPPING TABLE mapped to: %s ", dst.s().c_str(), hvid.vid_string().c_str(), ipvid.vid_string().c_str());
 
 				short opcode = htons(ARPOP_REPLY);
 				short etypeip = htons(ETHERTYPE_IP);
@@ -142,7 +142,7 @@ VEILProcessARP::smaction(Packet* p){
 
 				WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
 				if (q == 0) {
-					veil_chatter(true,"[  ProcessARP  ][Error!] in processarp: cannot make packet!");
+					veil_chatter_new(true, class_name(),"g[Error!] in processarp: cannot make packet!");
 					return 0;
 				}
 				click_ether *e = (click_ether *) q->data();
@@ -181,10 +181,10 @@ VEILProcessARP::smaction(Packet* p){
 					//calculate access switch VID
 					VID accvid = calculate_access_switch(&dst);					
 
-					veil_chatter(printDebugMessages,"[  ProcessARP  ][ARP Req][ToAccessSwitch] Asking for mapping for IP: %s SrcVID: %s to access switch: %s \n", dst.s().c_str(), hvid.vid_string().c_str(), accvid.switchVIDString().c_str());
+					veil_chatter_new(printDebugMessages, class_name(),"g[ARP Req][ToAccessSwitch] Asking for mapping for IP: %s SrcVID: %s to access switch: %s ", dst.s().c_str(), hvid.vid_string().c_str(), accvid.switchVIDString().c_str());
 					WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(veil_sub_header) + sizeof(click_ether_arp));
 					if (q == 0) {
-						veil_chatter(true,"[  ProcessARP  ][Error!] in processarp: cannot make packet!");
+						veil_chatter_new(true, class_name(),"g[Error!] in processarp: cannot make packet!");
 						return 0;
 					}
 					click_ether *e = (click_ether *) q->data();
@@ -217,7 +217,7 @@ VEILProcessARP::smaction(Packet* p){
 					p->kill();
 					return q;
 				}else{
-					veil_chatter(printDebugMessages,"[  ProcessARP  ][ARP Req][Error!] HOSTTABLE Dont have the mapping for IP: %s\n", src.s().c_str());
+					veil_chatter_new(printDebugMessages, class_name(),"g[ARP Req][Error!] HOSTTABLE Dont have the mapping for IP: %s", src.s().c_str());
 					p->kill();
 					return NULL;
 				}		
@@ -251,7 +251,7 @@ VEILProcessARP::smaction(Packet* p){
 		IPAddress dst = IPAddress(arp_payload->arp_tpa);
 		EtherAddress hmac = EtherAddress(arp_payload->arp_sha);
 
-		veil_chatter(printDebugMessages,"[  ProcessARP  ][VEIL_ENCAP_ARP] For IP: %s by SrcVID: %s to DstVID: %s.\n", dst.s().c_str(),  svid.vid_string().c_str(), dvid.vid_string().c_str());
+		veil_chatter_new(printDebugMessages, class_name(),"g[VEIL_ENCAP_ARP] For IP: %s by SrcVID: %s to DstVID: %s.", dst.s().c_str(),  svid.vid_string().c_str(), dvid.vid_string().c_str());
 
 		//ARP request: lookup mapping and host table. if found send reply. else route pkt to dst. 
 		if((ntohs(vheader->veil_type) == VEIL_ENCAP_ARP) && (ntohs(arp_payload->ea_hdr.ar_op) == ARPOP_REQUEST)){
@@ -262,7 +262,7 @@ VEILProcessARP::smaction(Packet* p){
 			if(interfaces->lookupVidEntry(&dvid, &interface))
 			{
 				if(map->lookupIP(&dst, &ipvid, &mvid) || host_table->lookupIP(&dst, &ipvid)){
-					veil_chatter(printDebugMessages,"[  ProcessARP  ][VEIL_ENCAP_ARP][Mapping Found] For IP: %s to VID: %s \n", dst.s().c_str(),  ipvid.vid_string().c_str());
+					veil_chatter_new(printDebugMessages, class_name(),"g[VEIL_ENCAP_ARP][Mapping Found] For IP: %s to VID: %s ", dst.s().c_str(),  ipvid.vid_string().c_str());
 
 					//TODO Make sure that routepacket takes care of it.
 					memcpy(eth->ether_dhost, &svid, 6);
@@ -284,7 +284,7 @@ VEILProcessARP::smaction(Packet* p){
 
 					return p;
 				}else{
-					veil_chatter(printDebugMessages,"[  ProcessARP  ][VEIL_ENCAP_ARP][NO Mapping Found] For IP: %s\n", dst.s().c_str());
+					veil_chatter_new(printDebugMessages, class_name(),"g[VEIL_ENCAP_ARP][NO Mapping Found] For IP: %s", dst.s().c_str());
 					p->kill();return NULL;
 				}							
 			}
@@ -305,13 +305,13 @@ VEILProcessARP::smaction(Packet* p){
 			VID hostvid = VID(arp_payload->arp_tha);
 
 			if(host_table->lookupIP(&dst, &myvid)){
-				veil_chatter(printDebugMessages,"[  ProcessARP  ][VEIL_ENCAP_ARP][ARP Reply] To my HOST IP: %s at VID: %s \n", dst.s().c_str(),  myvid.vid_string().c_str());
+				veil_chatter_new(printDebugMessages, class_name(),"g[VEIL_ENCAP_ARP][ARP Reply] To my HOST IP: %s at VID: %s ", dst.s().c_str(),  myvid.vid_string().c_str());
 				map->updateEntry(&src, &svid, &myVid, &hmac );
 				if(host_table->lookupVID(&hostvid, &dest)){
-					veil_chatter(printDebugMessages,"[  ProcessARP  ][VEIL_ENCAP_ARP][ARP Reply] To my HOST IP: %s  HostVID: %s \n", dst.s().c_str(),  hostvid.vid_string().c_str());
+					veil_chatter_new(printDebugMessages, class_name(),"g[VEIL_ENCAP_ARP][ARP Reply] To my HOST IP: %s  HostVID: %s ", dst.s().c_str(),  hostvid.vid_string().c_str());
 					WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
 					if (q == 0) {
-						veil_chatter(true,"[  ProcessARP  ][Error!] in arp responder: cannot make packet!");
+						veil_chatter_new(true, class_name(),"g[Error!] in arp responder: cannot make packet!");
 						return 0;
 					}
 
@@ -362,9 +362,9 @@ VEILProcessARP::push (
 {
 	Packet *p = smaction(pkt);
 	if(p != NULL){
-		//veil_chatter(printDebugMessages,"[  ProcessARP  ][VEIL_ENCAP_ARP][ARP Reply] BEFORE Pushing the packet to be routed!!");
+		//veil_chatter_new(printDebugMessages, class_name(),"g[VEIL_ENCAP_ARP][ARP Reply] BEFORE Pushing the packet to be routed!!");
 		output(0).push(p);
-		//veil_chatter(printDebugMessages,"[  ProcessARP  ][VEIL_ENCAP_ARP][ARP Reply] AFTER Pushing the packet to be routed!!");	
+		//veil_chatter_new(printDebugMessages, class_name(),"g[VEIL_ENCAP_ARP][ARP Reply] AFTER Pushing the packet to be routed!!");	
 	}
 }
 

@@ -384,8 +384,56 @@ struct veil_payload_svid_mappings{
 		va_start(val, fmt);
 		vsprintf(buf,fmt,val);
 		//printf("\nAt %s:: %s", ctime(&myt), buf);
-		printf("%s", buf);
+		printf("%d | %s", (int)myt,buf);
+		//printf("%s", myt,buf);
 		va_end(val);
+	}
+
+
+	inline
+	void veil_chatter_new(bool printit, const char * nametag , const char *fmt, ...){
+		if (!printit) return;
+		timeval tim;
+		gettimeofday(&tim, NULL);
+		char buf[2000];
+		bzero(buf,2000);
+		double t1 = tim.tv_sec + (tim.tv_usec/1000000.0);
+		va_list val;
+		va_start(val, fmt);
+		vsprintf(buf,fmt,val);
+		//printf("\nAt %s:: %s", ctime(&myt), buf);
+		printf("%3lf | %s | %s\n", t1, nametag, buf);
+		va_end(val);
+	}
+
+	inline
+	const char * get_packet_type_str(uint32_t type){
+		switch(type){
+			case ETHERTYPE_VEIL: return "EtherType_VEIL";
+			case ETHERTYPE_VEIL_IP: return "ETHERTYPE_VEIL_IP";
+			case VEIL_ARP_REQ: return "VEIL_ARP_REQ";	
+			case VEIL_ARP_RPLY: return "VEIL_ARP_RPLY";
+			case VEIL_PUBLISH: return "VEIL_PUBLISH";
+			case VEIL_IP: return "VEIL_IP";
+			case VEIL_HELLO: return "VEIL_HELLO";
+			case VEIL_PHELLO: return "VEIL_PHELLO";
+			case VEIL_VCC_SPANNING_TREE_AD: return "VEIL_VCC_SPANNING_TREE_AD";
+			case VEIL_VCC_SPANNING_TREE_SUBS: return "VEIL_VCC_SPANNING_TREE_SUBS";
+			case VEIL_LOCAL_TOPO_TO_VCC: return "VEIL_LOCAL_TOPO_TO_VCC";
+			case VEIL_SWITCH_VID_FROM_VCC: return "VEIL_SWITCH_VID_FROM_VCC";							
+			case VEIL_RDV_REPLY: return "VEIL_RDV_REPLY";							
+			case VEIL_RDV_PUBLISH: return "VEIL_RDV_PUBLISH";							
+			case VEIL_RDV_QUERY: return "VEIL_RDV_QUERY";							
+			case VEIL_MAP_PUBLISH: return "VEIL_MAP_PUBLISH";							
+			case VEIL_MAP_UPDATE: return "VEIL_MAP_UPDATE";							
+			case VEIL_ENCAP_IP: return "VEIL_ENCAP_IP";							
+			case VEIL_ENCAP_ARP: return "VEIL_ENCAP_ARP";							
+			case VEIL_ENCAP_REDIRECTION: return "VEIL_ENCAP_REDIRECTION";							
+			case VEIL_ENCAP_MULTIPATH_IP: return "VEIL_ENCAP_MULTIPATH_IP";								
+																										
+			default: return "Undefined_Packet_Type";
+		}
+		return "Error";
 	}
 
 CLICK_ENDDECLS

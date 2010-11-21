@@ -27,7 +27,7 @@ VEILGenerateVCCSTAdSub::configure (
 	ErrorHandler *errh)
 {
 	printDebugMessages = true;
-	click_chatter("[VCC_AD_SUB_LTOPO_GENERATOR] [FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!\n");
+	veil_chatter_new(true,class_name()," [FixME] Its mandatory to have 'PRINTDEBUG value' (here value = true/false) at the end of the configuration string!");
 	return cp_va_kparse(conf, this, errh,
 		"INTERFACETABLE", cpkM+cpkP, cpElementCast, "VEILInterfaceTable", &interfaces,
 		"NEIGHBORTABLE", cpkM+cpkP, cpElementCast, "VEILNeighborTable", &neighbors,
@@ -42,7 +42,7 @@ VEILGenerateVCCSTAdSub::initialize (
 {
 	myTimer.initialize(this);
 	myTimer.schedule_now();
-	veil_chatter(printDebugMessages, "-o [VCC_AD_SUB_LTOPO_GENERATOR] in initialize: done!\n");
+	veil_chatter_new(printDebugMessages, class_name(), "in initialize: done!");
 	return(0);
 }
 
@@ -51,7 +51,7 @@ VEILGenerateVCCSTAdSub::run_timer (
 	Timer *timer)
 {
 	assert(timer == &myTimer);
-	veil_chatter(printDebugMessages, "-o [VCC_AD_SUB_LTOPO_GENERATOR] in run_timer: processing the timer!\n");
+	veil_chatter_new(printDebugMessages, class_name(), "in run_timer: processing the timer!");
 	/* There are a number of things we do inside this.
 	 * 1. see if a path to reach VCC. If we do then publish it to
 	 * all my physical neighbors.
@@ -60,17 +60,17 @@ VEILGenerateVCCSTAdSub::run_timer (
 	// see if we have an entry for a path to reach VCC?
 	// if we don't then exit.
 	if (ststate->forwardingTableToVCC.empty()) {
-		veil_chatter(printDebugMessages, "-o [VCC_AD_SUB_LTOPO_GENERATOR] in run_timer: no path to vcc, rescheduling the timer after %d seconds!\n", VEIL_SPANNING_TREE_COST_BROADCAST);
+		veil_chatter_new(printDebugMessages, class_name(), "in run_timer: no path to vcc, rescheduling the timer after %d seconds!", VEIL_SPANNING_TREE_COST_BROADCAST);
 		myTimer.schedule_after_msec(VEIL_SPANNING_TREE_COST_BROADCAST);
 		return;
 	}
 
 	// construct and send the vcc advertisement and subscription packets.
-	veil_chatter(printDebugMessages, "-o [VCC_AD_SUB_LTOPO_GENERATOR] in run_timer: constructing and sending the vcc advertisement and subscription packets!\n");
+	veil_chatter_new(printDebugMessages, class_name(), "in run_timer: constructing and sending the vcc advertisement and subscription packets!");
 	sendVCCAdandSubPackets();
 
 	// now send the neighbor information to VCC.
-	veil_chatter(printDebugMessages, "-o [VCC_AD_SUB_LTOPO_GENERATOR] in run_timer: sending the neighbor information to VCC!\n");
+	veil_chatter_new(printDebugMessages, class_name(), "in run_timer: sending the neighbor information to VCC!");
 	sendNeighborInfotoVCC();
 
 	// The hello interval is 20 seconds.
@@ -88,7 +88,7 @@ VEILGenerateVCCSTAdSub::sendVCCAdandSubPackets(){
 	for (iter = ststate->forwardingTableToVCC.begin(); iter; ++iter){
 		vccmac = iter.key();
 		VEILSpanningTreeState::ParentEntry pe = iter.value();
-		veil_chatter(printDebugMessages, "-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendVCCAdandSubPackets: For vcc %s\n", vccmac.s().c_str());
+		veil_chatter_new(printDebugMessages, class_name(), "in sendVCCAdandSubPackets: For vcc %s", vccmac.s().c_str());
 		// else for each VCC announce its cost to all the neighbors.
 		for (int i = 0; i < ninterfaces; i++){
 			EtherAddress ethsrc;
@@ -97,7 +97,7 @@ VEILGenerateVCCSTAdSub::sendVCCAdandSubPackets(){
 			int packet_length = sizeof(click_ether) + sizeof(veil_sub_header) + sizeof(veil_payload_vcc_sp_tree_ad);
 			WritablePacket *packet = Packet::make(packet_length);
 			if (packet == 0) {
-					veil_chatter(true, "-o [VCC_AD_SUB_LTOPO_GENERATOR] in %s: cannot make packet for 'advertisement'!\n", name().c_str());
+					veil_chatter_new(true, class_name(), "in %s: cannot make packet for 'advertisement'!", name().c_str());
 					return;
 			}
 			memset(packet->data(), 0, packet->length());
@@ -117,7 +117,7 @@ VEILGenerateVCCSTAdSub::sendVCCAdandSubPackets(){
 
 			memcpy(&veil_payload->vccmac, &vccmac, 6);
 			veil_payload->cost = htons(pe.hopsToVcc);
-			veil_chatter(printDebugMessages, "-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendVCCAdandSubPackets: Sending Ad packet from %s to ff:ff:...:ff at interface %d!\n",ethsrc.s().c_str(),i);
+			veil_chatter_new(printDebugMessages, class_name(), "in sendVCCAdandSubPackets: Sending Ad packet from %s to ff:ff:...:ff at interface %d!",ethsrc.s().c_str(),i);
 			output(i).push(packet);
 		}
 
@@ -125,7 +125,7 @@ VEILGenerateVCCSTAdSub::sendVCCAdandSubPackets(){
 		int packet_len = sizeof(click_ether) + sizeof(veil_sub_header) + sizeof(veil_payload_vcc_sp_tree_sub);
 		WritablePacket *packet = Packet::make(packet_len);
 		if (packet == 0) {
-				veil_chatter(true, "-o [VCC_AD_SUB_LTOPO_GENERATOR] in %s: cannot make packet for 'subscription' !\n", name().c_str());
+				veil_chatter_new(true, class_name(), "in %s: cannot make packet for 'subscription' !", name().c_str());
 				return;
 		}
 		memset(packet->data(), 0, packet->length());
@@ -156,12 +156,12 @@ VEILGenerateVCCSTAdSub::sendVCCAdandSubPackets(){
 				interface2parent = interfaces->numInterfaces();
 			}
 			if (interface2parent >= 0 && interface2parent <= interfaces->numInterfaces()){
-				veil_chatter(printDebugMessages, "-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendVCCAdandSubPackets: Sending Sub packet from %s to %s vcc %s at interface %d!\n",nte->myMac.s().c_str(),pe.ParentMac.s().c_str(),vccmac.s().c_str(),interface2parent);
+				veil_chatter_new(printDebugMessages, class_name(), "in sendVCCAdandSubPackets: Sending Sub packet from %s to %s vcc %s at interface %d!",nte->myMac.s().c_str(),pe.ParentMac.s().c_str(),vccmac.s().c_str(),interface2parent);
 				output(interface2parent).push(packet);
 			}else{
 				// we don't which interface it is.
 				// this is definitely an error.
-				veil_chatter(true, "-o [VCC_AD_SUB_LTOPO_GENERATOR]  can't find the index for interface: %s, failed index: %d !\n", nte->myMac.s().c_str(), interface2parent);
+				veil_chatter_new(true, class_name(), " can't find the index for interface: %s, failed index: %d !", nte->myMac.s().c_str(), interface2parent);
 				packet->kill();
 			}
 		}else{
@@ -182,25 +182,25 @@ VEILGenerateVCCSTAdSub::sendNeighborInfotoVCC(){
 
 	// check if we have any vcc entry in our list. else exit.
 	if (ststate->forwardingTableToVCC.size() == 0){
-		veil_chatter(printDebugMessages,"-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendNeighborInfotoVCC: No VCC is learned yet!\n");
+		veil_chatter_new(printDebugMessages, class_name(),"in sendNeighborInfotoVCC: No VCC is learned yet!");
 		return;
 	}
 
-	veil_chatter(printDebugMessages,"-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendNeighborInfotoVCC: Reading the first key in the iterator!\n");
+	veil_chatter_new(printDebugMessages, class_name(),"in sendNeighborInfotoVCC: Reading the first key in the iterator!");
 	iter = ststate->forwardingTableToVCC.begin();
 	vccmac = iter.key();
-	veil_chatter(printDebugMessages,"-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendNeighborInfotoVCC: to vcc %s!\n", vccmac.s().c_str());
+	veil_chatter_new(printDebugMessages, class_name(),"in sendNeighborInfotoVCC: to vcc %s!", vccmac.s().c_str());
 	// since I have the vcc mac, choose the one that is closest to me based on the cost,
 	// if the cost is same then choose anyone of them.
 	// however, for now am assuming that there is only once VCC
 	if(ststate->forwardingTableToVCC.size() > 1){
 		//choose one vccmac out of all the options.
 		// leaving it for now.
-		veil_chatter(printDebugMessages,"-o [VCC_AD_SUB_LTOPO_GENERATOR] Warning: in sendNeighborInfotoVCC: Multiple VCC, currently sends the LTOPO to the first VCC (%s) only.!\n", vccmac.s().c_str());
+		veil_chatter_new(printDebugMessages, class_name(),"Warning: in sendNeighborInfotoVCC: Multiple VCC, currently sends the LTOPO to the first VCC (%s) only.!", vccmac.s().c_str());
 	}
 
 	// forwarder node to reach the VCC
-	veil_chatter(printDebugMessages,"-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendNeighborInfotoVCC: Reading the first value in the iterator!\n");
+	veil_chatter_new(printDebugMessages, class_name(),"in sendNeighborInfotoVCC: Reading the first value in the iterator!");
 	VEILSpanningTreeState::ParentEntry pe = iter.value();
 
 	EtherAddress parentToVcc = pe.ParentMac;
@@ -222,7 +222,7 @@ VEILGenerateVCCSTAdSub::sendNeighborInfotoVCC(){
 		VEILNeighborTable::NeighborTableEntry nte = it1.value();
 		Vector <EtherAddress> *vector = myinterface_neighbors.get_pointer(nte.myMac);
 		if(vector == NULL){
-			veil_chatter(true,"-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendNeighborInfotoVCC: vector is NULL for my interface %s!\n", nte.myMac.s().c_str());
+			veil_chatter_new(printDebugMessages, class_name(),"in sendNeighborInfotoVCC: vector is NULL for my interface %s!", nte.myMac.s().c_str());
 			return;
 		}
 
@@ -235,9 +235,9 @@ VEILGenerateVCCSTAdSub::sendNeighborInfotoVCC(){
 
 	if (interfaces->etheraddToInterfaceIndex.get_pointer(vccmac) != NULL){
 		interface2parent = ninterfaces;
-		veil_chatter(printDebugMessages,"-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendNeighborInfotoVCC: the vccmac %s is me at interface index %d!\n", vccmac.s().c_str(), ninterfaces);
+		veil_chatter_new(printDebugMessages, class_name(),"in sendNeighborInfotoVCC: the vccmac %s is me at interface index %d!", vccmac.s().c_str(), ninterfaces);
 	}if (interface2parent < 0 || interface2parent > ninterfaces){
-		veil_chatter(true, "-o [VCC_AD_SUB_LTOPO_GENERATOR] Dont know which of my interface connects to parentToVCC %s, interfaceindex is %d !\n", parentToVcc.s().c_str(), interface2parent);
+		veil_chatter_new(true, class_name(), "Dont know which of my interface connects to parentToVCC %s, interfaceindex is %d !", parentToVcc.s().c_str(), interface2parent);
 	}
 
 	for (int i = 0; i < ninterfaces; i++){
@@ -253,11 +253,11 @@ VEILGenerateVCCSTAdSub::sendNeighborInfotoVCC(){
 		}*/
 		uint16_t n_neigh = ninterfaces - 1 + vector->size();
 		// now create the outputpacket with appropriate length
-		veil_chatter(printDebugMessages,"-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendNeighborInfotoVCC: %s has %d neighbors. \n", ethsrc.s().c_str(), n_neigh);
+		veil_chatter_new(printDebugMessages, class_name(),"in sendNeighborInfotoVCC: %s has %d neighbors. ", ethsrc.s().c_str(), n_neigh);
 		int packet_len = sizeof(click_ether) + sizeof(veil_sub_header) + sizeof(veil_payload_ltopo_to_vcc) + n_neigh*6;
 		WritablePacket *packet = Packet::make(packet_len);
 		if (packet == 0) {
-				veil_chatter(true, "-o [VCC_AD_SUB_LTOPO_GENERATOR] in %s: cannot make packet for 'subscription' !\n", name().c_str());
+				veil_chatter_new(true, class_name(), "in %s: cannot make packet for 'subscription' !", name().c_str());
 				return;
 		}
 		memset(packet->data(), 0, packet->length());
@@ -303,11 +303,11 @@ VEILGenerateVCCSTAdSub::sendNeighborInfotoVCC(){
 		myinterface_neighbors.erase(ethsrc);
 
 		// now send the packet out from the interface.
-		veil_chatter(printDebugMessages,"-o [VCC_AD_SUB_LTOPO_GENERATOR] in sendNeighborInfotoVCC: Pushing the LTOPO packet for interface %s!\n",ethsrc.s().c_str());
+		veil_chatter_new(printDebugMessages, class_name(),"in sendNeighborInfotoVCC: Pushing the LTOPO packet for interface %s!",ethsrc.s().c_str());
 		// if vccmac corresponds to one of my interfaces then forward the packet
 		// on interface = ninterfaces, it goes back to the classifier.
 		if (interface2parent < 0 || interface2parent > ninterfaces){
-			veil_chatter(true, "-o [VCC_AD_SUB_LTOPO_GENERATOR] Dont know which of my interface %s connects to parentToVCC %s, interfaceindex is %d !\n", myLocalMac.s().c_str(), parentToVcc.s().c_str(), interface2parent);
+			veil_chatter_new(true, class_name(), "Dont know which of my interface %s connects to parentToVCC %s, interfaceindex is %d !", myLocalMac.s().c_str(), parentToVcc.s().c_str(), interface2parent);
 		}else{
 			output(interface2parent).push(packet);
 		}

@@ -43,8 +43,8 @@ VEILInterfaceTable::configure(Vector<String> &conf, ErrorHandler *errh)
 	if(!cp_bool(flag, &isVIDAssignmentDone))
 		return errh->error("[## InterfaceTable **] [Error] UseStatic FLAG should be either true or false");
 
-	if (isVIDAssignmentDone){
-		for (int i = 0; i < isvidset.size(); i++){isvidset[i] = true;}
+	for (int i = 0; i < isvidset.size(); i++){
+		isvidset.set(i,isVIDAssignmentDone);
 	}
 
 	i++;

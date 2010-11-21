@@ -48,7 +48,7 @@ VEILPublishAccessInfo::run_timer (
 		VID hvd = iter.value();
 		EtherAddress hmac;
 		if(!hosts->lookupVID(&hvd, &hmac)){
-			veil_chatter(true, "[PublishAccessInfo---->][Error!] Missing MAC for VID: %s and IP: %s\n", hvd.vid_string().c_str(), ip.s().c_str());
+			veil_chatter_new(true, class_name(), "[Error!] Missing MAC for VID: %s and IP: %s", hvd.vid_string().c_str(), ip.s().c_str());
 			continue;
 		}
 
@@ -56,7 +56,7 @@ VEILPublishAccessInfo::run_timer (
 		WritablePacket *p = Packet::make(packet_length);
 
 		if (p == 0) {
-			veil_chatter(true, "[PublishAccessInfo---->][Error!] cannot make packet in publishaccessinfo");
+			veil_chatter_new(true, class_name(), "[Error!] cannot make packet in publishaccessinfo");
 			return;
 		}
 
@@ -87,7 +87,7 @@ VEILPublishAccessInfo::run_timer (
 		SET_REROUTE_ANNO(p, 'r');
 
 		output(0).push(p);
-		veil_chatter(printDebugMessages,"[PublishAccessInfo---->][Access Info Publish] HOST IP: %s  VID: %s  MAC: %s AccessSwitchVID: %s\n", ip.s().c_str(),  hvd.vid_string().c_str(),hmac.s().c_str(),accessvid.switchVIDString().c_str() );
+		veil_chatter_new(printDebugMessages, class_name(),"[Access Info Publish] HOST IP: %s  VID: %s  MAC: %s AccessSwitchVID: %s", ip.s().c_str(),  hvd.vid_string().c_str(),hmac.s().c_str(),accessvid.switchVIDString().c_str() );
 	}
 	myTimer.schedule_after_msec(VEIL_PUBLISH_INTERVAL);
 }
