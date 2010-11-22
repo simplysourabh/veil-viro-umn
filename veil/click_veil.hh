@@ -373,7 +373,7 @@ struct veil_payload_svid_mappings{
 
 //------------------------------------ END -----------------------------------------
 
-
+/*
 	inline
 	void veil_chatter(bool printit, const char *fmt, ...){
 		if (!printit) return;
@@ -388,15 +388,15 @@ struct veil_payload_svid_mappings{
 		//printf("%s", myt,buf);
 		va_end(val);
 	}
-
+*/
 
 	inline
 	void veil_chatter_new(bool printit, const char * nametag , const char *fmt, ...){
 		if (!printit) return;
 		timeval tim;
 		gettimeofday(&tim, NULL);
-		char buf[2000];
-		bzero(buf,2000);
+		char buf[2400];
+		bzero(buf,2400);
 		double t1 = tim.tv_sec + (tim.tv_usec/1000000.0);
 		va_list val;
 		va_start(val, fmt);

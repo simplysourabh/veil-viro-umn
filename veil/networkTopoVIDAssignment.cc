@@ -241,10 +241,10 @@ VEILNetworkTopoVIDAssignment::performVIDAssignment(){
 		for (int i = 0; i < node_n; i++){
 			if (node2cluster[i] == secondCluster){
 				len2 = node2vid[i].length();
-				printf("node %d, vid %s, len %d, clusterid %d \n", i, node2vid[i].c_str(),len2,node2cluster[i]);
+				//printf("node %d, vid %s, len %d, clusterid %d \n", i, node2vid[i].c_str(),len2,node2cluster[i]);
 			} else if (node2cluster[i] == smallestClusterLabel){
 				len1 = node2vid[i].length();
-				printf("node %d, vid %s, len %d, clusterid %d \n", i, node2vid[i].c_str(),len1,node2cluster[i]);
+				//printf("node %d, vid %s, len %d, clusterid %d \n", i, node2vid[i].c_str(),len1,node2cluster[i]);
 			}
 		}
 		int len3 = max(len1,len2);
@@ -339,6 +339,7 @@ VEILNetworkTopoVIDAssignment::performVIDAssignment(){
 	// convert the vids to VID format.
 	for (int i = 0; i < node_n; i++){
 		char bytes[6];
+		memset(bytes,0,6);
 		VID vid;
 		uint32_t vidval = strtoul(node2vid[i].c_str(),NULL,2);
 		//printf("node2vid[%d] %s vidval %d\n", i, node2vid[i].c_str(),vidval);

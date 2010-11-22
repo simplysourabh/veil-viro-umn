@@ -40,6 +40,11 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 {
 	assert(timer == &myTimer);
 
+	if(!interfaces->isVIDAssignmentDone){
+		veil_chatter_new(printDebugMessages, class_name(), "run_timer | VID assignment is not done yet. Will try after %d ms.",VEIL_RDV_INTERVAL);
+		myTimer.schedule_after_msec(VEIL_RDV_INTERVAL);
+		return;
+	}
 	//first look at neighbor table and update routing table
 	const VEILNeighborTable::NeighborTable *nt = neighbors->get_neighbortable_handle();
 	VEILNeighborTable::NeighborTable::const_iterator iter;
@@ -48,6 +53,8 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 		VEILNeighborTable::NeighborTableEntry nte = iter.value();
 		EtherAddress macadd = iter.key();
 		VID myInterface = nte.myVid;
+		veil_chatter_new(printDebugMessages, class_name(), "RDV PUBLISH | For %s", myInterface.vid_string().c_str());
+		int intid = interfaces->interfaces.get(myInterface);
 		if (interfaces->isvidset[interfaces->interfaces[myInterface]] == false){ continue;}
 		VID neighbor = nte.neighborVID;
 		uint8_t ldist = neighbor.logical_distance(&myInterface);
@@ -56,6 +63,7 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 		route_table->updateEntry(&myInterface, ldist, &neighbor, &myInterface);	
 		
 		//TODO SJ: WE SHOULD BE PUBLISHING HERE!!
+		veil_chatter_new(printDebugMessages, class_name(), "RDV PUBLISH | For %s at bucket %d through %s", myInterface.vid_string().c_str(), neighbor.vid_string().c_str(), ldist);
 		rdv_publish(myInterface, neighbor,ldist);	
 	}
 
@@ -67,17 +75,22 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 	VID int1, int2, nexthop1, gateway1; 
 	for (iiter1 = it->begin(); iiter1; ++iiter1){
 		int1 = iiter1.key();
+		veil_chatter_new(printDebugMessages, class_name(), "RDV PUBLISH 2 | For %s", int1.vid_string().c_str());
 		if (interfaces->isvidset[interfaces->interfaces[int1]] == false){ continue;}
 		//click_chatter("BuildRouteTable: For Interface %s ", int1.switchVIDString().c_str());
 		for (iiter2 = it->begin(); iiter2; ++iiter2){
 			int2 = iiter2.key();
 			uint8_t ldist = int2.logical_distance(&int1);
 			if (ldist == 0){continue;}
-			//click_chatter("Neighbor %s ", int2.switchVIDString().c_str());			
+			//click_chatter("Neighbor %s at distance %d", int2.switchVIDString().c_str(),ldist);
 			route_table->updateEntry(&int1, ldist, &int2, &int1);
+			//printf("Returned!\n");
 			//TODO SJ: WE SHOULD BE PUBLISHING HERE!!
 			//TODO: Probably create a wrapper function for the RDV_PUBLISH.
-			rdv_publish(int1, int2,ldist);	
+			//veil_chatter_new(printDebugMessages, class_name(), "RDV PUBLISH | For %s at bucket %d through %s", int1.vid_string().c_str(), int2.vid_string().c_str(), ldist);
+			//printf("Returned2!\n");
+			rdv_publish(int1, int2,ldist);
+			//printf("Returned3!\n");
 		}
 		//click_chatter("\n");
 	}
@@ -85,12 +98,14 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 	//check for each interface
 	for(iiter = it->begin(); iiter; ++iiter){
 		VID myinterface = iiter.key();
+		veil_chatter_new(printDebugMessages, class_name(), "RDV QUERY | For %s", myinterface.vid_string().c_str());
 		if (interfaces->isvidset[interfaces->interfaces[myinterface]] == false){ continue;}
 		// ACTIVE_VID_LEN is set to avoid sending queries for the 
 		// non-existant levels in the tree. 
 		for(uint8_t i = HOST_LEN*8 + 1; i <= ACTIVE_VID_LEN*8; i++){
 			VID nexthop, rdvpt;
 			// Just Query it everytime! Don't need to see if the entry is already there or not!
+			veil_chatter_new(printDebugMessages, class_name(), "RDV QUERY | For %s at bucket %d", myinterface.vid_string().c_str(),i);
 			rdv_query(myinterface,i);
 		}		
 	}
@@ -100,10 +115,6 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 
 void
 VEILBuildRouteTable::rdv_publish (VID &myinterface, VID &nexthop, uint8_t i ){
-	if (interfaces->isvidset[interfaces->interfaces[myinterface]] == false){
-		veil_chatter_new(printDebugMessages, class_name(),"No VID assignment yet.");
-		return;
-	}
 	VID rdvpt;
 	myinterface.calculate_rdv_point(i, &rdvpt);
 	int packet_length = sizeof(click_ether) + sizeof(veil_sub_header) + sizeof(veil_payload_rdv_publish);
@@ -140,10 +151,6 @@ VEILBuildRouteTable::rdv_publish (VID &myinterface, VID &nexthop, uint8_t i ){
 
 void
 VEILBuildRouteTable::rdv_query (VID &myinterface, uint8_t i){
-	if (interfaces->isvidset[interfaces->interfaces[myinterface]] == false){
-		veil_chatter_new(printDebugMessages, class_name(),"No VID assignment yet.");
-		return;
-	}
 	VID rdvpt;
 	myinterface.calculate_rdv_point(i, &rdvpt);
 	int packet_length = sizeof(click_ether) + sizeof(veil_sub_header) + sizeof(veil_payload_rdv_query);

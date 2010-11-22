@@ -40,26 +40,27 @@ VEILRoutePacket::smaction(Packet* p){
 	int myport = PORT_ANNO(p);
 	VID myVid;
 	interfaces->lookupIntEntry(myport, &myVid);
-	veil_chatter_new(printDebugMessages, class_name()," ME %s ",myVid.switchVIDString().c_str() );
+	veil_chatter_new(printDebugMessages, class_name()," Input interface %s at port %d",myVid.switchVIDString().c_str(), myport );
 	click_ether *eth = (click_ether *) p->data();
 	bool dstvidChanged = false;
 	uint8_t k;
+	//printf("here 0 \n");
 	//VEIL packets: access PUBLISH/QUERY or RDV REQ/PUB/RPLY	
 	if(ntohs(eth->ether_type) == ETHERTYPE_VEIL){
 		//VID srcvid = VID(eth->ether_shost);
 		//VID dstvid = VID(eth->ether_dhost);
-
+		//printf("E here 0 \n");
 		veil_sub_header *vheader = (veil_sub_header *) (eth+1);
 		VID srcvid, dstvid;
 		memcpy(&srcvid, &vheader->svid,6);
 		memcpy(&dstvid, &vheader->dvid,6);
 
-		//veil_chatter_new(printDebugMessages, class_name()," Destination: |%s| ", dstvid.switchVIDString().c_str());
+		veil_chatter_new(printDebugMessages, class_name()," Destination: |%s| ", dstvid.switchVIDString().c_str());
 
 		uint16_t veil_type = ntohs(vheader->veil_type);
 		VID nextvid;
 		int port;
-
+		//printf("E here 1 \n");
 		if (veil_type == VEIL_ENCAP_MULTIPATH_IP){
 			port = getPort(dstvid, p,k, nextvid);
 
@@ -72,29 +73,32 @@ VEILRoutePacket::smaction(Packet* p){
 			if (finalvid == dstvid && port < numinterfaces && port >= 0 ){
 				VID newgw;
 				// Now choose an alternate gateway
+				//printf("E here 2 \n");
 				if(routes->getRoute(&dstvid,myVid, &nextvid, &newgw,false)){
 					veil_chatter_new(printDebugMessages, class_name(),"[VEIL_ENCAP_MULTIPATH_IP] New GW: %s to Destination %s at Bucket %d of ME %s ",newgw.switchVIDString().c_str(), finalvid.switchVIDString().c_str(), k ,myVid.switchVIDString().c_str() );
 					memcpy(&vheader->dvid, &newgw, 6);
+					//printf("E here 3 \n");
 					memcpy(&dstvid, &newgw, 6);
 				}
 			}
-
+			//printf("E here 4 \n");
 			// if dstvid == myvid then make the dstvid = finalvid
 			if (port == numinterfaces){
 				memcpy(&vheader->dvid, &veil_payload->final_dvid, 6);
 				memcpy(&dstvid, &veil_payload->final_dvid, 6);
 			}
-
+			//printf("E here 5 \n");
 		}
 
-
+		//printf("E here 6.0 \n");
 		port = getPort(dstvid, p,k, nextvid);
-
+		//printf("E here 6 \n");
 		while(('r' == REROUTE_ANNO(p) || veil_type  == VEIL_RDV_QUERY || veil_type  == VEIL_RDV_PUBLISH || veil_type == VEIL_MAP_PUBLISH) && port < 0){
 			dstvid.flip_bit(k);
 			//veil_chatter_new(printDebugMessages, class_name()," Destination after %dth bit flip: |%s| ",k, dstvid.switchVIDString().c_str());
 			veil_chatter_new(printDebugMessages, class_name()," Destination after %dth bit flip: |%s| ",k, dstvid.switchVIDString().c_str());
 			port = getPort(dstvid,p,k,nextvid);
+			//printf("E here 7 \n");
 			dstvidChanged = true;
 		}
 		
@@ -117,6 +121,7 @@ VEILRoutePacket::smaction(Packet* p){
 			veil_chatter_new(true, class_name(),"[TTL EXPIRED] Pkt type: Ethertype_veil Destination: |%s| at port: %d ", dstvid.switchVIDString().c_str(), port);
 			return numinterfaces+1;
 		}
+		//printf("E here 8 \n");
 
 		veil_chatter_new(printDebugMessages, class_name()," Pkt type: Ethertype_veil Destination: |%s| at port: %d ", dstvid.switchVIDString().c_str(), port);
 		return (port >= 0 ? port : numinterfaces+1);
@@ -171,43 +176,55 @@ VEILRoutePacket::getPort(VID dstvid, Packet *p, uint8_t & k, VID &nexthop){
 	
 	int port = -1; 
 	VID myVid;
+	//printf("getPort 1 \n");
 	uint8_t numinterfaces = interfaces->numInterfaces();
 	// SJ: Use the interface VID which is closest to the destionation!
 	getClosestInterfaceVID(dstvid, myVid); // return value is in myVid
-
+	//printf("getPort 2 \n");
 	//figure out what k is	
 	k = myVid.logical_distance(&dstvid);
-
+	//printf("1 Myvid is %s\n", myVid.vid_string().c_str());
 	//if k is <= 16 then pkt is destined to us
 	//i.e., myVid = dstvid
 	if(k <= 16){
+		//printf("getPort 3 \n");
 		//we need to set the dest field of the pkt to myVid
 		veil_chatter_new(printDebugMessages, class_name()," Destination is ME: |%s| ", dstvid.switchVIDString().c_str());
 		click_ether *e = (click_ether*) p->data();
 		memcpy(e->ether_dhost, &myVid, VID_LEN);
 		memcpy(&nexthop, &myVid, 6);
 		return numinterfaces;
-	}			
-	
+	}
+	//printf("2 Myvid is %s\n", myVid.vid_string().c_str());
+	//printf("getPort 4 \n");
 	// see if it belongs to one of our physical neighbors,
 	// lookup neighbor table
 	// SJ: IMPORTANT: See if the first 32 bits are same or not!!! for the neighbor lookup
 	VID swvid = dstvid.getSwitchVID();
 	VID myInterfacevid;
+	//printf("getPort 5 \n");
 	if(neighbors->lookupEntry(&swvid, &myInterfacevid)){
+		//printf("getPort 6 \n");
 		memcpy(&nexthop, &swvid,6);
 		interfaces->lookupVidEntry(&myInterfacevid, &port);
+		//printf("getPort 7 \n");
 		return port;
 	}
-	
+	//printf("3 Myvid is %s\n", myVid.vid_string().c_str());
+	//printf("getPort 8 \n");
 	// otherwise lookup route table for kth bucket
 	VID gateway;
+	//return -1;
+	//printf("4 Myvid is %s\n", myVid.vid_string().c_str());
 	while(routes->getRoute(&dstvid,myVid, &nexthop, &gateway))
 	{
 		int temp;
+		//printf("getPort 9 \n");
 		// see if the nexthop is one of the physical neighbor?
 		if (neighbors->lookupEntry(&nexthop, &myInterfacevid)){
+			//printf("getPort 10 \n");
 			interfaces->lookupVidEntry(&myInterfacevid, &port);
+			//printf("getPort 11 \n");
 			return port;
 		}
 
@@ -217,7 +234,7 @@ VEILRoutePacket::getPort(VID dstvid, Packet *p, uint8_t & k, VID &nexthop){
 			memcpy(&myVid, &nexthop,6);
 			k = myVid.logical_distance(&dstvid);
 			// now look up in the routing table for this local interface.
-			//veil_chatter_new(printDebugMessages, class_name()," For Dest VID: |%s|  Nexthop: |%s| is my local interface.",dstvid.switchVIDString().c_str(),nexthop.switchVIDString().c_str());
+			veil_chatter_new(printDebugMessages, class_name()," For Dest VID: |%s|  Nexthop: |%s| is my local interface.",dstvid.switchVIDString().c_str(),nexthop.switchVIDString().c_str());
 		}
 		else{
 			veil_chatter_new(true, class_name(),"[ERROR][NEXTHOP IS NEITHER A PHYSICAL NEIGHBOR, NOR MY LOCAL INTERFACE] I SHOULD NEVER REACH HERE:  For Dest VID: |%s|  MyVID: |%s| NextHop: |%s| ",dstvid.switchVIDString().c_str(),myVid.switchVIDString().c_str(), nexthop.switchVIDString().c_str());
@@ -225,7 +242,7 @@ VEILRoutePacket::getPort(VID dstvid, Packet *p, uint8_t & k, VID &nexthop){
 			return port;
 		}
 	}
-	
+	//printf("getPort 9 port is %d \n", port);
 	return port;
 }
 
@@ -253,12 +270,13 @@ VEILRoutePacket::getClosestInterfaceVID(VID dstvid, VID &myVID){
 		if (interfaces->lookupIntEntry(i, &intvid)){
 			uint32_t newdist = VID::XOR(intvid, dstvid);
 			if (newdist < xordist){
+				//printf("VEILRoutePacket::getClosestInterfaceVID myvid %s intvid %s \n", myVID.vid_string().c_str(), intvid.vid_string().c_str());
 				memcpy(&myVID, &intvid,6);
 				xordist = newdist;		
 			}
 		}
 	}
-	//veil_chatter_new(printDebugMessages, class_name(),"[Closest MyInerface VID] Dest VID: |%s|  MyVID: |%s| XoRDist: %d",dstvid.switchVIDString().c_str(),myVID.switchVIDString().c_str(), xordist);
+	veil_chatter_new(printDebugMessages, class_name(),"[Closest MyInerface VID] Dest VID: |%s|  MyVID: |%s| XoRDist: %d",dstvid.switchVIDString().c_str(),myVID.switchVIDString().c_str(), xordist);
 }
 
 CLICK_ENDDECLS

@@ -246,6 +246,11 @@ VEILProcessVCCSTAdSub::processSwitchVID(Packet*p){
 			//duplicate
 			VID cvid = interfaces->rinterfaces.get(myintindex);
 			if (cvid != myvid) veil_chatter_new(true, class_name(), "Warning: Changed vid for interface %d, from %s to %s! ",myintindex, cvid.vid_string().c_str(), myvid.vid_string().c_str());
+			// now erase the old entry first.
+			interfaces->rinterfaces.erase(myintindex);
+			if(interfaces->interfaces.get_pointer(cvid) != NULL){
+				interfaces->interfaces.erase(cvid);
+			}
 		}
 		// now update.
 		veil_chatter_new(printDebugMessages, class_name(), "VID for interface %d is %s! ",myintindex, myvid.vid_string().c_str());
@@ -253,6 +258,17 @@ VEILProcessVCCSTAdSub::processSwitchVID(Packet*p){
 		interfaces->interfaces.set(myvid,myintindex);
 		//return -1;
 		interfaces->isvidset.set(myintindex, vidset);
+
+		// now make sure if vid is set for all the interfaces or not.
+		bool allset = true;
+		for (int i = 0; i < interfaces->etheraddToInterfaceIndex.size(); i++){
+			if(!interfaces->isvidset[i]) {
+				veil_chatter_new(printDebugMessages, class_name(),"%d th interface %s does not have the vid assignment yet.", i, interfaces->interfaceIndexToEtherAddr[i].s().c_str());
+				allset = false;break;
+			}
+		}
+		interfaces->isVIDAssignmentDone = allset;
+
 	}
 	else{
 		VEILSpanningTreeState::ForwardingTableFromVCC::const_iterator it;

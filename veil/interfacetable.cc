@@ -78,6 +78,7 @@ VEILInterfaceTable::lookupIntEntry(int i, VID* ivid)
 	bool found = false;
 	if (!(rinterfaces.find(i) == rinterfaces.end())) {
 		VID vid = rinterfaces.get(i);
+		//printf("VEILInterfaceTable::lookupIntEntry vid: %s, int: %d VIDLEN %d\n", vid.vid_string().c_str(), i, VID_LEN);
 		memcpy(ivid, &vid, VID_LEN);
 		found = true;
 	}

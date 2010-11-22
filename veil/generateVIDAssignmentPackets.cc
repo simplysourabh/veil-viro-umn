@@ -101,7 +101,7 @@ VEILGenerateVIDAssignmentPackets::dispatch_one_vid_mac_pair(EtherAddress dstmac,
 
 	// do I have dstmac in the children ?
 	if (interfaces->etheraddToInterfaceIndex.get_pointer(dstmac) != NULL){
-		printf("Packet is for me. sending out on interface: %d\n", interfaces->numInterfaces());
+		//printf("Packet is for me. sending out on interface: %d\n", interfaces->numInterfaces());
 		output(interfaces->numInterfaces()).push(packet);
 		veil_chatter_new(printDebugMessages,class_name(), "in sendNeighborInfotoVCC: VID assignment is for my interface %s at %d!", dstmac.s().c_str(),interfaces->numInterfaces());
 	}

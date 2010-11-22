@@ -86,8 +86,8 @@ VEILRouteTable::updateEntry (
 
 	// there is no mapping already, so create one and add it.
 	if (buck == NULL){
-		Bucket *newbuck = new Bucket();
-		rt->set(b,*newbuck);
+		Bucket tempbucket;
+		rt->set(b,tempbucket);
 		buck = rt->get_pointer(b);
 		//set up the timer
 		TimerData *tdata = new TimerData();
@@ -117,6 +117,7 @@ VEILRouteTable::updateEntry (
 		for (j = 1; j < MAX_GW_PER_BUCKET; j++){
 			buck->buckets[j].isValid = false;
 		}
+		//printf("in VEILRouteTable::updateEntry done1\n");
 		return;
 	}
 	for (j = 0; j < MAX_GW_PER_BUCKET; j++){
@@ -139,15 +140,27 @@ VEILRouteTable::updateEntry (
 bool
 VEILRouteTable::getRoute(VID* dst, VID myinterface, VID *nh, VID *g,bool isDefault)
 {
+	//printf("VEILRouteTable::getRoute 1\n");
 	bool found = false;
 	uint8_t j = 0;
 	uint8_t b = myinterface.logical_distance(dst);
 	InnerRouteTable *rt = routes.get_pointer(myinterface);
+	//printf("VEILRouteTable::getRoute myinterface %s dst %s\n", myinterface.vid_string().c_str(), dst->vid_string().c_str());
+	if (rt == NULL){
+		veil_chatter_new(true, class_name(),"VEILRouteTable::getRoute: rt is NULL!");
+		return false;
+	}
+	//printf("VEILRouteTable::getRoute 2\n");
 	Bucket *buck = rt->get_pointer(b);
+	//printf("VEILRouteTable::getRoute 3\n");
 	if (buck != NULL){
+		//printf("VEILRouteTable::getRoute 4\n");
 		if (isDefault){
+			//printf("VEILRouteTable::getRoute 5\n");
 			for (j = 0; j < MAX_GW_PER_BUCKET; j++){
+				//printf("VEILRouteTable::getRoute 6\n");
 				if (buck->buckets[j].isValid && buck->buckets[j].isDefault){
+					//printf("VEILRouteTable::getRoute 7\n");
 					memcpy(nh, &(buck->buckets[j].nexthop), 6);
 					memcpy(g, &(buck->buckets[j].gateway), 6);
 					return true;
@@ -156,12 +169,15 @@ VEILRouteTable::getRoute(VID* dst, VID myinterface, VID *nh, VID *g,bool isDefau
 			return false;
 		}else{
 			srand(time(NULL));
+			//printf("VEILRouteTable::getRoute 8\n");
 			uint8_t totalValidEntries = 0;
 			uint8_t k = 0;
 
 			// first count how many valid entries are there.
 			for (k = 0; k < MAX_GW_PER_BUCKET; k++){
+				//printf("VEILRouteTable::getRoute 9\n");
 				if (buck->buckets[k].isValid){
+					//printf("VEILRouteTable::getRoute 10\n");
 					totalValidEntries++;
 				}
 			}
@@ -173,8 +189,11 @@ VEILRouteTable::getRoute(VID* dst, VID myinterface, VID *nh, VID *g,bool isDefau
 			uint8_t pickj = rand() % totalValidEntries;
 			uint8_t r = 0;
 			for (k = 0; k < MAX_GW_PER_BUCKET; k++){
+				//printf("VEILRouteTable::getRoute 11\n");
 				if (buck->buckets[k].isValid){
+					//printf("VEILRouteTable::getRoute 12\n");
 					if (r == pickj){
+						//printf("VEILRouteTable::getRoute 13\n");
 						memcpy(nh, &(buck->buckets[pickj].nexthop), 6);
 						memcpy(g, &(buck->buckets[pickj].gateway), 6);
 						return true;
@@ -184,6 +203,7 @@ VEILRouteTable::getRoute(VID* dst, VID myinterface, VID *nh, VID *g,bool isDefau
 			}
 		}
 	}
+	//printf("VEILRouteTable::getRoute 14\n");
 	return found;
 }
 
