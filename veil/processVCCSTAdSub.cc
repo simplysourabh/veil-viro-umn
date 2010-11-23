@@ -227,9 +227,9 @@ VEILProcessVCCSTAdSub::processSwitchVID(Packet*p){
 		veil_chatter_new(true, class_name(), "ERROR: in processLocalTopo: TTL expired.");
 		return -1;
 	}
-	printf("TTL is : %d ", veil_sub->ttl);
+	//printf("TTL is : %d ", veil_sub->ttl);
 	veil_sub->ttl = veil_sub->ttl -1;
-	printf("Updated TTL is : %d\n", veil_sub->ttl);
+	//printf("Updated TTL is : %d\n", veil_sub->ttl);
 
 	veil_chatter_new(printDebugMessages, class_name(), "Packet of type: switch vid assignment, coming from vccmac %s dstmac %s", vccmac.s().c_str(), dstmac.s().c_str());
 

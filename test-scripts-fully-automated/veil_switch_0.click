@@ -80,13 +80,13 @@ vccgenerator[0] -> q0;
 vccgenerator[1] -> q1;
 vccgenerator[2] -> q2;
 vccgenerator[3] -> q3;
-vccgenerator[4] -> Print(PACKETISFORME) -> c;
+vccgenerator[4] -> c;
 
 vidgenerator[0] -> q0;
 vidgenerator[1] -> q1;
 vidgenerator[2] -> q2;
 vidgenerator[3] -> q3;
-vidgenerator[4] -> Print(PACKETISFORMEFromVIDGenerator, MAXLENGTH 50) -> c;
+vidgenerator[4] -> c;
 
 vccprocessor[0] -> q0;
 vccprocessor[1] -> q1;
