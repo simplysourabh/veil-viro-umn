@@ -44,13 +44,18 @@ VEILRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 	veil_chatter_new(true,class_name(),"[FixME] Updating default routing entry for a bucket purges all the other routing entries, also default entry is always added in the beginning of the list of routing entries.");
 	int res = 0;
 	int i = 0;
-	for (i = 0; i < conf.size()-1; i++) {
+	for (i = 0; i < conf.size()-2; i++) {
 		res = cp_viro_route(conf[i], errh);
 	}
-	cp_shift_spacevec(conf[i]);
-	String printflag = cp_shift_spacevec(conf[i]);
-	if(!cp_bool(printflag, &printDebugMessages))
-		return errh->error(" [Error] PRINTDEBUG FLAG should be either true or false");	
+	Vector<String> conf1;
+	conf1.push_back(conf[i]);
+	i++;
+	conf1.push_back(conf[i]);
+	res = cp_va_kparse(conf1, this, errh,
+			"INTERFACETABLE", cpkM+cpkP, cpElementCast, "VEILInterfaceTable", &interfaces,
+			"PRINTDEBUG", 0, cpBool, &printDebugMessages,
+			cpEnd);
+
 	return res;
 }
 
@@ -66,18 +71,24 @@ VEILRouteTable::updateEntry (
 	
 	//we first want to check if an InnerRouteTable is already present
 	//Check if innerroutetable is present for interface vid = i?
+	if (interfaces->interfaces.get_pointer(*i) == NULL){
+		veil_chatter_new(printDebugMessages, class_name(), "in updateEntry | Interface with VID %s is not available anymore!", i->vid_string().c_str());
+		return;
+	}
+	int int_id = interfaces->interfaces.get(*i);
+
 	InnerRouteTable *rt; uint8_t j = 0;
-	if(routes.find(*i) != routes.end()){
+	if(routes.find(int_id) != routes.end()){
 		// yes we have a innerroutetable for interface vid = i
 		// get the pointer to the table.
-		rt = routes.get_pointer(*i);
+		rt = routes.get_pointer(int_id);
 	} else {
 		// No we dont have the innerroutetable for interface vid = i
 		// create new innerroutetable for the interface vid = i, and 
 		// add it to the main routing table.
 		rt = new HashTable<uint8_t, Bucket>::HashTable();
-		routes.set(*i,*rt);
-		rt = routes.get_pointer(*i);
+		routes.set(int_id,*rt);
+		rt = routes.get_pointer(int_id);
 	}
 
 	// Now see if we have any mapping for the bucket:b in interface:i
@@ -92,7 +103,7 @@ VEILRouteTable::updateEntry (
 		//set up the timer
 		TimerData *tdata = new TimerData();
 		tdata->bucket = b;
-		tdata->interface = new VID(i->data());
+		tdata->interface_id = int_id;
 		tdata->routes = &routes;
 		Timer *expiry = new Timer(&VEILRouteTable::expire, tdata);
 		expiry->initialize(this);
@@ -113,11 +124,11 @@ VEILRouteTable::updateEntry (
 		buck->buckets[0].isDefault = true;
 		buck->expiry->unschedule();
 		buck->expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
-		veil_chatter_new(printDebugMessages, class_name()," Updated Default and \" purged\" all the other Bucket %d for Interface |%s| ",b, i->switchVIDString().c_str());
+		veil_chatter_new(printDebugMessages, class_name()," Updated Default and \"purged\" all the other Bucket %d for Interface |%s| ",b, i->switchVIDString().c_str());
 		for (j = 1; j < MAX_GW_PER_BUCKET; j++){
 			buck->buckets[j].isValid = false;
 		}
-		//printf("in VEILRouteTable::updateEntry done1\n");
+		printf("in VEILRouteTable::updateEntry done1\n");
 		return;
 	}
 	for (j = 0; j < MAX_GW_PER_BUCKET; j++){
@@ -140,15 +151,27 @@ VEILRouteTable::updateEntry (
 bool
 VEILRouteTable::getRoute(VID* dst, VID myinterface, VID *nh, VID *g,bool isDefault)
 {
+	if (interfaces->interfaces.get_pointer(myinterface) == NULL){
+		veil_chatter_new(printDebugMessages, class_name(), "in getRoute | Interface with VID %s is not available anymore!", myinterface.vid_string().c_str());
+		return false;
+	}
+	int int_id = interfaces->interfaces.get(myinterface);
+
 	//printf("VEILRouteTable::getRoute 1\n");
 	bool found = false;
 	uint8_t j = 0;
 	uint8_t b = myinterface.logical_distance(dst);
-	InnerRouteTable *rt = routes.get_pointer(myinterface);
+	InnerRouteTable *rt = routes.get_pointer(int_id);
 	//printf("VEILRouteTable::getRoute myinterface %s dst %s\n", myinterface.vid_string().c_str(), dst->vid_string().c_str());
 	if (rt == NULL){
 		veil_chatter_new(true, class_name(),"VEILRouteTable::getRoute: rt is NULL!");
 		return false;
+	}
+
+	if(b <= 16){
+		memcpy(nh, &myinterface,6);
+		veil_chatter_new(printDebugMessages, class_name(), "getRoute | dst %s is me %s, and logical_distance is %d. Nexthop %s",dst->vid_string().c_str(), myinterface.switchVIDString().c_str(), b, nh->switchVIDString());
+		return true;
 	}
 	//printf("VEILRouteTable::getRoute 2\n");
 	Bucket *buck = rt->get_pointer(b);
@@ -211,10 +234,15 @@ VEILRouteTable::getRoute(VID* dst, VID myinterface, VID *nh, VID *g,bool isDefau
 bool
 VEILRouteTable::getBucket(uint8_t b, VID* i, VID *nh)
 {
+	if (interfaces->interfaces.get_pointer(*i) == NULL){
+		veil_chatter_new(printDebugMessages, class_name(), "Interface with VID %s is not available anymore!", i->switchVIDString().c_str());
+		return false;
+	}
+	int int_id = interfaces->interfaces.get(*i);
 	bool found = false;
 	uint8_t j = 0;
-	if (routes.find(*i) != routes.end()) {
-		InnerRouteTable rt = routes.get(*i);
+	if (routes.find(int_id) != routes.end()) {
+		InnerRouteTable rt = routes.get(int_id);
 		if (rt.find(b) != rt.end()) {
 			Bucket buck = rt.get(b);
 			for (j = 0; j < MAX_GW_PER_BUCKET; j++){
@@ -236,15 +264,13 @@ VEILRouteTable::expire(Timer *t, void *data)
 {
 	TimerData *td = (TimerData *) data;
 	uint8_t bucket = td->bucket;
-	VID interface;
-	memcpy(&interface, td->interface, VID_LEN);
-	veil_chatter_new(true,"VEILRouteTable", " [Timer Expired] on Interface VID: |%s| for bucket %d ",interface.switchVIDString().c_str(), bucket);
-	delete(td->interface);
-	InnerRouteTable* irt = td->routes->get_pointer(interface);
+	int interfaceid = td->interface_id;
+	veil_chatter_new(true,"VEILRouteTable", " [Timer Expired] on Interface %d: for bucket %d ",interfaceid, bucket);
+	InnerRouteTable* irt = td->routes->get_pointer(interfaceid);
 	Bucket* buck = irt->get_pointer(bucket);
 	// Erase returns the number of elements deleted, so if it is 0, then it means that corresponding entry was not deleted.
 	if (irt->find(bucket) == irt->end()){
-		veil_chatter_new(true, "VEILRouteTable" ,"[Delete ERROR!!][Timer Expired] on Interface VID: |%s| for bucket %d ",interface.switchVIDString().c_str(), bucket);
+		veil_chatter_new(true, "VEILRouteTable" ,"[Delete ERROR!!][Timer Expired] on Interface %d for bucket %d ",interfaceid, bucket);
 	}else{
 		for (uint8_t i = 0; i < MAX_GW_PER_BUCKET; i++){
 			buck->buckets[i].isValid = false;
@@ -265,7 +291,7 @@ VEILRouteTable::read_handler(Element *e, void *thunk)
 	sa << "\n-----------------Routing Table START-----------------\n"<<"[Routing Table]" << '\n';
 	sa << "My VID" << "\t\t" << "Bucket" << '\t' <<"NextHop VID" << "\t"<< "Gateway VID" <<"\t"<<"IsDefault" <<"\t"<< "TTL" << '\n';
 	for(iter1 = routes1.begin(); iter1; ++iter1){
-		String myInterface = static_cast<VID>(iter1.key()).switchVIDString();
+		String myInterface = static_cast<VID>(rt1->interfaces->rinterfaces[iter1.key()]).switchVIDString();
 		InnerRouteTable rt = iter1.value();
 		for(iter2 = rt.begin(); iter2; ++iter2){
 			int bucket = iter2.key();		

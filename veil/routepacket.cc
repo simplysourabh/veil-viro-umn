@@ -96,7 +96,7 @@ VEILRoutePacket::smaction(Packet* p){
 		while(('r' == REROUTE_ANNO(p) || veil_type  == VEIL_RDV_QUERY || veil_type  == VEIL_RDV_PUBLISH || veil_type == VEIL_MAP_PUBLISH) && port < 0){
 			dstvid.flip_bit(k);
 			//veil_chatter_new(printDebugMessages, class_name()," Destination after %dth bit flip: |%s| ",k, dstvid.switchVIDString().c_str());
-			veil_chatter_new(printDebugMessages, class_name()," Destination after %dth bit flip: |%s| ",k, dstvid.switchVIDString().c_str());
+			veil_chatter_new(printDebugMessages, class_name()," Destination after %dth bit flip: |%s| port was %d",k, dstvid.switchVIDString().c_str(), port);
 			port = getPort(dstvid,p,k,nextvid);
 			//printf("E here 7 \n");
 			dstvidChanged = true;
@@ -183,6 +183,7 @@ VEILRoutePacket::getPort(VID dstvid, Packet *p, uint8_t & k, VID &nexthop){
 	//printf("getPort 2 \n");
 	//figure out what k is	
 	k = myVid.logical_distance(&dstvid);
+	veil_chatter_new(printDebugMessages,class_name(),"getPort | DstVID %s myVid %s logical_distance %d", dstvid.vid_string().c_str(), myVid.vid_string().c_str(), k);
 	//printf("1 Myvid is %s\n", myVid.vid_string().c_str());
 	//if k is <= 16 then pkt is destined to us
 	//i.e., myVid = dstvid
@@ -234,7 +235,9 @@ VEILRoutePacket::getPort(VID dstvid, Packet *p, uint8_t & k, VID &nexthop){
 			memcpy(&myVid, &nexthop,6);
 			k = myVid.logical_distance(&dstvid);
 			// now look up in the routing table for this local interface.
-			veil_chatter_new(printDebugMessages, class_name()," For Dest VID: |%s|  Nexthop: |%s| is my local interface.",dstvid.switchVIDString().c_str(),nexthop.switchVIDString().c_str());
+			veil_chatter_new(printDebugMessages, class_name()," For Dest VID: |%s|  Nexthop: |%s| is my local interface, logical_distance %d",dstvid.switchVIDString().c_str(),nexthop.switchVIDString().c_str(), k);
+			port = numinterfaces;
+			return port;
 		}
 		else{
 			veil_chatter_new(true, class_name(),"[ERROR][NEXTHOP IS NEITHER A PHYSICAL NEIGHBOR, NOR MY LOCAL INTERFACE] I SHOULD NEVER REACH HERE:  For Dest VID: |%s|  MyVID: |%s| NextHop: |%s| ",dstvid.switchVIDString().c_str(),myVid.switchVIDString().c_str(), nexthop.switchVIDString().c_str());
@@ -276,7 +279,7 @@ VEILRoutePacket::getClosestInterfaceVID(VID dstvid, VID &myVID){
 			}
 		}
 	}
-	veil_chatter_new(printDebugMessages, class_name(),"[Closest MyInerface VID] Dest VID: |%s|  MyVID: |%s| XoRDist: %d",dstvid.switchVIDString().c_str(),myVID.switchVIDString().c_str(), xordist);
+	veil_chatter_new(printDebugMessages, class_name(),"getClosestInterfaceVID | [Closest MyInerface VID] Dest VID: |%s|  MyVID: |%s| XoRDist: %d",dstvid.switchVIDString().c_str(),myVID.switchVIDString().c_str(), xordist);
 }
 
 CLICK_ENDDECLS

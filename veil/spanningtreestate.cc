@@ -191,7 +191,7 @@ VEILSpanningTreeState::read_handler(Element *e, void *thunk)
 	ForwardingTableFromVCC::iterator iterFrom;
 
 	sa << "\n-----------------SpanningTreeState START-----------------\n"<<"" << '\n';
-	sa << "VCC MAC" << "\t" << "Parent(forwarder)MAC" << "\tCost(#hops)"<<'\t' << "TTL" << '\n';
+	sa << "VCC MAC" << "\t\t\t" << "Parent(forwarder)MAC" << "\t\tCost(#hops)"<<'\t' << "TTL" << '\n';
 	for (iterTo = st->forwardingTableToVCC.begin(); iterTo; ++iterTo){
 		String vccmac = static_cast <EtherAddress> (iterTo.key()).s();
 		ParentEntry pe = iterTo.value();
@@ -200,7 +200,7 @@ VEILSpanningTreeState::read_handler(Element *e, void *thunk)
 		sa << vccmac <<"\t"<<parentmac<<"\t"<<pe.hopsToVcc<<"\t"<<t->expiry().sec() - time(NULL) << " Sec\n";
 	}
 	sa <<"\n";
-	sa << "Child MAC\tVCC MAC\tTTL\n";
+	sa << "Child MAC\t\t\tVCC MAC\t\tTTL\n";
 	for (iterFrom = st->forwardingTableFromVCC.begin(); iterFrom; ++iterFrom){
 		String childmac = static_cast <EtherAddress> (iterFrom.key()).s();
 		ChildEntry ce = iterFrom.value();

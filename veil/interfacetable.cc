@@ -65,10 +65,11 @@ bool
 VEILInterfaceTable::lookupVidEntry(VID* ivid, int* i)
 {
 	bool found = false;
-	if (!(interfaces.find(*ivid) == interfaces.end())) {
+	if (interfaces.get_pointer(*ivid) != NULL){
 		*i = interfaces.get(*ivid);
-		found = true;
+		return true;
 	}
+
 	return found;
 }
 
@@ -118,11 +119,11 @@ VEILInterfaceTable::read_handler(Element *e, void *thunk)
 	}else{
 		sa<<"VIDs are NOT assigned yet!\n";
 	}
-	sa << "Interface VID" << "\tMAC Address" << "\tinterface#\n";
+	sa << "ID\tInterface VID" << "\tMAC Address" << "\tinterface#\n";
 	for(int i = 0; i < it->numInterfaces(); i++){
 		String vid = static_cast<VID>(it->rinterfaces.get(i)).switchVIDString();
 		String macadd = (static_cast<EtherAddress>(it->interfaceIndexToEtherAddr.get(i))).s();
-		sa << vid << '\t' << macadd <<'\t'<< i << '\n';
+		sa <<i<<'\t'<< vid << '\t' << macadd <<'\t'<< i << '\n';
 	}
 	sa<< "----------------- Interface Table END -----------------\n\n";
 	return sa.take_string();

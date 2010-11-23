@@ -7,6 +7,7 @@
 #include <click/hashtable.hh>
 #include <click/vid.hh>
 #include "click_veil.hh"
+#include "interfacetable.hh"
 
 CLICK_DECLS
 
@@ -34,11 +35,12 @@ class VEILRouteTable : public Element {
 		
 		// Full Routing Table, a <key, value> pair
 		// Key = VID of the interface, Value = InnerRouteTable
-		typedef HashTable<VID, InnerRouteTable> OuterRouteTable;
+		// SJ Changing the OuterRouteTable to key = int and value = inner_route_table. on Nov 22.
+		typedef HashTable<int, InnerRouteTable> OuterRouteTable;
 
 		struct TimerData {
 			OuterRouteTable *routes;
-			VID *interface;
+			int interface_id;
 			uint8_t bucket;
 			VID *gateway;
 		};
@@ -58,10 +60,10 @@ class VEILRouteTable : public Element {
 		static void expire(Timer*, void*);
 		static String read_handler(Element*, void*);
 		void add_handlers();	
-	
-	private:	
 		OuterRouteTable routes;
+	private:	
 		bool printDebugMessages ;
+		VEILInterfaceTable *interfaces;
 							
 };
 
