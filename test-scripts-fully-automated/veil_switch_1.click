@@ -8,14 +8,14 @@ interfaces::VEILInterfaceTable(
 				PRINTDEBUG false
 			      );
 
-hosts::VEILHostTable(PRINTDEBUG false);
-neighbors::VEILNeighborTable(PRINTDEBUG false);
+hosts::VEILHostTable(PRINTDEBUG true);
+neighbors::VEILNeighborTable(PRINTDEBUG true);
 
-mapping::VEILMappingTable(PRINTDEBUG false);
-rendezvouspoints::VEILRendezvousTable(PRINTDEBUG false);
+mapping::VEILMappingTable(PRINTDEBUG true);
+rendezvouspoints::VEILRendezvousTable(PRINTDEBUG true);
 routes::VEILRouteTable(INTERFACETABLE interfaces, PRINTDEBUG true);
 
-topo::VEILNetworkTopoVIDAssignment(PRINTDEBUG true);
+topo::VEILNetworkTopoVIDAssignment(PRINTDEBUG false);
 
 // output devices
 out0::ToDevice(eth0);
@@ -69,7 +69,7 @@ router[1] -> q1;
 router[2] -> q2;
 router[3] -> q3;
 router[4] -> c;
-router[5] -> Print(<--RoutePacketERROR-->) -> Discard;
+router[5] -> Discard;
 
 vccstate::VEILSpanningTreeState(PRINTDEBUG false);
 vccgenerator::VEILGenerateVCCSTAdSub(interfaces, neighbors, vccstate, PRINTDEBUG false);
@@ -96,16 +96,16 @@ c[1] -> prdv;
 c[2] -> prdv;
 c[3] -> prdv;
 
-parp::VEILProcessARP(hosts, mapping, interfaces,PRINTDEBUG false) ->  router;
+parp::VEILProcessARP(hosts, mapping, interfaces,PRINTDEBUG true) ->  router;
 
 c[4]  -> Print (ETHERARP) ->  parp;
 c[10] -> Print (VEIL_ARP) ->  parp;
 
-paci::VEILProcessAccessInfo(mapping, interfaces,PRINTDEBUG false) -> router;
+paci::VEILProcessAccessInfo(mapping, interfaces,PRINTDEBUG true) -> router;
 c[5] -> paci;
 c[6] -> paci; 
 
-pip::VEILProcessIP(hosts, mapping, interfaces,FORWARDING_TYPE 2, PRINTDEBUG false)-> router;
+pip::VEILProcessIP(hosts, mapping, interfaces,FORWARDING_TYPE 2, PRINTDEBUG true)-> router;
 
 c[7]  -> pip;
 c[8]  -> pip;
@@ -115,15 +115,16 @@ c[11] -> pip;
 
 VEILBuildRouteTable(neighbors, routes, interfaces,PRINTDEBUG true) -> router;
 
-VEILPublishAccessInfo(hosts, PRINTDEBUG false) -> router;
+VEILPublishAccessInfo(hosts, PRINTDEBUG true) -> router;
 
 c[13] -> Discard;
 
-Script(wait 0s, print interfaces.table, wait 10s, loop);
-Script(wait 1s, print routes.table, wait 10s, loop);
-Script(wait 2s, print neighbors.table, wait 10s, loop);
-Script(wait 3s, print rendezvouspoints.table, wait 10s, loop);
-Script(wait 4s, print hosts.table, wait 200s, loop);
-Script(wait 5s, print mapping.table, wait 200s, loop);
-Script(wait 0s, print vccstate.state, wait 10s, loop);
-Script(wait 3s, print topo.table, wait 10s, loop);
+
+Script(wait 0s, print interfaces.table, wait 20s, loop);
+Script(wait 1s, print routes.table, wait 19s, loop);
+Script(wait 2s, print neighbors.table, wait 18s, loop);
+Script(wait 3s, print rendezvouspoints.table, wait 17s, loop);
+Script(wait 4s, print hosts.table, wait 16s, loop);
+Script(wait 5s, print mapping.table, wait 15s, loop);
+Script(wait 6s, print vccstate.state, wait 14s, loop);
+Script(wait 7s, print topo.table, wait 13s, loop);
