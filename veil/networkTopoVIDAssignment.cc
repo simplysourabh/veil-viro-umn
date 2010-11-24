@@ -309,8 +309,8 @@ VEILNetworkTopoVIDAssignment::performVIDAssignment(){
 	int vidlen = node2vid[0].length();
 
 	// adding enough room at the prefix and suffix levels
-	int prefixlen = (32-vidlen)/2;
-	int suffixlen = 32 - vidlen - prefixlen;
+	int suffixlen = 2; // using a constant length suffix.
+	int prefixlen = 32-suffixlen-vidlen;
 	veil_chatter_new(printDebugMessages, class_name()," Adding a prefix of len %d, suffix of len %d to current vidlen %d", prefixlen,suffixlen, vidlen);
 	while (vidlen < 32){
 		for (int i = 0; i < node_n; i++){
