@@ -5,7 +5,7 @@ interfaces::VEILInterfaceTable(
 				000000000000,08:00:27:8e:51:cd,
 				000000000000,08:00:27:6e:7d:bd,
 				UseStatic false, 
-				PRINTDEBUG false
+				PRINTDEBUG true
 			      );
 
 hosts::VEILHostTable(PRINTDEBUG true);
@@ -74,7 +74,7 @@ router[5] -> Discard;
 datasAd::TimedSource(DATA \<ffffffff ffff 0800 276e 7dbd 9876 0800 276e 7dbd 000000000000 0101 0200 0800 276e7dbd 0000>, INTERVAL 5) -> c;
 vccstate::VEILSpanningTreeState(08:00:27:6e:7d:bd 08:00:27:6e:7d:bd 0, PRINTDEBUG false);
 vccgenerator::VEILGenerateVCCSTAdSub(interfaces, neighbors, vccstate, PRINTDEBUG false);
-vccprocessor::VEILProcessVCCSTAdSub(INTERFACETABLE interfaces, NEIGHBORTABLE neighbors, SPANNINGTREESTATE vccstate, NETWORKTOPO topo, PRINTDEBUG false);
+vccprocessor::VEILProcessVCCSTAdSub(INTERFACETABLE interfaces, NEIGHBORTABLE neighbors, SPANNINGTREESTATE vccstate, NETWORKTOPO topo, PRINTDEBUG true);
 vidgenerator::VEILGenerateVIDAssignmentPackets(INTERFACETABLE interfaces, NEIGHBORTABLE neighbors, SPANNINGTREESTATE vccstate, NETWORKTOPO topo, PRINTDEBUG false);
 vccgenerator[0] -> q0;
 vccgenerator[1] -> q1;
