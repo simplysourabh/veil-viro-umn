@@ -47,13 +47,35 @@ VEILRoutePacket::smaction(Packet* p){
 	//printf("here 0 \n");
 	//VEIL packets: access PUBLISH/QUERY or RDV REQ/PUB/RPLY	
 	if(ntohs(eth->ether_type) == ETHERTYPE_VEIL){
-		//VID srcvid = VID(eth->ether_shost);
-		//VID dstvid = VID(eth->ether_dhost);
-		//printf("E here 0 \n");
+		VID srcvidmac = VID(eth->ether_shost);
+		VID dstvidmac = VID(eth->ether_dhost);
+		EtherAddress dstmac, srcmac;
+		memcpy(&dstmac, eth->ether_dhost,6);
+		memcpy(&srcmac, eth->ether_shost,6);
+		
 		veil_sub_header *vheader = (veil_sub_header *) (eth+1);
 		VID srcvid, dstvid;
-		memcpy(&srcvid, &vheader->svid,6);
+		memset(&srcvid, 0, 6);
+		memset(&myVid, 0, 6);
+		memcpy(&srcvid, &vheader->svid,4);
 		memcpy(&dstvid, &vheader->dvid,6);
+		// if dstvidmac is not one of my interfaces vid then drop the packet.
+		if (interfaces->interfaces.get_pointer(dstvidmac) != NULL){
+			memcpy(&myVid, &dstvidmac,4);
+		}else if(interfaces->interfaces.get_pointer(srcvidmac) != NULL){
+			memcpy(&myVid, &srcvidmac,4);			
+		}else if(interfaces->etheraddToInterfaceIndex.get_pointer(dstmac) != NULL){
+			myVid = interfaces->rinterfaces[interfaces->etheraddToInterfaceIndex[dstmac]];
+		}else if(interfaces->etheraddToInterfaceIndex.get_pointer(srcmac) != NULL){
+			myVid = interfaces->rinterfaces[interfaces->etheraddToInterfaceIndex[srcmac]];
+		}else if(interfaces->interfaces.get_pointer(srcvid) != NULL){
+			memcpy(&myVid, &srcvid, 4);
+		}else{
+			veil_chatter_new(printDebugMessages, class_name(),"PACKETYPE is ETHERTYPE_VEIL DstVID/MAC %s does not belong to any of my interfaces! rejecting the packet. srcvid %s dstvidmac %s",dstmac.s().c_str(), srcvid.vid_string().c_str(), dstvidmac.vid_string().c_str());
+			return -1;
+		}
+		veil_chatter_new(printDebugMessages,class_name(),"Packet of type ETHERTYPE_VEIL arrived on my vid/mac %s and myvid %s", dstmac.s().c_str(), myVid.switchVIDString().c_str());
+		//printf("E here 0 \n");
 
 		veil_chatter_new(printDebugMessages, class_name()," Destination: |%s| ", dstvid.switchVIDString().c_str());
 
@@ -62,7 +84,7 @@ VEILRoutePacket::smaction(Packet* p){
 		int port;
 		//printf("E here 1 \n");
 		if (veil_type == VEIL_ENCAP_MULTIPATH_IP){
-			port = getPort(dstvid, p,k, nextvid);
+			port = getPort(dstvid, p,k, nextvid, myVid);
 
 			VID finalvid;
 			veil_payload_multipath *veil_payload = (veil_payload_multipath *)(vheader+1);
@@ -91,13 +113,13 @@ VEILRoutePacket::smaction(Packet* p){
 		}
 
 		//printf("E here 6.0 \n");
-		port = getPort(dstvid, p,k, nextvid);
+		port = getPort(dstvid, p,k, nextvid, myVid);
 		//printf("E here 6 \n");
 		while(('r' == REROUTE_ANNO(p) || veil_type  == VEIL_RDV_QUERY || veil_type  == VEIL_RDV_PUBLISH || veil_type == VEIL_MAP_PUBLISH) && port < 0){
 			dstvid.flip_bit(k);
 			//veil_chatter_new(printDebugMessages, class_name()," Destination after %dth bit flip: |%s| ",k, dstvid.switchVIDString().c_str());
 			veil_chatter_new(printDebugMessages, class_name()," Destination after %dth bit flip: |%s| port was %d",k, dstvid.switchVIDString().c_str(), port);
-			port = getPort(dstvid,p,k,nextvid);
+			port = getPort(dstvid,p,k,nextvid, myVid);
 			//printf("E here 7 \n");
 			dstvidChanged = true;
 		}
@@ -155,11 +177,43 @@ VEILRoutePacket::smaction(Packet* p){
 	
 	if(ntohs(eth->ether_type) == ETHERTYPE_VEIL_IP){
 		// TODO TTL Decrement?
+	        VID srcvidmac;
+		memset(&srcvidmac, 0, 6);
+		memcpy(&srcvidmac, eth->ether_shost, 4);
+	        VID dstvidmac = VID(eth->ether_dhost);
+	        EtherAddress dstmac,srcmac;
+	        memcpy(&dstmac, eth->ether_dhost,6);
+	        memcpy(&srcmac, eth->ether_shost,6);
+		memset(&myVid,0,6);
 		
+		veil_sub_header *vheader = (veil_sub_header *) (eth+1);
+		VID srcvid, dstvid;
+		memset(&srcvid, 0, 6);
+		memcpy(&srcvid, &vheader->svid,4);
+		memcpy(&dstvid, &vheader->dvid,6);
+	        // if dstvidmac is not one of my interfaces vid then drop the packet.
+
+
+		if (interfaces->interfaces.get_pointer(dstvidmac) != NULL){
+			memcpy(&myVid, &dstvidmac,4);
+		}else if(interfaces->interfaces.get_pointer(srcvidmac) != NULL){
+			memcpy(&myVid, &srcvidmac,4);			
+		}else if(interfaces->etheraddToInterfaceIndex.get_pointer(dstmac) != NULL){
+			myVid = interfaces->rinterfaces[interfaces->etheraddToInterfaceIndex[dstmac]];
+		}else if(interfaces->etheraddToInterfaceIndex.get_pointer(srcmac) != NULL){
+			myVid = interfaces->rinterfaces[interfaces->etheraddToInterfaceIndex[srcmac]];
+		}else if(interfaces->interfaces.get_pointer(srcvid) != NULL){
+			memcpy(&myVid, &srcvid, 4);
+		}else{
+			veil_chatter_new(printDebugMessages, class_name(),"PACKETYPE is ETHERTYPE_VEIL_IP DstVID/MAC %s does not belong to any of my interfaces! rejecting the packet. srcvid %s dstvidmac %s",dstmac.s().c_str(), srcvid.vid_string().c_str(), dstvidmac.vid_string().c_str());
+		       return -1;
+		}
+
+		veil_chatter_new(printDebugMessages,class_name(),"Packet of type ETHERTYPE_VEIL_IP arrived on my vid/mac %s  and myvid %s", dstmac.s().c_str(), myVid.switchVIDString().c_str());
 		EtherAddress dst = EtherAddress(eth->ether_dhost);
 		VID dvid, nexthop;
 		memcpy(&dvid, &dst, VID_LEN);
-		int port = getPort(dvid, p,k, nexthop);
+		int port = getPort(dvid, p,k, nexthop, myVid);
 		veil_chatter_new(printDebugMessages, class_name()," Pkt type: Ethertype_VEIL_IP Destination VID: %s  at port: %d ", dst.s().c_str(), port);
 		return (port >= 0 ? port : numinterfaces+1);
 	}
@@ -168,18 +222,17 @@ VEILRoutePacket::smaction(Packet* p){
 }
 
 int
-VEILRoutePacket::getPort(VID dstvid, Packet *p, uint8_t & k, VID &nexthop){
+VEILRoutePacket::getPort(VID dstvid, Packet *p, uint8_t & k, VID &nexthop, VID &myVid){
 	// returns -1 if no appropriate output port was found
 	// returns numinterfaces if the packet is desined to one 
 	// of the local interface
 	// otherwise returns the physical output port on the veil_switch
 	
 	int port = -1; 
-	VID myVid;
 	//printf("getPort 1 \n");
 	uint8_t numinterfaces = interfaces->numInterfaces();
 	// SJ: Use the interface VID which is closest to the destionation!
-	getClosestInterfaceVID(dstvid, myVid); // return value is in myVid
+	//getClosestInterfaceVID(dstvid, myVid); // return value is in myVid
 	//printf("getPort 2 \n");
 	//figure out what k is	
 	k = myVid.logical_distance(&dstvid);
@@ -240,7 +293,7 @@ VEILRoutePacket::getPort(VID dstvid, Packet *p, uint8_t & k, VID &nexthop){
 			return port;
 		}
 		else{
-			veil_chatter_new(true, class_name(),"[ERROR][NEXTHOP IS NEITHER A PHYSICAL NEIGHBOR, NOR MY LOCAL INTERFACE] I SHOULD NEVER REACH HERE:  For Dest VID: |%s|  MyVID: |%s| NextHop: |%s| ",dstvid.switchVIDString().c_str(),myVid.switchVIDString().c_str(), nexthop.switchVIDString().c_str());
+			veil_chatter_new(true, class_name(),"[ERROR][NEXTHOP IS NEITHER A PHYSICAL NEIGHBOR, NOR MY LOCAL INTERFACE] I SHOULD NEVER REACHED HERE:  For Dest VID: |%s|  MyVID: |%s| NextHop: |%s| ",dstvid.switchVIDString().c_str(),myVid.switchVIDString().c_str(), nexthop.switchVIDString().c_str());
 			port = -1; 
 			return port;
 		}
@@ -256,10 +309,12 @@ VEILRoutePacket::push (
 	Packet* pkt)
 {
 	int port = smaction(pkt);
-	if (pkt != NULL)
+	if (pkt != NULL && port != -1)
 	{
-		//veil_chatter_new(printDebugMessages, class_name()," Forwarding packet on port %d.",port);
+		veil_chatter_new(printDebugMessages, class_name()," Forwarding packet on port %d.",port);
 		output(port).push(pkt);
+	}else if(pkt != NULL){
+		pkt->kill();
 	}
 }
 

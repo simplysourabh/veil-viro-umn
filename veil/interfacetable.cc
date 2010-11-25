@@ -47,6 +47,8 @@ VEILInterfaceTable::configure(Vector<String> &conf, ErrorHandler *errh)
 		isvidset.set(i,isVIDAssignmentDone);
 	}
 
+	if (isVIDAssignmentDone == false){interfaces.clear();}
+
 	i++;
 	cp_shift_spacevec(conf[i]);
 	String printflag = cp_shift_spacevec(conf[i]);
@@ -65,9 +67,15 @@ bool
 VEILInterfaceTable::lookupVidEntry(VID* ivid, int* i)
 {
 	bool found = false;
+	// make sure that reverse mapping is also correct.
 	if (interfaces.get_pointer(*ivid) != NULL){
 		*i = interfaces.get(*ivid);
-		return true;
+		if(rinterfaces.get(*i) == *ivid){
+			return true;
+		}else{
+			veil_chatter_new(printDebugMessages, class_name(), "Warning: VID %s for interface %d is inconsistent, needs to be removed from interfaces.", ivid->switchVIDString().c_str(), *i);
+			return false;
+		}
 	}
 
 	return found;
@@ -119,11 +127,19 @@ VEILInterfaceTable::read_handler(Element *e, void *thunk)
 	}else{
 		sa<<"VIDs are NOT assigned yet!\n";
 	}
-	sa << "ID\tInterface VID" << "\tMAC Address" << "\tinterface#\n";
+	sa << "ID\tInterface VID" << "\tMAC Address" << "\n";
 	for(int i = 0; i < it->numInterfaces(); i++){
 		String vid = static_cast<VID>(it->rinterfaces.get(i)).switchVIDString();
 		String macadd = (static_cast<EtherAddress>(it->interfaceIndexToEtherAddr.get(i))).s();
-		sa <<i<<'\t'<< vid << '\t' << macadd <<'\t'<< i << '\n';
+		sa <<i<<'\t'<< vid <<'\t' << macadd <<'\n';
+	}
+
+	// print all the vids in the table.
+	sa<<"\t\t READING interface(vid,i)\n";
+	InterfaceTable::iterator iter;
+	for (iter = it->interfaces.begin(); iter; iter++){
+		String vid = static_cast<VID>(iter.key()).switchVIDString();
+		sa<<iter.value()<<"\t"<<vid<<'\n';
 	}
 	sa<< "----------------- Interface Table END -----------------\n\n";
 	return sa.take_string();

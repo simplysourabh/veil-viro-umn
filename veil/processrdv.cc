@@ -144,7 +144,7 @@ VEILProcessRDV::smaction(Packet* p){
 			bzero(&gateway,6);
 			memcpy(&gateway, reply_payload->gw_vid[j], 4);
 			uint8_t dist_to_gateway = dvid.logical_distance(&gateway);
-			//veil_chatter_new(printDebugMessages, class_name(), "[RDV Reply] MyVID: |%s| BucketLevel: %d Current_Gateway: %s ", dvid.switchVIDString().c_str(), k, gateway.switchVIDString().c_str());
+			veil_chatter_new(printDebugMessages, class_name(), "[RDV Reply] MyVID: |%s| BucketLevel: %d Current_Gateway: %s ", dvid.switchVIDString().c_str(), k, gateway.switchVIDString().c_str());
 			if (dist_to_gateway > 16){
 				veil_chatter_new(printDebugMessages, class_name(), "[RDV Reply][Gateway] MyVID: |%s| GWVID: |%s| BucketLevel: %d ", dvid.switchVIDString().c_str(),gateway.switchVIDString().c_str(), k);
 				//find nexthop to reach gateway

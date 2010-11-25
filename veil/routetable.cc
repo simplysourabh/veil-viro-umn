@@ -77,6 +77,7 @@ VEILRouteTable::updateEntry (
 	}
 	int int_id = interfaces->interfaces.get(*i);
 
+	veil_chatter_new(printDebugMessages, class_name(),"updateEntry | For my vid %s at interface %d bucket %d nh %s gw %s", i->switchVIDString().c_str(), int_id, b, nh->switchVIDString().c_str(), g->switchVIDString().c_str());
 	InnerRouteTable *rt; uint8_t j = 0;
 	if(routes.find(int_id) != routes.end()){
 		// yes we have a innerroutetable for interface vid = i
@@ -128,7 +129,7 @@ VEILRouteTable::updateEntry (
 		for (j = 1; j < MAX_GW_PER_BUCKET; j++){
 			buck->buckets[j].isValid = false;
 		}
-		printf("in VEILRouteTable::updateEntry done1\n");
+		//printf("in VEILRouteTable::updateEntry done1\n");
 		return;
 	}
 	for (j = 0; j < MAX_GW_PER_BUCKET; j++){
@@ -152,7 +153,7 @@ bool
 VEILRouteTable::getRoute(VID* dst, VID myinterface, VID *nh, VID *g,bool isDefault)
 {
 	if (interfaces->interfaces.get_pointer(myinterface) == NULL){
-		veil_chatter_new(printDebugMessages, class_name(), "in getRoute | Interface with VID %s is not available anymore!", myinterface.vid_string().c_str());
+		veil_chatter_new(true, class_name(), "in getRoute | Interface with VID %s is not available anymore!", myinterface.vid_string().c_str());
 		return false;
 	}
 	int int_id = interfaces->interfaces.get(myinterface);
@@ -289,7 +290,7 @@ VEILRouteTable::read_handler(Element *e, void *thunk)
 	InnerRouteTable::iterator iter2;
 	OuterRouteTable routes1 = rt1->routes;
 	sa << "\n-----------------Routing Table START-----------------\n"<<"[Routing Table]" << '\n';
-	sa << "My VID" << "\t\t" << "Bucket" << '\t' <<"NextHop VID" << "\t"<< "Gateway VID" <<"\t"<<"IsDefault" <<"\t"<< "TTL" << '\n';
+	sa << "My VID" << "\t\t" << "Bucket" << '\t' <<"NextHop VID" << "\t"<< "Gateway VID" <<"\t"<<"IsDefault" <<" "<< "TTL" << '\n';
 	for(iter1 = routes1.begin(); iter1; ++iter1){
 		String myInterface = static_cast<VID>(rt1->interfaces->rinterfaces[iter1.key()]).switchVIDString();
 		InnerRouteTable rt = iter1.value();
@@ -310,6 +311,7 @@ VEILRouteTable::read_handler(Element *e, void *thunk)
 	sa<< "----------------- Routing Table END -----------------\n\n";
 	return sa.take_string();	  
 }
+
 void
 VEILRouteTable::add_handlers()
 {

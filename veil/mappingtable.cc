@@ -123,8 +123,8 @@ VEILMappingTable::read_handler(Element *e, void *thunk)
 		MappingTableEntry mte = iter.value();
 		String ipvid = static_cast<VID>(mte.ipVid).vid_string();		
 		String myvid = static_cast<VID>(mte.myVid).switchVIDString();
-		//String hmac = mte.ipmac.s();
-		sa << ipa << '\t' << ipvid << '\t' <<mte.ipmac << '\t'<< myvid << '\n';
+		String hmac = static_cast<EtherAddress>(mte.ipmac).s();
+		sa << ipa << '\t' << ipvid << '\t' <<hmac<< '\t'<< myvid << '\n';
 	}
 	sa<< "----------------- Mapping Table END -----------------\n\n";	
 	return sa.take_string();	  

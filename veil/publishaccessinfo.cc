@@ -86,8 +86,8 @@ VEILPublishAccessInfo::run_timer (
 
 		SET_REROUTE_ANNO(p, 'r');
 
-		output(0).push(p);
 		veil_chatter_new(printDebugMessages, class_name(),"[Access Info Publish] HOST IP: %s  VID: %s  MAC: %s AccessSwitchVID: %s", ip.s().c_str(),  hvd.vid_string().c_str(),hmac.s().c_str(),accessvid.switchVIDString().c_str() );
+		output(0).push(p);
 	}
 	myTimer.schedule_after_msec(VEIL_PUBLISH_INTERVAL);
 }

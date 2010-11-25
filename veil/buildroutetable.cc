@@ -77,22 +77,22 @@ VEILBuildRouteTable::run_timer (Timer *timer)
 		int1 = iiter1.key();
 		veil_chatter_new(printDebugMessages, class_name(), "RDV PUBLISH 2 | For %s", int1.vid_string().c_str());
 		if (interfaces->isvidset[interfaces->interfaces[int1]] == false){ continue;}
-		printf("BuildRouteTable: For Interface %s ", int1.switchVIDString().c_str());
+		//printf("BuildRouteTable: For Interface %s ", int1.switchVIDString().c_str());
 		for (iiter2 = it->begin(); iiter2; ++iiter2){
 			int2 = iiter2.key();
 			uint8_t ldist = int2.logical_distance(&int1);
 			if (ldist == 0){continue;}
-			printf("Neighbor %s at distance %d", int2.switchVIDString().c_str(),ldist);
+			//printf("Neighbor %s at distance %d", int2.switchVIDString().c_str(),ldist);
 			route_table->updateEntry(&int1, ldist, &int2, &int1);
-			printf("Returned!\n");
+			//printf("Returned!\n");
 			//TODO SJ: WE SHOULD BE PUBLISHING HERE!!
 			//TODO: Probably create a wrapper function for the RDV_PUBLISH.
 			veil_chatter_new(printDebugMessages, class_name(), "RDV PUBLISH | For %s at bucket %d through %s", int1.vid_string().c_str(), ldist, int2.vid_string().c_str());
-			printf("Returned2!\n");
+			//printf("Returned2!\n");
 			rdv_publish(int1, int2,ldist);
-			printf("Returned3!\n");
+			//printf("Returned3!\n");
 		}
-		printf("\n");
+		//printf("\n");
 	}
 	
 	//check for each interface

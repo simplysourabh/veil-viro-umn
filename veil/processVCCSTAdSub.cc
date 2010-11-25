@@ -245,18 +245,29 @@ VEILProcessVCCSTAdSub::processSwitchVID(Packet*p){
 		if (interfaces->rinterfaces.get_pointer(myintindex) != NULL){
 			//duplicate
 			VID cvid = interfaces->rinterfaces.get(myintindex);
-			if (cvid != myvid) veil_chatter_new(true, class_name(), "Warning: Changed vid for interface %d, from %s to %s! ",myintindex, cvid.vid_string().c_str(), myvid.vid_string().c_str());
-			// now erase the old entry first.
-			interfaces->rinterfaces.erase(myintindex);
-			if(interfaces->interfaces.get_pointer(cvid) != NULL){
-				interfaces->interfaces.erase(cvid);
+			if (cvid != myvid) {
+				veil_chatter_new(true, class_name(), "Warning: Changed vid for interface %d, from %s to %s! ",myintindex, cvid.vid_string().c_str(), myvid.vid_string().c_str());
 			}
 		}
-		// now update.
+		interfaces->rinterfaces[myintindex] = myvid;
+		interfaces->interfaces[myvid] = myintindex;
 		veil_chatter_new(printDebugMessages, class_name(), "VID for interface %d is %s! ",myintindex, myvid.vid_string().c_str());
-		interfaces->rinterfaces.set(myintindex, myvid);
-		interfaces->interfaces.set(myvid,myintindex);
-		//return -1;
+		// now check if the myintindex is associated with different vid in the
+		// interfaces->interfaces table.
+		VEILInterfaceTable::InterfaceTable::iterator iter;
+		iter = interfaces->interfaces.begin();
+		while (iter){
+			int int_id = iter.value();
+			VID cvid = iter.key();
+			if (cvid != myvid && int_id == myintindex){
+				veil_chatter_new(printDebugMessages, class_name(), "Warning: removing old assignment vid(%s) -> interface id (%d)", cvid.switchVIDString().c_str(), int_id);
+				iter = interfaces->interfaces.erase(iter);
+			}else{
+				iter++;
+			}
+				
+		}
+
 		interfaces->isvidset.set(myintindex, vidset);
 
 		// now make sure if vid is set for all the interfaces or not.

@@ -52,7 +52,8 @@ VEILProcessAccessInfo::smaction(Packet* p)
 		veil_payload_map_publish * payload_publish = (veil_payload_map_publish*)(vheader+1);
 		IPAddress ip = payload_publish->ip;
 		VID vid = payload_publish->vid;
-		EtherAddress mac = payload_publish->mac;
+		EtherAddress mac;
+		memcpy(&mac,&payload_publish->mac,6);
 		map->updateEntry(&ip, &vid, &myVid, &mac);
 		veil_chatter_new(printDebugMessages, class_name(),"[STORE MAPPING] HOST IP: %s  VID: %s  AccessSwitchVID: %s", ip.s().c_str(),  vid.vid_string().c_str(),myVid.switchVIDString().c_str()) ;
 		
