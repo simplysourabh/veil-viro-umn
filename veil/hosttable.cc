@@ -54,6 +54,51 @@ VEILHostTable::configure(Vector<String> &conf, ErrorHandler *errh)
 	return res;
 }
 
+void 
+VEILHostTable::expire(Timer *t, void *data){
+	TimerData *td = (TimerData *) data;
+	//remove all the mappings one by one.
+	EtherAddress mac;
+	HostEntry hentry;
+	IPAddress ip;
+	VID vid,vid2;
+	if(td->host2interfacetable.get_pointer(td->ip)){
+		hentry = td->host2interfacetable[td->ip]
+	}else{
+		//error
+	}
+	td->host2interfacetable.erase(td->ip);
+
+	if(td->ip2vidtable.get_pointer(td->ip)){
+		vid = td->ip2vidtable[td->ip];
+	}else{
+		//error
+	}
+	td->ip2vidtable.erase(td->ip);
+
+	if(td->vid2ethtable.get_pointer(vid)){
+		mac = td->vid2ethtable[vid];
+	}else{
+		//error
+	}
+	td->vid2ethtable.erase(vid);
+
+	if(td->eth2vidtable.get_pointer(mac)){
+		vid2 = td->eth2vidtable[mac];
+	}else{
+		//error
+	}
+	td->eth2vidtable.erase(mac);
+
+	if (vid != vid2){
+		//error
+	}
+
+	
+
+	delete(t);
+	delete(td);
+}
 void
 VEILHostTable::updateEntry (
 	VID *vid,
