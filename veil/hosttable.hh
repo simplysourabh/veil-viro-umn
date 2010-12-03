@@ -13,11 +13,16 @@ CLICK_DECLS
 //to here because interface VID can be derived from host VID
 class VEILHostTable : public Element {
 	public:
+		
+		struct HostEntry{
+			int interfaceid;
+			Timer *expiry;
+		};
 
 		typedef HashTable<VID, EtherAddress> HostTable;
 		typedef HashTable<EtherAddress, VID> ReverseHostTable;
 		typedef HashTable<IPAddress, VID> HostIPTable;
-
+		typedef HashTable<IPAddress, HostEntry> HostInterfaceTable;
 		VEILHostTable();
 		~VEILHostTable();
 
@@ -33,6 +38,17 @@ class VEILHostTable : public Element {
 		bool lookupMAC(EtherAddress*, VID*);
 		bool lookupIP(IPAddress*, VID*);
 		void updateEntry (VID *vid, EtherAddress *mac, IPAddress *ip);
+		
+		static void expire(Timer*, void*);
+		struct TimerData {
+			HostTable *vid2ethtable;
+			ReverseHostTable *eth2vidtable;
+			HostIPTable *ip2vidtable;
+			HostInterfaceTable *host2interfacetable;
+			VID hostvid;
+			IPAddress ip;
+		};
+
 		inline const HostIPTable* get_host_iptable_handle(){
 			return &iphosts;
 		}

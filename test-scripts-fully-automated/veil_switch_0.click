@@ -5,15 +5,15 @@ interfaces::VEILInterfaceTable(
 				000000000000,08:00:27:8e:51:cd,
 				000000000000,08:00:27:6e:7d:bd,
 				UseStatic false, 
-				PRINTDEBUG true
+				PRINTDEBUG false
 			      );
 
-hosts::VEILHostTable(PRINTDEBUG true);
-neighbors::VEILNeighborTable(PRINTDEBUG true);
+hosts::VEILHostTable(PRINTDEBUG false);
+neighbors::VEILNeighborTable(PRINTDEBUG false);
 
-mapping::VEILMappingTable(PRINTDEBUG true);
-rendezvouspoints::VEILRendezvousTable(PRINTDEBUG true);
-routes::VEILRouteTable(INTERFACETABLE interfaces, PRINTDEBUG true);
+mapping::VEILMappingTable(PRINTDEBUG false);
+rendezvouspoints::VEILRendezvousTable(PRINTDEBUG false);
+routes::VEILRouteTable(INTERFACETABLE interfaces, PRINTDEBUG false);
 
 topo::VEILNetworkTopoVIDAssignment(VCCMAC 08:00:27:6e:7d:bd, PRINTDEBUG false);
 
@@ -62,7 +62,7 @@ in2 -> VEILSetPortAnnotation(2) -> c;
 in3 -> VEILSetPortAnnotation(3) -> c;
 
 
-router::VEILRoutePacket(hosts, routes, interfaces, neighbors, PRINTDEBUG true);
+router::VEILRoutePacket(hosts, routes, interfaces, neighbors, PRINTDEBUG false);
 //need Queue to convert from push to pull
 router[0] -> q0;
 router[1] -> q1;
@@ -74,7 +74,7 @@ router[5] -> Discard;
 datasAd::TimedSource(DATA \<ffffffff ffff 0800 276e 7dbd 9876 0800 276e 7dbd 000000000000 0101 0200 0800 276e7dbd 0000>, INTERVAL 5) -> c;
 vccstate::VEILSpanningTreeState(08:00:27:6e:7d:bd 08:00:27:6e:7d:bd 0, PRINTDEBUG false);
 vccgenerator::VEILGenerateVCCSTAdSub(interfaces, neighbors, vccstate, PRINTDEBUG false);
-vccprocessor::VEILProcessVCCSTAdSub(INTERFACETABLE interfaces, NEIGHBORTABLE neighbors, SPANNINGTREESTATE vccstate, NETWORKTOPO topo, PRINTDEBUG true);
+vccprocessor::VEILProcessVCCSTAdSub(INTERFACETABLE interfaces, NEIGHBORTABLE neighbors, SPANNINGTREESTATE vccstate, NETWORKTOPO topo, PRINTDEBUG false);
 vidgenerator::VEILGenerateVIDAssignmentPackets(INTERFACETABLE interfaces, NEIGHBORTABLE neighbors, SPANNINGTREESTATE vccstate, NETWORKTOPO topo, PRINTDEBUG false);
 vccgenerator[0] -> q0;
 vccgenerator[1] -> q1;
@@ -103,16 +103,16 @@ c[1] -> prdv;
 c[2] -> prdv;
 c[3] -> prdv;
 
-parp::VEILProcessARP(hosts, mapping, interfaces,PRINTDEBUG true) ->  router;
+parp::VEILProcessARP(hosts, mapping, interfaces,PRINTDEBUG false) ->  router;
 
 c[4]  -> Print (ETHERARP) ->  parp;
 c[10] -> Print (VEIL_ARP) ->  parp;
 
-paci::VEILProcessAccessInfo(mapping, interfaces,PRINTDEBUG true) -> router;
+paci::VEILProcessAccessInfo(mapping, interfaces,PRINTDEBUG false) -> router;
 c[5] -> paci;
 c[6] -> paci; 
 
-pip::VEILProcessIP(hosts, mapping, interfaces,FORWARDING_TYPE 2, PRINTDEBUG true)-> router;
+pip::VEILProcessIP(hosts, mapping, interfaces,FORWARDING_TYPE 2, PRINTDEBUG false)-> router;
 
 c[7]  -> pip;
 c[8]  -> pip;
@@ -120,9 +120,9 @@ c[9]  -> pip;
 c[11] -> pip;
 
 
-VEILBuildRouteTable(neighbors, routes, interfaces,PRINTDEBUG true) -> router;
+VEILBuildRouteTable(neighbors, routes, interfaces,PRINTDEBUG false) -> router;
 
-VEILPublishAccessInfo(hosts, PRINTDEBUG true) -> router;
+VEILPublishAccessInfo(hosts, PRINTDEBUG false) -> router;
 
 c[13] -> Discard;
 
