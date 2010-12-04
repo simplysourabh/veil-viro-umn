@@ -53,10 +53,11 @@ VEILProcessARP::smaction(Packet* p){
 		IPAddress src = IPAddress(ap->arp_spa);
 		IPAddress dst = IPAddress(ap->arp_tpa);
 
-		VID::generate_host_vid(&myVid, &esrc, &hvid);
-		//host_table->updateEntry(&hvid, &esrc);
-		//host_table->updateIPEntry(&src, &hvid);
-		host_table->updateEntry(&hvid, &esrc, &src);
+		host_table->generate_host_vid(src, esrc, myport, myVid, &hvid);
+		/* TODO 
+			Fix this generate_host_vid function. Instead of calling it from the VID class
+			call it from the hosts class.
+		*/
 
 		veil_chatter_new(printDebugMessages, class_name(),"[ARP] From ip=%s(mac=%s,vid=%s) to ip=%s(mac=%s),", src.s().c_str(), esrc.s().c_str(), hvid.vid_string().c_str(),dst.s().c_str(),edest.s().c_str());
 

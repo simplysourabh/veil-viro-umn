@@ -75,8 +75,7 @@ VEILProcessIP::smaction(Packet* p)
 		IPAddress dstip = IPAddress(ip_header->ip_dst);
 
 		//Register "source ip, source mac" to a vid with myvid.	
-		VID::generate_host_vid(&myVid, &smac, &svid);	
-		hosts->updateEntry(&svid, &smac, &srcip);
+		hosts->generate_host_vid(srcip, smac, myport, myVid, &svid);
 		//veil_chatter_new(true, class_name(), "PacketLength : %d ", ntohs(ip_header->ip_len));
 		//check if dst is a host connected to us
 		if(hosts->lookupIP(&dstip, &dvid)){
