@@ -27,24 +27,24 @@ CLICK_DECLS
 
 
 // Intervals are in ms
-#define VEIL_HELLO_INTERVAL		20000
-#define VEIL_PHELLO_INTERVAL	20000
-#define VEIL_PUBLISH_INTERVAL	20000
-#define VEIL_RDV_INTERVAL		20000
-#define HOST_ENTRY_EXPIRY		20000
+#define VEIL_HELLO_INTERVAL		10000
+#define VEIL_PHELLO_INTERVAL	10000
+#define VEIL_PUBLISH_INTERVAL	10000
+#define VEIL_RDV_INTERVAL		10000
+#define HOST_ENTRY_EXPIRY		10000
 
 
 /* value greater than hello/publish interval so entries don't expire just    
  * when hello/publish pkts need to be resent. risking temporarily invalid    
  * routes. 
  */ 
-#define VEIL_TBL_ENTRY_EXPIRY	50000
+#define VEIL_TBL_ENTRY_EXPIRY	30000
 #define MAX_TTL 				0x0f
 
-#define VEIL_SPANNING_TREE_ENTRY_EXPIRY 50000 // an entry for the veil spanning tree will expire after
+#define VEIL_SPANNING_TREE_ENTRY_EXPIRY 30000 // an entry for the veil spanning tree will expire after
 // 20 seconds.
-#define VEIL_SPANNING_TREE_COST_BROADCAST 25000 // update the cost every 10 seconds.
-#define VEIL_VID_BROADCAST_TIME 20000
+#define VEIL_SPANNING_TREE_COST_BROADCAST 10000 // update the cost every 10 seconds.
+#define VEIL_VID_BROADCAST_TIME 10000
 
 #define MAX_PACKET_SIZE	1000 // maximum packet size in bytes.
 // Maximum number of gateways stored in each Bucket

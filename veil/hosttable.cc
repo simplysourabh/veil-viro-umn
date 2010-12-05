@@ -126,7 +126,7 @@ VEILHostTable::expire(Timer *t, void *data){
 void 
 VEILHostTable::updateEntry (VID vid, EtherAddress mac, IPAddress ip, int interfaceid){
 	/*
-			LOGIC
+		LOGIC
 		First check if ip to interface entry is there:
 			if its there then check if its same or not.
 				if its different then remove the old entry/entries and create a new one.
@@ -181,20 +181,27 @@ VEILHostTable::generate_host_vid(IPAddress hip, EtherAddress hmac, int myinterfa
 		likely to happen real implementation since there are 2^16 - ß1 such vids at a given switch.
 	*/
 	bool isNew = false;
+	veil_chatter_new(printDebugMessages,class_name(),"generate_host_vid | Host ip %s Mac %s Myinterface %d SwitchVID %s", hip.s().c_str(), hmac.s().c_str(), myinterfaceid, switchvid.switchVIDString().c_str());
 	// first see if the ip has currently assigned vid.
 	if (inthosts.get_pointer(hip) != NULL) {
 		HostEntry he = inthosts[hip];
+		veil_chatter_new(printDebugMessages, class_name(), "generate_host_vid | host ip %s is already present at interface %d", hip.s().c_str(), he.interfaceid);
 		// check if the switch vid is still the same or not.
 		if (he.interfaceid == myinterfaceid) {
 			// update the timers.
 			VID vid1 = iphosts[hip];
-			updateEntry(vid1, hmac, hip, myinterfaceid);
 			memcpy(hvid, &vid1,6);
 			he.expiry->unschedule();
 			he.expiry->schedule_after_msec(HOST_ENTRY_EXPIRY);
+			inthosts[hip] = he;
+			hosts[vid1] = hmac;
+			rhosts[hmac] = vid1;
+			iphosts[hip] = vid1;
+			veil_chatter_new(printDebugMessages, class_name(), "generate_host_vid | refreshed the entry for ip %s by %dms", hip.s().c_str(), HOST_ENTRY_EXPIRY);
 			return false;
 		}else {
 			// remove the old mapping.
+			veil_chatter_new(printDebugMessages, class_name(), "generate_host_vid | host ip %s has different INTERFACE %d old interface was %d", hip.s().c_str(), myinterfaceid, he.interfaceid);
 			he.expiry->unschedule();
 			delete(he.expiry);
 			hosts.erase(iphosts[hip]);
@@ -218,6 +225,7 @@ VEILHostTable::generate_host_vid(IPAddress hip, EtherAddress hmac, int myinterfa
 	memcpy(vptr+4,&startrand,2);
 	
 	// see if this random id exists or not.
+	veil_chatter_new(printDebugMessages, class_name(), "generate_host_vid | Checking for availability of %s for %s", v1.vid_string().c_str(), hip.s().c_str());
 	while(hosts.get_pointer(v1) != NULL){
 		// this vid already exists. try a new vid.
 		currrand++;
@@ -230,6 +238,7 @@ VEILHostTable::generate_host_vid(IPAddress hip, EtherAddress hmac, int myinterfa
 	}
 	
 	// assign this vid to hip.
+	veil_chatter_new(printDebugMessages, class_name(), "generate_host_vid | Finally assigning VID %s to host ip %s", v1.vid_string().c_str(), hip.s().c_str());
 	updateEntry(v1, hmac, hip, myinterfaceid);
 	return isNew;
 }
@@ -332,15 +341,24 @@ VEILHostTable::read_handler(Element *e, void *thunk)
 		return sa.take_string();
 	case table:
 		sa << "\n----------------- Host Table START-----------------\n" << '\n';
-		sa << "Host IP   " << "\t" << "Host MAC        " << '\t' << "Host VID" << '\n';
+		sa << "Host IP   " << "\t" << "Host MAC        " << '\t' << "Host VID\tMy Interface\tExpiry\n";
 		for(iiter = iphosts.begin(); iiter; ++iiter){
 			IPAddress ipa = iiter.key();
 			VID v = static_cast<VID>(iiter.value());
 			EtherAddress ea;
+			int myint = -1;
+			int secremaining = -1;
 			if(!ht->lookupVID(&v, &ea)){
 				veil_chatter_new(true, ht->class_name(), "[Error] No IP to VID mapping for : %s", ipa.s().c_str());
-			}				
-			sa << ipa << '\t' << ea << '\t' << v.vid_string()<<'\n';
+			}
+			if(ht->inthosts.get_pointer(ipa) != NULL){
+				HostEntry he = ht->inthosts[ipa];
+				myint = he.interfaceid;
+				secremaining = he.expiry->expiry().sec() - time(NULL);
+			}else{
+				veil_chatter_new(true, ht->class_name(), "read_handler | No hostentry found for ip %s!", ipa.s().c_str());
+			}
+			sa << ipa << '\t' << ea << '\t' << v.vid_string()<<'\t'<<myint<<'\t'<<secremaining<<" Sec\n";
 		}
 		sa<< "----------------- Host Table END -----------------\n\n";
 		return sa.take_string();

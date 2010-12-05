@@ -310,7 +310,7 @@ VEILProcessARP::smaction(Packet* p){
 
 			if(host_table->lookupIP(&dst, &myvid)){
 				veil_chatter_new(printDebugMessages, class_name(),"[VEIL_ENCAP_ARP][ARP Reply] To my HOST IP: %s at VID: %s ", dst.s().c_str(),  myvid.vid_string().c_str());
-				map->updateEntry(&src, &svid, &myVid, &hmac );
+				map->updateEntry(src, svid, myVid, hmac );
 				if(host_table->lookupVID(&hostvid, &dest)){
 					veil_chatter_new(printDebugMessages, class_name(),"[VEIL_ENCAP_ARP][ARP Reply] To my HOST IP: %s  HostVID: %s ", dst.s().c_str(),  hostvid.vid_string().c_str());
 					WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));

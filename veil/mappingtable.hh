@@ -23,7 +23,7 @@ class VEILMappingTable : public Element {
 		int cp_mapping(String, ErrorHandler*);
 
 		int configure(Vector<String>&, ErrorHandler*);
-		void updateEntry(IPAddress *ip, VID *ipvid, VID* myvid, EtherAddress *mac);
+		void updateEntry(IPAddress ip, VID ipvid, VID myvid, EtherAddress mac);
 		bool lookupIP(IPAddress *ip, VID *ipvid, VID* myvid, EtherAddress *mac=NULL);
 		static void expire(Timer*, void*);
 		static String read_handler(Element*, void*);

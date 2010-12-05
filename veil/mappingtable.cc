@@ -34,7 +34,7 @@ VEILMappingTable::cp_mapping(String s, ErrorHandler *errh)
 	myvid_str = cp_shift_spacevec(s);
 	if(!cp_vid(myvid_str, &myvid))
 		return errh->error("interface VID is not in expected format");
-	updateEntry(&ip, &vid, &myvid,&hmac);
+	updateEntry(ip, vid, myvid,hmac);
 	return 0;
 }
 
@@ -55,38 +55,41 @@ VEILMappingTable::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-VEILMappingTable::updateEntry (IPAddress *ip, VID *ipvid, VID *myvid, EtherAddress *ipmac)
+VEILMappingTable::updateEntry (IPAddress ip, VID ipvid, VID myvid, EtherAddress ipmac)
 {
 	MappingTableEntry entry;
 	// first see if mapping is already there or not?
-	if(ipmap.find(*ip) != ipmap.end()){
-		entry = ipmap.get(*ip);
-		MappingTableEntry *ent_pointer = ipmap.get_pointer(*ip);
-		ent_pointer->expiry->unschedule();
-
-		if((*ipvid) != entry.ipVid || (*myvid) != entry.myVid || (*ipmac) != entry.ipmac){
-			veil_chatter_new(printDebugMessages, class_name()," New mapping for IP: %s to VID: %s, old vid: %s ", ip->s().c_str(), ipvid->vid_string().c_str(), entry.ipVid.vid_string().c_str());
-			// TODO: Send a VEIL_MAP_UPDATE to original switch, so that it can update its host table.
-			memcpy(&(ent_pointer->ipVid), ipvid->data(),6);
-			memcpy(&(ent_pointer->myVid), myvid->data(),6);
-			memcpy(&(ent_pointer->ipmac), ipmac->data(),6);
+	if(ipmap.find(ip) != ipmap.end()){
+		entry = ipmap.get(ip);
+		entry.expiry->unschedule();
+		
+		if((ipvid) != entry.ipVid || (myvid) != entry.myVid || (ipmac) != entry.ipmac){
+			veil_chatter_new(printDebugMessages, class_name()," Warning: Mapping changed for IP: %s to VID: %s, mac: %s old vid: %s old mac: %s", ip.s().c_str(), ipvid.vid_string().c_str(), ipmac.s().c_str(), entry.ipVid.vid_string().c_str(), entry.ipmac.s().c_str());
 		}
-		// refresh the timer in this case.
-		ent_pointer->expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
+		entry.ipVid = ipvid;
+		entry.myVid = myvid;
+		entry.ipmac = ipmac;
+		entry.expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
+		ipmap[ip] = entry;
 		return;
 	}
 
+	veil_chatter_new(printDebugMessages, class_name()," updateEntry | New mapping for IP: %s to VID: %s, mac: %s ", ip.s().c_str(), ipvid.vid_string().c_str(), ipmac.s().c_str());
+	
 	TimerData *tdata = new TimerData();
 	tdata->ipmap = &ipmap;
-	memcpy(&tdata->ip, &ip, 4);
-	memcpy(&entry.ipVid, ipvid->data(), 6);
-	memcpy(&entry.myVid, myvid->data(), 6);
-	memcpy(&entry.ipmac, ipmac->data(), 6);
+	
+	tdata->ip = ip;
+	
+	entry.ipVid = ipvid;
+	entry.myVid = myvid;
+	entry.ipmac = ipmac;
+	
 	Timer *expiry = new Timer(&VEILMappingTable::expire, tdata);
 	expiry->initialize(this);
-	expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
 	entry.expiry  = expiry;
-	ipmap.set(*ip, entry);
+	ipmap.set(ip, entry);
+	expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
 }
 
 bool
@@ -116,7 +119,7 @@ VEILMappingTable::read_handler(Element *e, void *thunk)
 	IPMapTable ipmap = mt->ipmap;
 
 	sa << "\n----------------- Mapping START-----------------"<< '\n';
-	sa << "HOST IP " << " \t" << "HOST VID" <<"\t\t"<<"Host MAC"<< "\t" << "Access Switch(Interface) VID\n";
+	sa << "HOST IP " << " \t" << "HOST VID" <<"\t\t"<<"Host MAC"<< "\t" << "Access Switch(Interface) VID\tExpiry Time(in Sec)\n";
 
 	for(iter = ipmap.begin(); iter; ++iter){
 		IPAddress ipa = iter.key();
@@ -124,7 +127,7 @@ VEILMappingTable::read_handler(Element *e, void *thunk)
 		String ipvid = static_cast<VID>(mte.ipVid).vid_string();		
 		String myvid = static_cast<VID>(mte.myVid).switchVIDString();
 		String hmac = static_cast<EtherAddress>(mte.ipmac).s();
-		sa << ipa << '\t' << ipvid << '\t' <<hmac<< '\t'<< myvid << '\n';
+		sa << ipa << '\t' << ipvid << '\t' <<hmac<< '\t'<< myvid <<'\t' <<mte.expiry->expiry().sec()-time(NULL)<< '\n';
 	}
 	sa<< "----------------- Mapping Table END -----------------\n\n";	
 	return sa.take_string();	  
@@ -140,6 +143,12 @@ void
 VEILMappingTable::expire(Timer *t, void *data) 	
 {
 	TimerData *td = (TimerData *) data;
+	if(td->ipmap->get_pointer(td->ip)){
+		MappingTableEntry mte = td->ipmap->get(td->ip);
+		StringAccum sa;
+		sa<<"expire | Mapping ip "<<td->ip<<" vid "<<mte.ipVid.vid_string()<<" mac "<<mte.ipmac;
+		veil_chatter_new(true,class_name(),"%s",sa.take_string().c_str());
+	}
 	td->ipmap->erase(td->ip);
 	t->clear();
 	delete(t);
