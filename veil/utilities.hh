@@ -11,6 +11,7 @@
 
 CLICK_DECLS
 
+/*
 //this is for access and rdv point rerouting
 #define REROUTE_ANNO_OFFSET       20
 #define REROUTE_ANNO(p)           ((p)->anno_u8(Packet::user_anno_offset + REROUTE_ANNO_OFFSET))
@@ -34,6 +35,7 @@ static VID calculate_access_switch(IPAddress *ip){
 	val[3] = data[3] << 5; 
 	return VID(static_cast<const unsigned char*>(val));
 }
+*/
 
 CLICK_ENDDECLS
 #endif

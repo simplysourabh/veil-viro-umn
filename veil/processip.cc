@@ -75,7 +75,22 @@ VEILProcessIP::smaction(Packet* p)
 		IPAddress dstip = IPAddress(ip_header->ip_dst);
 
 		//Register "source ip, source mac" to a vid with myvid.	
-		hosts->generate_host_vid(srcip, smac, myport, myVid, &svid);
+		bool isNew = hosts->generate_host_vid(srcip, smac, myport, myVid, &svid);
+		if (isNew){
+			veil_chatter_new(printDebugMessages, class_name(), "smaction | publishing the info for the new host. ip %s vid %s mac %s at interface %d", srcip.s().c_str(), svid.vid_string().c_str(), smac.s().c_str(), myport);
+			// this is a new mapping. publish it.
+
+			//--------------------------
+			WritablePacket* p = publish_access_info_packet(srcip, smac, svid, printDebugMessages, class_name());
+			if (p == NULL) {
+				veil_chatter_new(true, class_name(), "[Error!] cannot make packet in publishaccessinfo");
+			}else{
+				output(0).push(p);
+			}
+			//--------------------------
+			// create the publish access info packet and push it to the output.
+			
+		}
 		//veil_chatter_new(true, class_name(), "PacketLength : %d ", ntohs(ip_header->ip_len));
 		//check if dst is a host connected to us
 		if(hosts->lookupIP(&dstip, &dvid)){
@@ -83,6 +98,8 @@ VEILProcessIP::smaction(Packet* p)
 			//thru the same interface, ignore packet
 			dvid.extract_switch_vid(&vid);
 			if(vid == myVid){
+				//TODO: I should review this case. As of now, it doesn't seem that we should ever reach here.
+				// and if we do, then something may be wrong.
 				veil_chatter_new(printDebugMessages, class_name(),"[ProcessIP][EtherTYPE_IP][Both Host are on same interface] From (IP: %s, Mac: %s) to (IP: %s, VID: %s),", srcip.s().c_str(), smac.s().c_str(), dstip.s().c_str(),dvid.vid_string().c_str());
 				p->kill();
 				return NULL;

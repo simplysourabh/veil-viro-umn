@@ -52,6 +52,14 @@ VEILPublishAccessInfo::run_timer (
 			continue;
 		}
 
+		//--------------------------
+		WritablePacket* p = publish_access_info_packet(ip, hmac, hvd, printDebugMessages, class_name());
+		if (p == NULL) {
+			veil_chatter_new(true, class_name(), "[Error!] cannot make packet in publishaccessinfo");
+			continue;
+		}
+		//--------------------------
+/*
 		int packet_length = sizeof(click_ether) + sizeof(veil_sub_header) + sizeof(veil_payload_map_publish);
 		WritablePacket *p = Packet::make(packet_length);
 
@@ -87,6 +95,7 @@ VEILPublishAccessInfo::run_timer (
 		SET_REROUTE_ANNO(p, 'r');
 
 		veil_chatter_new(printDebugMessages, class_name(),"[Access Info Publish] HOST IP: %s  VID: %s  MAC: %s AccessSwitchVID: %s", ip.s().c_str(),  hvd.vid_string().c_str(),hmac.s().c_str(),accessvid.switchVIDString().c_str() );
+*/
 		output(0).push(p);
 	}
 	myTimer.schedule_after_msec(VEIL_PUBLISH_INTERVAL);

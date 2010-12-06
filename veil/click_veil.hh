@@ -14,6 +14,9 @@
 #include <stdio.h>
 #include <time.h>
 
+
+#include <click/packet_anno.hh>
+#include <click/packet.hh>
 CLICK_DECLS
 
 //temporary solution to identify VEIL pkts
@@ -435,6 +438,69 @@ struct veil_payload_svid_mappings{
 			default: return "Undefined_Packet_Type";
 		}
 		return "Error";
+	}
+
+/*
+FROM UTILITIES.HH 
+*/
+//---------------------------------------------------------------------
+	//this is for access and rdv point rerouting
+	#define REROUTE_ANNO_OFFSET       20
+	#define REROUTE_ANNO(p)           ((p)->anno_u8(Packet::user_anno_offset + REROUTE_ANNO_OFFSET))
+	#define SET_REROUTE_ANNO(p, v)    ((p)->set_anno_u8(Packet::user_anno_offset + REROUTE_ANNO_OFFSET, (v)))
+
+	//set port number annotation for all incoming packets
+	#define PORT_ANNO_OFFSET          10
+	#define PORT_ANNO(p)              ((p)->anno_u32(Packet::user_anno_offset + PORT_ANNO_OFFSET))
+	#define SET_PORT_ANNO(p, v)       ((p)->set_anno_u32(Packet::user_anno_offset + PORT_ANNO_OFFSET, (v)))
+
+	//TODO: find a good hash function. 
+	//shouldn't get an all 0's vid or something equally crazy
+	//we don't want hash clashes either
+	static VID calculate_access_switch(IPAddress *ip){
+		unsigned char* data = ip->data();
+		unsigned char val[VID_LEN];
+		memset (val, 0, sizeof(val));	
+		val[0] = data[0] >> 4 & val[1];
+		val[1] = data[1] << 2;
+		val[2] = data[2] >> 1 ^ val[3];
+		val[3] = data[3] << 5; 
+		return VID(static_cast<const unsigned char*>(val));
+	}
+//------------------------------------------------------------------------
+	
+	// creates the publish access info packet. returns NULL in the event of failure.
+	inline
+	WritablePacket* publish_access_info_packet(IPAddress ip, EtherAddress smac, VID svid, bool printDebugMessages, const char* callers_name){
+		int packet_length = sizeof(click_ether) + sizeof(veil_sub_header) + sizeof(veil_payload_map_publish);
+                WritablePacket *p = Packet::make(packet_length);
+                if (p == 0) {
+                        veil_chatter_new(true, callers_name, "[Error!] cannot make packet in publishaccessinfo");
+                        return NULL;
+                }
+                memset(p->data(), 0, p->length());
+                click_ether *e = (click_ether *) p->data();
+                p->set_ether_header(e);
+	        VID accessvid = calculate_access_switch(&ip);
+	        memcpy(e->ether_dhost, &accessvid, 6); 
+	        bzero(e->ether_shost,6);
+	        memcpy(e->ether_shost, &svid, 4);
+	        e->ether_type = htons(ETHERTYPE_VEIL);
+                veil_sub_header *vheader = (veil_sub_header*) (e + 1);
+                vheader->veil_type = htons(VEIL_MAP_PUBLISH);
+	        vheader->ttl = MAX_TTL;
+	        memcpy(&vheader->dvid, &accessvid, 6);
+	        bzero(&vheader->svid, 6);
+	        memcpy(&vheader->svid, &svid, 4);
+                veil_payload_map_publish * payload_publish = (veil_payload_map_publish * )(vheader+1);
+                memcpy(&payload_publish->ip, &ip, 4);
+                memcpy(&payload_publish->mac, &smac, 6);
+                memcpy(&payload_publish->vid, &svid, 6);
+
+                SET_REROUTE_ANNO(p, 'r');
+
+                veil_chatter_new(printDebugMessages, callers_name,"[Access Info Publish] HOST IP: %s  VID: %s  MAC: %s AccessSwitchVID: %s", ip.s().c_str(),  svid.vid_string().c_str(),smac.s().c_str(),accessvid.switchVIDString().c_str() );
+		return p;
 	}
 
 CLICK_ENDDECLS

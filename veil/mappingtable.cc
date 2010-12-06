@@ -147,7 +147,7 @@ VEILMappingTable::expire(Timer *t, void *data)
 		MappingTableEntry mte = td->ipmap->get(td->ip);
 		StringAccum sa;
 		sa<<"expire | Mapping ip "<<td->ip<<" vid "<<mte.ipVid.vid_string()<<" mac "<<mte.ipmac;
-		veil_chatter_new(true,class_name(),"%s",sa.take_string().c_str());
+		veil_chatter_new(true,"VEILMappingTable","%s",sa.take_string().c_str());
 	}
 	td->ipmap->erase(td->ip);
 	t->clear();

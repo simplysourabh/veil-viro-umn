@@ -53,7 +53,23 @@ VEILProcessARP::smaction(Packet* p){
 		IPAddress src = IPAddress(ap->arp_spa);
 		IPAddress dst = IPAddress(ap->arp_tpa);
 
-		host_table->generate_host_vid(src, esrc, myport, myVid, &hvid);
+		//host_table->generate_host_vid(src, esrc, myport, myVid, &hvid);
+		bool isNew = host_table->generate_host_vid(src, esrc, myport, myVid, &hvid);
+		if (isNew){
+			veil_chatter_new(printDebugMessages, class_name(), "smaction | publishing the info for the new host. ip %s vid %s mac %s at interface %d", src.s().c_str(), hvid.vid_string().c_str(), esrc.s().c_str(), myport);
+			// this is a new mapping. publish it.
+
+			//--------------------------
+			WritablePacket* p = publish_access_info_packet(src, esrc, hvid, printDebugMessages, class_name());
+			if (p == NULL) {
+				veil_chatter_new(true, class_name(), "[Error!] cannot make packet in publishaccessinfo");
+			}else{
+				output(0).push(p);
+			}
+			//--------------------------
+			// create the publish access info packet and push it to the output.
+			
+		}
 		/* TODO 
 			Fix this generate_host_vid function. Instead of calling it from the VID class
 			call it from the hosts class.
