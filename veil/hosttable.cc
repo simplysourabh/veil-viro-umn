@@ -308,6 +308,44 @@ VEILHostTable::lookupIP (
 	return(found);
 }
 
+void
+VEILHostTable::deleteIP(IPAddress ip){
+	veil_chatter_new(printDebugMessages, class_name(),"Deleting the mappings for the ip %s", ip.s().c_str());
+	HostEntry he;
+	if(inthosts.get_pointer(ip) != NULL){
+		he.expiry->unschedule();
+		delete(he.expiry);
+		inthosts.erase(ip);
+		VID vid; EtherAddress mac; 
+		if (iphosts.get_pointer(ip) == NULL){
+			//error
+			veil_chatter_new(printDebugMessages, class_name(),"deleteIP | Mappings for the ip %s was not found in the iphosts!", ip.s().c_str());
+			return;
+		}
+		vid = iphosts[ip];
+		iphosts.erase(ip);
+
+		if (hosts.get_pointer(vid) == NULL){
+			//error
+			veil_chatter_new(printDebugMessages, class_name(),"deleteIP | Mappings for the ip %s with vid %s was not found in the hosts!", ip.s().c_str(), vid.vid_string().c_str());
+			return;
+		}
+		mac = hosts[vid];
+		hosts.erase(vid);
+
+		if(rhosts.get_pointer(mac) == NULL){
+			//error
+			veil_chatter_new(printDebugMessages, class_name(),"deleteIP | Mappings for the ip %s with mac %s was not found in the rhosts!", ip.s().c_str(), mac.s().c_str());
+			return;
+		}
+
+		rhosts.erase(mac);
+
+	}else{
+		veil_chatter_new(printDebugMessages, class_name(),"deleteIP | Mappings for the ip %s was not found!", ip.s().c_str());
+	}
+}
+
 String
 VEILHostTable::read_handler(Element *e, void *thunk)
 {

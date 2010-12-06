@@ -46,6 +46,46 @@ VEILProcessIP::configure (
 
 }
 
+void 
+VEILProcessIP::send_arp_query_packet(IPAddress srcip, IPAddress dstip, VID srcvid, VID myvid){
+	// we send an artificial veil_arp query packet to the access switch.
+	//calculate access switch VID
+	VID accvid = calculate_access_switch(&dstip);                                     
+
+	veil_chatter_new(printDebugMessages, class_name()," send_arp_query_packet |  Asking for mapping for IP: %s SrcVID: %s to access switch: %s ", dstip.s().c_str(), srcvid.vid_string().c_str(), accvid.switchVIDString().c_str());
+	WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(veil_sub_header) + sizeof(click_ether_arp));
+	if (q == 0) {
+		veil_chatter_new(true, class_name(),"[Error!] in processarp: cannot make packet!");
+		return;
+	}
+	click_ether *e = (click_ether *) q->data();
+	q->set_ether_header(e);
+
+	memcpy(e->ether_dhost, &accvid, 6);
+	memcpy(e->ether_shost, &myvid, 6);
+	e->ether_type = htons(ETHERTYPE_VEIL);
+
+	veil_sub_header *vheader = (veil_sub_header*) (e+1);
+	memcpy(&vheader->dvid, &accvid, 6);
+	memcpy(&vheader->svid, &srcvid, 6);
+	vheader->veil_type = htons(VEIL_ENCAP_ARP);
+	vheader->ttl = MAX_TTL;
+
+	click_ether_arp *arp_payload = (click_ether_arp *) (vheader + 1);
+	arp_payload->ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
+        arp_payload->ea_hdr.ar_pro = htons(ETHERTYPE_IP);
+	arp_payload->ea_hdr.ar_hln = 6;
+	arp_payload->ea_hdr.ar_pln = 4;
+	arp_payload->ea_hdr.ar_op = htons(ARPOP_REQUEST);
+	memcpy(arp_payload->arp_sha, &srcvid, 6);
+	memcpy(arp_payload->arp_spa, &srcip, 4);
+	memset(arp_payload->arp_tha, 0, 6);
+	memcpy(arp_payload->arp_tpa, &dstip, 4);
+	SET_REROUTE_ANNO(q, 'r');
+	
+	output(0).push(q);
+}
+
 Packet* 
 VEILProcessIP::smaction(Packet* p)
 {
@@ -79,7 +119,6 @@ VEILProcessIP::smaction(Packet* p)
 		if (isNew){
 			veil_chatter_new(printDebugMessages, class_name(), "smaction | publishing the info for the new host. ip %s vid %s mac %s at interface %d", srcip.s().c_str(), svid.vid_string().c_str(), smac.s().c_str(), myport);
 			// this is a new mapping. publish it.
-
 			//--------------------------
 			WritablePacket* p = publish_access_info_packet(srcip, smac, svid, printDebugMessages, class_name());
 			if (p == NULL) {
@@ -124,7 +163,8 @@ VEILProcessIP::smaction(Packet* p)
 			memcpy(eth->ether_shost, &svid, VID_LEN); 
 			veil_chatter_new(printDebugMessages, class_name(),"[EtherTYPE_IP][Encapsulation to VEIL_IP type] From (IP: %s, Mac: %s) to (IP: %s, VID: %s), After add rewriting: From (IP: %s, VID: %s)", srcip.s().c_str(), smac.s().c_str(), dstip.s().c_str(),dvid.vid_string().c_str() , srcip.s().c_str(), svid.vid_string().c_str());
 			return p;
-		} else if (forwarding_type == IP_FORWARDING_TYPE_ENCAP){
+		} 
+		else if (forwarding_type == IP_FORWARDING_TYPE_ENCAP){
 			WritablePacket *q = p->push(sizeof(veil_sub_header));
 
 			// set the ether header
@@ -229,6 +269,8 @@ VEILProcessIP::smaction(Packet* p)
 			int interface;
 			if(interfaces->lookupVidEntry(&intvid, &interface)){
 				veil_chatter_new(printDebugMessages, class_name(),"[VEILSwitch to VEILSwitch][NO MAC for my host!]From (IP: %s, VID: %s) to (IP: %s, VID: %s)", srcip.s().c_str(), svid.vid_string().c_str(), dstip.s().c_str(),dvid.vid_string().c_str());
+				
+				send_arp_query_packet(srcip, dstip, svid, myVid);
 				p->kill();
 				return NULL;
 			}
@@ -303,6 +345,7 @@ VEILProcessIP::smaction(Packet* p)
 					int interface;
 					if(interfaces->lookupVidEntry(&intvid, &interface)){
 						veil_chatter_new(printDebugMessages, class_name(),"[VEILSwitch to VEILSwitch][NO MAC for my host!]From (IP: %s, VID: %s) to (IP: %s, VID: %s)", srcip.s().c_str(), svid.vid_string().c_str(), dstip.s().c_str(),dvid.vid_string().c_str());
+						send_arp_query_packet(srcip, dstip, svid, myVid);
 						p->kill();
 						return NULL;
 					}
@@ -394,4 +437,3 @@ VEILProcessIP::push(int, Packet* p)
 CLICK_ENDDECLS
 
 EXPORT_ELEMENT(VEILProcessIP)
-

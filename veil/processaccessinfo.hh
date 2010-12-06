@@ -8,6 +8,7 @@
 #include "click_veil.hh"
 #include "mappingtable.hh"
 #include "interfacetable.hh"
+#include "hosttable.hh"
 
 CLICK_DECLS
 
@@ -27,7 +28,8 @@ class VEILProcessAccessInfo : public Element {
 	private:
 		VEILInterfaceTable *interfaces;
 		VEILMappingTable *map;
-		bool printDebugMessages ;
+		VEILHostTable *hosts;
+		bool printDebugMessages;
 			
 };
 

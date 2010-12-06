@@ -24,7 +24,8 @@ class VEILProcessIP : public Element {
 
 		int configure(Vector<String>&, ErrorHandler*);
 		Packet* smaction(Packet*);
-	 	virtual void push (int, Packet*);		
+	 	virtual void push (int, Packet*);	
+		void send_arp_query_packet(IPAddress srcip, IPAddress dstip, VID srcvid, VID myvid);
 
 	private:
 		VEILInterfaceTable *interfaces;

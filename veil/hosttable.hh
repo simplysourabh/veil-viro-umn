@@ -35,6 +35,7 @@ class VEILHostTable : public Element {
 		bool lookupVID(VID*, EtherAddress*);
 		bool lookupMAC(EtherAddress*, VID*);
 		bool lookupIP(IPAddress*, VID*); 
+		void deleteIP(IPAddress ip); 
 		void updateEntry (VID vid, EtherAddress mac, IPAddress ip, int interfaceid);
 		bool refreshIPintEntry(IPAddress ip, int interfaceid);
 		bool generate_host_vid(IPAddress hip, EtherAddress hmac, int myinterfaceid, VID switchvid, VID *hvid);

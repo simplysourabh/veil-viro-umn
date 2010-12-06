@@ -502,6 +502,39 @@ FROM UTILITIES.HH
                 veil_chatter_new(printDebugMessages, callers_name,"[Access Info Publish] HOST IP: %s  VID: %s  MAC: %s AccessSwitchVID: %s", ip.s().c_str(),  svid.vid_string().c_str(),smac.s().c_str(),accessvid.switchVIDString().c_str() );
 		return p;
 	}
+	// creates the .
+	inline
+	WritablePacket* update_access_info_packet(IPAddress ip, EtherAddress smac, VID svid, VID dstvid, VID myvid, bool printDebugMessages, const char* callers_name){
+		int packet_length = sizeof(click_ether) + sizeof(veil_sub_header) + sizeof(veil_payload_map_publish);
+                WritablePacket *p = Packet::make(packet_length);
+                if (p == 0) {
+                        veil_chatter_new(true, callers_name, "[Error!] cannot make packet in publishaccessinfo");
+                        return NULL;
+                }
+                memset(p->data(), 0, p->length());
+                click_ether *e = (click_ether *) p->data();
+                p->set_ether_header(e);
+	        memcpy(e->ether_dhost, &dstvid, 6); 
+	        bzero(e->ether_shost,6);
+	        memcpy(e->ether_shost, &myvid, 4);
+	        e->ether_type = htons(ETHERTYPE_VEIL);
+                veil_sub_header *vheader = (veil_sub_header*) (e + 1);
+                vheader->veil_type = htons(VEIL_MAP_UPDATE);
+	        vheader->ttl = MAX_TTL;
+	        memcpy(&vheader->dvid, &dstvid, 6);
+	        bzero(&vheader->svid, 6);
+	        memcpy(&vheader->svid, &myvid, 4);
+                veil_payload_map_update * payload_update = (veil_payload_map_update * )(vheader+1);
+                memcpy(&payload_update->ip, &ip, 4);
+                memcpy(&payload_update->mac, &smac, 6);
+                memcpy(&payload_update->vid, &svid, 6);
+		
+		// we don't need to reroute the map_update packets.
+                //SET_REROUTE_ANNO(p, 'r');
+
+                veil_chatter_new(printDebugMessages, callers_name,"[Access Info Update] HOST IP: %s  VID: %s  MAC: %s AccessSwitchVID: %s Old host-switch: %s", ip.s().c_str(),  svid.vid_string().c_str(),smac.s().c_str(),myvid.switchVIDString().c_str(), dstvid.vid_string().c_str() );
+		return p;
+	}
 
 CLICK_ENDDECLS
 #endif
