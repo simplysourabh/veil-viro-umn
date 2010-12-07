@@ -59,46 +59,9 @@ VEILPublishAccessInfo::run_timer (
 			continue;
 		}
 		//--------------------------
-/*
-		int packet_length = sizeof(click_ether) + sizeof(veil_sub_header) + sizeof(veil_payload_map_publish);
-		WritablePacket *p = Packet::make(packet_length);
-
-		if (p == 0) {
-			veil_chatter_new(true, class_name(), "[Error!] cannot make packet in publishaccessinfo");
-			return;
-		}
-
-		memset(p->data(), 0, p->length());
-
-		click_ether *e = (click_ether *) p->data();
-		p->set_ether_header(e);
-
-
-		VID accessvid = calculate_access_switch(&ip);
-		memcpy(e->ether_dhost, &accessvid, 6); 
-		bzero(e->ether_shost,6);
-		memcpy(e->ether_shost, &hvd, 4);
-		e->ether_type = htons(ETHERTYPE_VEIL);
-
-		veil_sub_header *vheader = (veil_sub_header*) (e + 1);
-		vheader->veil_type = htons(VEIL_MAP_PUBLISH);
-		vheader->ttl = MAX_TTL;
-		memcpy(&vheader->dvid, &accessvid, 6);
-		bzero(&vheader->svid, 6);
-		memcpy(&vheader->svid, &hvd, 4);
-
-		veil_payload_map_publish * payload_publish = (veil_payload_map_publish * )(vheader+1);
-		memcpy(&payload_publish->ip, &ip, 4);
-		memcpy(&payload_publish->mac, &hmac, 6);
-		memcpy(&payload_publish->vid, &hvd, 6);
-
-		SET_REROUTE_ANNO(p, 'r');
-
-		veil_chatter_new(printDebugMessages, class_name(),"[Access Info Publish] HOST IP: %s  VID: %s  MAC: %s AccessSwitchVID: %s", ip.s().c_str(),  hvd.vid_string().c_str(),hmac.s().c_str(),accessvid.switchVIDString().c_str() );
-*/
 		output(0).push(p);
 	}
-	myTimer.schedule_after_msec(VEIL_PUBLISH_INTERVAL);
+	myTimer.schedule_after_msec(HOST_ENTRY_EXPIRY/2.5);
 }
 
 CLICK_ENDDECLS

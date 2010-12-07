@@ -38,15 +38,16 @@ VEILRoutePacket::smaction(Packet* p){
 		return numinterfaces+1;
 	}
 	int myport = PORT_ANNO(p);
+	click_ether *eth = (click_ether *) p->data();
+	uint16_t ether_pkt_type = ntohs(eth->ether_type);
 	VID myVid;
 	interfaces->lookupIntEntry(myport, &myVid);
-	veil_chatter_new(printDebugMessages, class_name()," Input interface %s at port %d",myVid.switchVIDString().c_str(), myport );
-	click_ether *eth = (click_ether *) p->data();
+	veil_chatter_new(printDebugMessages, class_name()," Input interface %s at port %d packet type: %s",myVid.switchVIDString().c_str(), myport, get_packet_type_str(ether_pkt_type) );
 	bool dstvidChanged = false;
 	uint8_t k;
 	//printf("here 0 \n");
 	//VEIL packets: access PUBLISH/QUERY or RDV REQ/PUB/RPLY	
-	if(ntohs(eth->ether_type) == ETHERTYPE_VEIL){
+	if(ether_pkt_type == ETHERTYPE_VEIL){
 		VID srcvidmac = VID(eth->ether_shost);
 		VID dstvidmac = VID(eth->ether_dhost);
 		EtherAddress dstmac, srcmac;
@@ -74,12 +75,11 @@ VEILRoutePacket::smaction(Packet* p){
 			veil_chatter_new(printDebugMessages, class_name(),"PACKETYPE is ETHERTYPE_VEIL DstVID/MAC %s does not belong to any of my interfaces! rejecting the packet. srcvid %s dstvidmac %s",dstmac.s().c_str(), srcvid.vid_string().c_str(), dstvidmac.vid_string().c_str());
 			return -1;
 		}
-		veil_chatter_new(printDebugMessages,class_name(),"Packet of type ETHERTYPE_VEIL arrived on my vid/mac %s and myvid %s", dstmac.s().c_str(), myVid.switchVIDString().c_str());
+		uint16_t veil_type = ntohs(vheader->veil_type);
+		veil_chatter_new(printDebugMessages,class_name(),"veil type %s; my vid/mac %s myvid %s dstvid %s", get_packet_type_str(veil_type), dstmac.s().c_str(), myVid.switchVIDString().c_str(), dstvid.vid_string().c_str());
 		//printf("E here 0 \n");
 
-		veil_chatter_new(printDebugMessages, class_name()," Destination: |%s| ", dstvid.switchVIDString().c_str());
 
-		uint16_t veil_type = ntohs(vheader->veil_type);
 		VID nextvid;
 		int port;
 		//printf("E here 1 \n");

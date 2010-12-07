@@ -325,7 +325,7 @@ VEILProcessARP::smaction(Packet* p){
 			VID hostvid = VID(arp_payload->arp_tha);
 
 			if(host_table->lookupIP(&dst, &myvid)){
-				veil_chatter_new(printDebugMessages, class_name(),"[VEIL_ENCAP_ARP][ARP Reply] To my HOST IP: %s at VID: %s ", dst.s().c_str(),  myvid.vid_string().c_str());
+				//veil_chatter_new(printDebugMessages, class_name(),"[VEIL_ENCAP_ARP][ARP Reply] To my HOST IP: %s at VID: %s ", dst.s().c_str(),  myvid.vid_string().c_str());
 				
 				// SJ: Do not cache the mapping locally. it may create problems 
 				// when hosts move around more frequently.

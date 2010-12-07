@@ -69,7 +69,7 @@ VEILMappingTable::updateEntry (IPAddress ip, VID ipvid, VID myvid, EtherAddress 
 		entry.ipVid = ipvid;
 		entry.myVid = myvid;
 		entry.ipmac = ipmac;
-		entry.expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
+		entry.expiry->schedule_after_msec(HOST_ENTRY_EXPIRY);
 		ipmap[ip] = entry;
 		return;
 	}
@@ -89,7 +89,7 @@ VEILMappingTable::updateEntry (IPAddress ip, VID ipvid, VID myvid, EtherAddress 
 	expiry->initialize(this);
 	entry.expiry  = expiry;
 	ipmap.set(ip, entry);
-	expiry->schedule_after_msec(VEIL_TBL_ENTRY_EXPIRY);
+	expiry->schedule_after_msec(HOST_ENTRY_EXPIRY);
 }
 
 bool

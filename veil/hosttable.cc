@@ -240,6 +240,7 @@ VEILHostTable::generate_host_vid(IPAddress hip, EtherAddress hmac, int myinterfa
 	// assign this vid to hip.
 	veil_chatter_new(printDebugMessages, class_name(), "generate_host_vid | Finally assigning VID %s to host ip %s", v1.vid_string().c_str(), hip.s().c_str());
 	updateEntry(v1, hmac, hip, myinterfaceid);
+	memcpy(hvid, &v1,6);
 	return isNew;
 }
 
@@ -313,6 +314,7 @@ VEILHostTable::deleteIP(IPAddress ip){
 	veil_chatter_new(printDebugMessages, class_name(),"Deleting the mappings for the ip %s", ip.s().c_str());
 	HostEntry he;
 	if(inthosts.get_pointer(ip) != NULL){
+		he = inthosts[ip];
 		he.expiry->unschedule();
 		delete(he.expiry);
 		inthosts.erase(ip);

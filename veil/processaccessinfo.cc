@@ -59,7 +59,7 @@ VEILProcessAccessInfo::smaction(Packet* p)
 			VID myhostvid;
 			hosts->lookupIP(&hostip, &myhostvid);
 		
-			veil_chatter_new(printDebugMessages, class_name(), "smaction | VEIL_MAP_UPDATE for ip %s old vid%s newvid %s", hostip.s().c_str(), myhostvid.vid_string().c_str(), hostvid.vid_string().c_str());
+			veil_chatter_new(printDebugMessages, class_name(), "smaction | VEIL_MAP_UPDATE for ip %s old vid %s newvid %s", hostip.s().c_str(), myhostvid.vid_string().c_str(), hostvid.vid_string().c_str());
 			// if the hostvid is not same as the current mapping then we 
 			// need to delete our mapping.
 			if (myhostvid != hostvid){
@@ -95,7 +95,7 @@ VEILProcessAccessInfo::smaction(Packet* p)
 				bzero(&dst_host_switchvid, 6);
 				memcpy(&dst_host_switchvid, &vidold, 4);
         			WritablePacket* p = update_access_info_packet(ip, mac, vid, dst_host_switchvid, myVid, printDebugMessages, class_name());
-				veil_chatter_new(printDebugMessages, class_name(), "Sending the packet to %s", dst_host_switchvid);
+				veil_chatter_new(printDebugMessages, class_name(), "Sending the packet to %s", dst_host_switchvid.vid_string().c_str());
 
 				// push the packet to output(0)
 				if(p){ output(0).push(p);}

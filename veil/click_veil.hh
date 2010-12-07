@@ -32,24 +32,24 @@ CLICK_DECLS
 // Intervals are in ms
 #define VEIL_HELLO_INTERVAL		10000
 #define VEIL_PHELLO_INTERVAL	10000
-#define VEIL_PUBLISH_INTERVAL	10000
-#define VEIL_RDV_INTERVAL		10000
-#define HOST_ENTRY_EXPIRY		10000
+#define VEIL_PUBLISH_INTERVAL	25000
+#define VEIL_RDV_INTERVAL		30000
+#define HOST_ENTRY_EXPIRY		60000
 
 
 /* value greater than hello/publish interval so entries don't expire just    
  * when hello/publish pkts need to be resent. risking temporarily invalid    
  * routes. 
  */ 
-#define VEIL_TBL_ENTRY_EXPIRY	30000
+#define VEIL_TBL_ENTRY_EXPIRY	60000
 #define MAX_TTL 				0x0f
 
-#define VEIL_SPANNING_TREE_ENTRY_EXPIRY 30000 // an entry for the veil spanning tree will expire after
+#define VEIL_SPANNING_TREE_ENTRY_EXPIRY 60000 // an entry for the veil spanning tree will expire after
 // 20 seconds.
-#define VEIL_SPANNING_TREE_COST_BROADCAST 10000 // update the cost every 10 seconds.
-#define VEIL_VID_BROADCAST_TIME 10000
+#define VEIL_SPANNING_TREE_COST_BROADCAST 25000 // update the cost every 10 seconds.
+#define VEIL_VID_BROADCAST_TIME 25000
 
-#define MAX_PACKET_SIZE	1000 // maximum packet size in bytes.
+#define MAX_PACKET_SIZE	1200 // maximum packet size in bytes.
 // Maximum number of gateways stored in each Bucket
 #define MAX_GW_PER_BUCKET		4
 
@@ -532,7 +532,7 @@ FROM UTILITIES.HH
 		// we don't need to reroute the map_update packets.
                 //SET_REROUTE_ANNO(p, 'r');
 
-                veil_chatter_new(printDebugMessages, callers_name,"[Access Info Update] HOST IP: %s  VID: %s  MAC: %s AccessSwitchVID: %s Old host-switch: %s", ip.s().c_str(),  svid.vid_string().c_str(),smac.s().c_str(),myvid.switchVIDString().c_str(), dstvid.vid_string().c_str() );
+                veil_chatter_new(printDebugMessages, callers_name,"[Access Info Update] HOST IP: %s  VID: %s  MAC: %s AccessSwitchVID: %s Old host-switch: %s", ip.s().c_str(),   svid.vid_string().c_str(), smac.s().c_str(), myvid.switchVIDString().c_str(), dstvid.vid_string().c_str() );
 		return p;
 	}
 

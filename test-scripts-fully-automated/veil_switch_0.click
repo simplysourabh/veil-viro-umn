@@ -11,7 +11,7 @@ interfaces::VEILInterfaceTable(
 hosts::VEILHostTable(PRINTDEBUG true);
 neighbors::VEILNeighborTable(PRINTDEBUG false);
 
-mapping::VEILMappingTable(PRINTDEBUG false);
+mapping::VEILMappingTable(PRINTDEBUG true);
 rendezvouspoints::VEILRendezvousTable(PRINTDEBUG false);
 routes::VEILRouteTable(INTERFACETABLE interfaces, PRINTDEBUG false);
 
@@ -108,7 +108,7 @@ parp::VEILProcessARP(hosts, mapping, interfaces,PRINTDEBUG true) ->  router;
 c[10]  -> ARPPrint ->  parp;
 c[4] -> Print (VEIL_ARP, MAXLENGTH 100) ->  parp;
 
-paci::VEILProcessAccessInfo(mapping, interfaces,PRINTDEBUG false) -> router;
+paci::VEILProcessAccessInfo(hosts,mapping, interfaces,PRINTDEBUG true) -> router;
 c[5] -> paci;
 c[6] -> paci; 
 
@@ -122,7 +122,7 @@ c[11] -> pip;
 
 VEILBuildRouteTable(neighbors, routes, interfaces,PRINTDEBUG false) -> router;
 
-VEILPublishAccessInfo(hosts, PRINTDEBUG false) -> router;
+VEILPublishAccessInfo(hosts, PRINTDEBUG true) -> router;
 
 c[13] -> Discard;
 

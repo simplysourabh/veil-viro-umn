@@ -28,15 +28,15 @@ cd /opt/ns-allinone-2.29/click/elements/veil
 
 # now go the click root directory run configure, make, make install
 cd /opt/ns-allinone-2.29/click/
-sudo ./configure  --enable-analysis --enable-test --enable-userlevel --enable-local
-sudo make elemlist
+#sudo ./configure  --enable-analysis --enable-test --enable-userlevel --enable-local
+#sudo make elemlist
 sudo make 
 sudo make install
 
 # go to veil directory and run configure, make and make install
 cd elements/veil
-sudo ./configure
-sudo make elemlist
+#sudo ./configure
+#sudo make elemlist
 sudo make 
 sudo make install 
 

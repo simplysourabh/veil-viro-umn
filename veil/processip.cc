@@ -283,9 +283,9 @@ VEILProcessIP::smaction(Packet* p)
 	if(ntohs(eth->ether_type) == ETHERTYPE_VEIL){
 		// First see if the packet is destined to one of my interfaces or not?
 		int interface;
+		veil_sub_header * vheader = (veil_sub_header *) (eth +1);
+		memcpy(&svid, &vheader->svid,6);
 		if(interfaces->lookupVidEntry(&dvid, &interface)){
-			veil_sub_header * vheader = (veil_sub_header *) (eth +1);
-
 			if (ntohs(vheader->veil_type) == VEIL_ENCAP_IP){
 				click_ip *i = (click_ip*) (vheader+1);
 				IPAddress srcip = IPAddress(i->ip_src);
@@ -298,31 +298,6 @@ VEILProcessIP::smaction(Packet* p)
 				// return the modified packet p
 				memcpy(&dvid, &vheader->dvid, 6);
 				if (hosts->lookupVID(&dvid, &dmac)){
-					/*
-						//int ip_payload_size = p->length() - sizeof(veil_sub_header) - sizeof(click_ether);
-						int packetlen = p->length() - sizeof(veil_sub_header);
-						// create a new packet with the length = click_ether + ip payload
-						WritablePacket *q = Packet::make(packetlen);
-						veil_chatter (printDebugMessages, "Process IP : Packet Length1: %d ", q->length());
-						memset(q->data(), 0, q->length());
-						veil_chatter (printDebugMessages, "Process IP : Packet Length2: %d ", q->length());
-
-						// copy the ether_header
-						memcpy(q->data(), p->data(), sizeof(click_ether));
-						// now set up the Ether Header
-						click_ether *q_eth = (click_ether *)q->data();
-						q_eth->ether_type = htons(ETHERTYPE_IP);
-						memcpy(q_eth->ether_dhost, &dmac, VID_LEN);
-						memcpy(q_eth->ether_shost, &vheader->svid,6);
-
-						// copy the ip payload
-						click_ip *q_ip = (click_ip *)(q_eth+1);
-						memcpy(q_ip, i,ntohs(i->ip_len));
-						veil_chatter_new(printDebugMessages, class_name(),"[VEIL to EtherTYPE_IP][After decapsulation]From (IP: %s) to (IP: %s)", srcip.s().c_str(), dstip.s().c_str());
-						p->kill();return q;
-					 */
-
-					VID svid; memcpy(&svid, &vheader->svid,6);
 					//veil_chatter_new(true, class_name(),"Packet Length Before PULL: %d ", p->length());
 					// remove the shim header
 					p->pull( (sizeof(veil_sub_header)) );
@@ -334,7 +309,7 @@ VEILProcessIP::smaction(Packet* p)
 					memcpy(q_eth->ether_dhost, &dmac, VID_LEN);
 					memcpy(q_eth->ether_shost, &svid,6);
 
-					veil_chatter_new(printDebugMessages, class_name(),"[VEIL to EtherTYPE_IP][After decapsulation]From (IP: %s) to (IP: %s)", srcip.s().c_str(), dstip.s().c_str());
+					veil_chatter_new(printDebugMessages, class_name(),"[VEIL to EtherTYPE_IP][After decapsulation 1]From (IP: %s) to (IP: %s)", srcip.s().c_str(), dstip.s().c_str());
 					return p;
 
 				}else{
@@ -388,7 +363,6 @@ VEILProcessIP::smaction(Packet* p)
 						p->kill();return q;
 					 */
 
-					VID svid; memcpy(&svid, &vheader->svid,6);
 					//veil_chatter_new(true, class_name(),"Packet Length Before PULL: %d ", p->length());
 					// remove the shim header
 					p->pull( (sizeof(veil_sub_header)+sizeof(veil_payload_multipath)) );
@@ -400,7 +374,7 @@ VEILProcessIP::smaction(Packet* p)
 					memcpy(q_eth->ether_dhost, &dmac, VID_LEN);
 					memcpy(q_eth->ether_shost, &svid,6);
 
-					veil_chatter_new(printDebugMessages, class_name(),"[VEIL to EtherTYPE_IP][After decapsulation]From (IP: %s) to (IP: %s)", srcip.s().c_str(), dstip.s().c_str());
+					veil_chatter_new(printDebugMessages, class_name(),"[VEIL to EtherTYPE_IP][After decapsulation 2]From (IP: %s) to (IP: %s)", srcip.s().c_str(), dstip.s().c_str());
 					return p;
 
 				}else{
@@ -411,6 +385,7 @@ VEILProcessIP::smaction(Packet* p)
 					int interface;
 					if(interfaces->lookupVidEntry(&intvid, &interface)){
 						veil_chatter_new(printDebugMessages, class_name(),"[VEILSwitch to VEILSwitch][NO MAC for my host!]From (IP: %s, VID: %s) to (IP: %s, VID: %s)", srcip.s().c_str(), svid.vid_string().c_str(), dstip.s().c_str(),dvid.vid_string().c_str());
+						send_arp_query_packet(srcip, dstip, svid, myVid);
 						p->kill();
 						return NULL;
 					}
