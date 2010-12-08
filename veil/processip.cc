@@ -132,14 +132,32 @@ VEILProcessIP::smaction(Packet* p)
 		}
 		//veil_chatter_new(true, class_name(), "PacketLength : %d ", ntohs(ip_header->ip_len));
 		//check if dst is a host connected to us
+		VID sipvid, dipvid; 
 		if(hosts->lookupIP(&dstip, &dvid)){
 			//if src and dst are connected to us
 			//thru the same interface, ignore packet
 			dvid.extract_switch_vid(&vid);
 			if(vid == myVid){
-				//TODO: I should review this case. As of now, it doesn't seem that we should ever reach here.
-				// and if we do, then something may be wrong.
 				veil_chatter_new(printDebugMessages, class_name(),"[ProcessIP][EtherTYPE_IP][Both Host are on same interface] From (IP: %s, Mac: %s) to (IP: %s, VID: %s),", srcip.s().c_str(), smac.s().c_str(), dstip.s().c_str(),dvid.vid_string().c_str());
+
+				// see if the source and destnation address on the ether header are not using 
+				// the vids for the hosts.
+
+				// first fetch the svid, dvid for hosts, and compare it with the mac addresses 
+				// used on the packet. 
+				if(hosts->lookupIP(&dstip, &dipvid)){
+					EtherAddress dipmac;
+					if(hosts->lookupVID(&dipvid, &dipmac)){
+						if(dmac != dipmac){
+							// update the destination mac address on the packet.
+							memcpy(eth->ether_dhost, dipmac.data(), 6);
+							veil_chatter_new(printDebugMessages, class_name(), "Both source and destination are on the same lan, but vid %s was used to address the destination instead of the MAC %s.", dvid.vid_string().c_str(), dipmac.s().c_str());
+							// push the packet to be routed.
+							return p;
+						}
+					}
+				}
+				// if the 
 				p->kill();
 				return NULL;
 			}
