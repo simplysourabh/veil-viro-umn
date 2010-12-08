@@ -153,6 +153,11 @@ VEILProcessIP::smaction(Packet* p)
 							memcpy(eth->ether_dhost, dipmac.data(), 6);
 							veil_chatter_new(printDebugMessages, class_name(), "Both source and destination are on the same lan, but vid %s was used to address the destination instead of the MAC %s.", dvid.vid_string().c_str(), dipmac.s().c_str());
 							// push the packet to be routed.
+
+							// Also create a dummy arp reply packet and push it.
+							veil_chatter_new(printDebugMessages, class_name(), "Sending my host the UNSOLICITED ARP Reply packet (%s, %s) => (%s, %s)", srcip.s().c_str(), smac.s().c_str(), dstip.s().c_str(), dipmac.s().c_str());
+							WritablePacket* q = create_arp_reply_packet(smac, dipmac, srcip, dstip);
+							output(0).push(q);
 							return p;
 						}
 					}

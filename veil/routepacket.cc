@@ -146,7 +146,29 @@ VEILRoutePacket::smaction(Packet* p){
 		//printf("E here 8 \n");
 
 		veil_chatter_new(printDebugMessages, class_name()," Pkt type: Ethertype_veil Destination: |%s| at port: %d ", dstvid.switchVIDString().c_str(), port);
-		return (port >= 0 ? port : numinterfaces+1);
+		port = port >= 0?port:numinterfaces+1;
+
+		// if veil_payload is an IP packet
+		// and we couldn't find the forwarding port. then it may be because 
+		// the host was using "mac" address instead of the vid for the destination.
+		// to fix this, we will create an unsolicited "arp query" packet to handle such scenarios.
+		if(port > numinterfaces && (veil_type == VEIL_ENCAP_MULTIPATH_IP || veil_type == VEIL_ENCAP_IP)){
+			click_ip *ip_header;
+			if(veil_type==VEIL_ENCAP_MULTIPATH_IP){
+				veil_payload_multipath *veil_payload = (veil_payload_multipath*) (vheader + 1);
+				ip_header = (click_ip*) (veil_payload+1);
+			}else{
+				ip_header = (click_ip*) (vheader+1);
+			}
+			IPAddress srcip = IPAddress(ip_header->ip_src);
+			IPAddress dstip = IPAddress(ip_header->ip_dst);
+			VID svid;
+			memcpy(&svid, &vheader->svid, 6);
+			veil_chatter_new(true, class_name(), " No route to Destination VID(%s)! Sending the ARP request on the senders behalf. (%s, %s) => (%s)", dstvid.vid_string().c_str(), srcip.s().c_str(), svid.vid_string().c_str(), dstip.s().c_str()); 
+			WritablePacket* q =  create_veil_encap_arp_query_packet(dstip, srcip, svid, myVid);
+			if (q) {output(numinterfaces).push(q);}
+		}
+		return port;
 		// returns the port number if found, else to the ERROR outputport given by numinterfaces + 1
 		
 	}	

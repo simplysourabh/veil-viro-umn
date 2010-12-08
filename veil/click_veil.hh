@@ -536,5 +536,70 @@ FROM UTILITIES.HH
 		return p;
 	}
 
+
+	inline
+	WritablePacket* create_arp_reply_packet(EtherAddress smac, EtherAddress dmac, IPAddress sip, IPAddress dip){
+		WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(click_ether_arp));
+		if (q == 0) {
+			veil_chatter_new(true, "click_veil","[Error!] in arp responder: cannot make packet!");
+			return 0;
+		}
+
+		click_ether *e = (click_ether *) q->data();
+		q->set_ether_header(e);
+		memcpy(e->ether_dhost, dmac.data(), 6);
+		memcpy(e->ether_shost, smac.data(), 6);
+		e->ether_type = htons(ETHERTYPE_ARP);
+		click_ether_arp *ea = (click_ether_arp *) (e + 1);
+		ea->ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
+		ea->ea_hdr.ar_pro = htons(ETHERTYPE_IP);
+		ea->ea_hdr.ar_hln = 6;
+		ea->ea_hdr.ar_pln = 4;
+		ea->ea_hdr.ar_op = htons(ARPOP_REPLY);
+		memcpy(ea->arp_sha, smac.data(), 6);
+		memcpy(ea->arp_spa, sip.data(), 4);
+		memcpy(ea->arp_tha, dmac.data(), 6);
+		memcpy(ea->arp_tpa, dip.data(), 4);
+
+		return q;
+	}
+	
+	inline
+	WritablePacket * create_veil_encap_arp_query_packet(IPAddress dstip, IPAddress srcip, VID srcvid, VID myvid){
+	        VID accvid = calculate_access_switch(&dstip);
+
+		WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(veil_sub_header) + sizeof(click_ether_arp));
+	        if (q == 0) {
+	                veil_chatter_new(true, "CLICK_VEIL ","[Error!] in processarp: cannot make packet!");
+	                return NULL;
+	        }
+
+	        click_ether *e = (click_ether *) q->data();
+	        q->set_ether_header(e);
+	
+	        memcpy(e->ether_dhost, &myvid, 6);
+	        memcpy(e->ether_shost, &myvid, 6);
+	        e->ether_type = htons(ETHERTYPE_VEIL);
+	
+	        veil_sub_header *vheader = (veil_sub_header*) (e+1);
+	        memcpy(&vheader->dvid, &accvid, 6);
+	        memcpy(&vheader->svid, &srcvid, 6);
+	        vheader->veil_type = htons(VEIL_ENCAP_ARP);
+	        vheader->ttl = MAX_TTL;
+	
+	        click_ether_arp *arp_payload = (click_ether_arp *) (vheader + 1);
+	        arp_payload->ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
+	        arp_payload->ea_hdr.ar_pro = htons(ETHERTYPE_IP);
+	        arp_payload->ea_hdr.ar_hln = 6;
+	        arp_payload->ea_hdr.ar_pln = 4;
+	        arp_payload->ea_hdr.ar_op = htons(ARPOP_REQUEST);
+	        memcpy(arp_payload->arp_sha, &srcvid, 6);
+	        memcpy(arp_payload->arp_spa, &srcip, 4);
+	        memset(arp_payload->arp_tha, 0, 6);
+	        memcpy(arp_payload->arp_tpa, &dstip, 4);
+
+		return q;
+	
+	}	
 CLICK_ENDDECLS
 #endif
