@@ -186,29 +186,36 @@ VEILHostTable::generate_host_vid(IPAddress hip, EtherAddress hmac, int myinterfa
 	if (inthosts.get_pointer(hip) != NULL) {
 		HostEntry he = inthosts[hip];
 		veil_chatter_new(printDebugMessages, class_name(), "generate_host_vid | host ip %s is already present at interface %d", hip.s().c_str(), he.interfaceid);
-		// check if the switch vid is still the same or not.
 		if (he.interfaceid == myinterfaceid) {
-			// update the timers.
-			VID vid1 = iphosts[hip];
-			memcpy(hvid, &vid1,6);
-			he.expiry->unschedule();
-			he.expiry->schedule_after_msec(HOST_ENTRY_EXPIRY);
-			inthosts[hip] = he;
-			hosts[vid1] = hmac;
-			rhosts[hmac] = vid1;
-			iphosts[hip] = vid1;
-			veil_chatter_new(printDebugMessages, class_name(), "generate_host_vid | refreshed the entry for ip %s by %dms", hip.s().c_str(), HOST_ENTRY_EXPIRY);
-			return false;
-		}else {
-			// remove the old mapping.
-			veil_chatter_new(printDebugMessages, class_name(), "generate_host_vid | host ip %s has different INTERFACE %d old interface was %d", hip.s().c_str(), myinterfaceid, he.interfaceid);
-			he.expiry->unschedule();
-			delete(he.expiry);
-			hosts.erase(iphosts[hip]);
-			rhosts.erase(hmac);
-			iphosts.erase(hip);
-			inthosts.erase(hip);
+			// check if the switch vid is still the same or not. if may happen if the vid
+			// for the interface changes.
+			if(iphosts.get_pointer(hip) != NULL){
+				VID hostswitchvid = iphosts[hip];
+				bzero(hostswitchvid.data()+4,2);
+				if(hostswitchvid == switchvid){ 
+					// update the timers.
+					VID vid1 = iphosts[hip];
+					memcpy(hvid, &vid1,6);
+					he.expiry->unschedule();
+					he.expiry->schedule_after_msec(HOST_ENTRY_EXPIRY);
+					inthosts[hip] = he;
+					hosts[vid1] = hmac;
+					rhosts[hmac] = vid1;
+					iphosts[hip] = vid1;
+					veil_chatter_new(printDebugMessages, class_name(), "generate_host_vid | refreshed the entry for ip %s by %dms", hip.s().c_str(), HOST_ENTRY_EXPIRY);
+					return false;
+				}
+				veil_chatter_new(printDebugMessages, class_name(), "generate_host_vid | switch vid changed! (%s -> %s)", hostswitchvid.vid_string().c_str(), switchvid.vid_string().c_str());
+			}
 		}
+		// remove the old mapping.
+		veil_chatter_new(printDebugMessages, class_name(), "generate_host_vid | host ip %s has different INTERFACE %d old interface was %d", hip.s().c_str(), myinterfaceid, he.interfaceid);
+		he.expiry->unschedule();
+		delete(he.expiry);
+		hosts.erase(iphosts[hip]);
+		rhosts.erase(hmac);
+		iphosts.erase(hip);
+		inthosts.erase(hip);
 	}
 	
 	// since we reached here, it means that 
