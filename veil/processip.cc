@@ -46,6 +46,7 @@ VEILProcessIP::configure (
 
 }
 
+
 void 
 VEILProcessIP::send_arp_query_packet(IPAddress srcip, IPAddress dstip, VID srcvid, VID myvid){
 	// we send an artificial veil_arp query packet to the access switch.
@@ -294,8 +295,7 @@ VEILProcessIP::smaction(Packet* p)
 				veil_chatter_new(printDebugMessages, class_name(),"[VEILSwitch to VEILSwitch][NO MAC for my host!]From (IP: %s, VID: %s) to (IP: %s, VID: %s)", srcip.s().c_str(), svid.vid_string().c_str(), dstip.s().c_str(),dvid.vid_string().c_str());
 				
 				send_arp_query_packet(srcip, dstip, svid, myVid);
-				p->kill();
-				return NULL;
+	                 	p->kill();
 			}
 		}
 		// Simply forward the packet to "routing module"
@@ -343,9 +343,14 @@ VEILProcessIP::smaction(Packet* p)
 					int interface;
 					if(interfaces->lookupVidEntry(&intvid, &interface)){
 						veil_chatter_new(printDebugMessages, class_name(),"[VEILSwitch to VEILSwitch][NO MAC for my host!]From (IP: %s, VID: %s) to (IP: %s, VID: %s)", srcip.s().c_str(), svid.vid_string().c_str(), dstip.s().c_str(),dvid.vid_string().c_str());
-						send_arp_query_packet(srcip, dstip, svid, myVid);
-						p->kill();
-						return NULL;
+						
+						// Send the encapsulated packet to the ACCESS SWITCH:
+						p = create_an_encapsulated_packet_to_access_switch(p);
+						veil_chatter_new(printDebugMessages, class_name(), "Sending the packet to access switch.(1) ");
+						return p;
+						//send_arp_query_packet(srcip, dstip, svid, myVid);
+						//p->kill();
+						//return NULL;
 					}
 				}
 			}else if (ntohs(vheader->veil_type) == VEIL_ENCAP_MULTIPATH_IP){
@@ -408,9 +413,14 @@ VEILProcessIP::smaction(Packet* p)
 					int interface;
 					if(interfaces->lookupVidEntry(&intvid, &interface)){
 						veil_chatter_new(printDebugMessages, class_name(),"[VEILSwitch to VEILSwitch][NO MAC for my host!]From (IP: %s, VID: %s) to (IP: %s, VID: %s)", srcip.s().c_str(), svid.vid_string().c_str(), dstip.s().c_str(),dvid.vid_string().c_str());
-						send_arp_query_packet(srcip, dstip, svid, myVid);
-						p->kill();
-						return NULL;
+		
+						// Send the encapsulated packet to the ACCESS SWITCH:
+						p = create_an_encapsulated_packet_to_access_switch(p);
+						veil_chatter_new(printDebugMessages, class_name(), "Sending the packet to access switch.");
+						return p;
+						//send_arp_query_packet(srcip, dstip, svid, myVid);
+						//p->kill();
+						//return NULL;
 					}
 				}
 			}

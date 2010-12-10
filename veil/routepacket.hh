@@ -21,7 +21,7 @@ class VEILRoutePacket: public Element {
 
 		int configure(Vector<String>&, ErrorHandler*);
 		//this method returns the output port #		
-		int smaction(Packet*);
+		int smaction(Packet*&);
 	 	virtual void push (int, Packet*);
 	 	void getClosestInterfaceVID(VID dstvid, VID &myVID);
 	 	int getPort(VID dstvid, Packet *p, uint8_t & k, VID &nexthop, VID &myVid);

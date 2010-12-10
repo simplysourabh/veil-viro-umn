@@ -110,7 +110,9 @@ CLICK_DECLS
 // that host has moved.  Upon receiving this packet host will inform all the host-devices
 // connected to it by sending an ARP Reply packet to all of them.
 #define VEIL_MAP_UPDATE			0x0202
-
+// we use the following type to encapsulate the packets to access switch vid, when 
+// there is no path for the current dest vid on the IP packet.
+#define NO_VID_TO_ACCESS_SWITCH		0x0203
 
 // An encapsulated IP packet. source and dest will be the VIDs of the end-hosts.
 #define VEIL_ENCAP_IP			0x0601
@@ -226,6 +228,11 @@ struct veil_payload_multipath{
 	VID final_dvid;
 };
 
+// Type: NO_VID_TO_ACCESS_SWITCH
+// |Currend DST VID 6 bytes|
+struct veil_payload_no_vid_to_access_switch{
+	VID current_dvid;
+};
 // payload structure for the VEIL_VCC_SPANNING_TREE_AD
 // |MAC 6 bytes : # of hops to VCC 2 bytes|
 struct veil_payload_vcc_sp_tree_ad{
@@ -502,6 +509,7 @@ FROM UTILITIES.HH
                 veil_chatter_new(printDebugMessages, callers_name,"[Access Info Publish] HOST IP: %s  VID: %s  MAC: %s AccessSwitchVID: %s", ip.s().c_str(),  svid.vid_string().c_str(),smac.s().c_str(),accessvid.switchVIDString().c_str() );
 		return p;
 	}
+
 	// creates the .
 	inline
 	WritablePacket* update_access_info_packet(IPAddress ip, EtherAddress smac, VID svid, VID dstvid, VID myvid, bool printDebugMessages, const char* callers_name){
@@ -563,7 +571,44 @@ FROM UTILITIES.HH
 
 		return q;
 	}
+
+	inline
+	WritablePacket * create_veil_encap_arp_reply_packet(IPAddress dstip, IPAddress srcip, VID srcvid, VID dstvid, VID myvid){
+	        VID accvid = calculate_access_switch(&dstip);
+
+		WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(veil_sub_header) + sizeof(click_ether_arp));
+	        if (q == 0) {
+	                veil_chatter_new(true, "CLICK_VEIL "," ERROR create_veil_encap_arp_reply_packet: cannot make packet!");
+	                return NULL;
+	        }
+
+	        click_ether *e = (click_ether *) q->data();
+	        q->set_ether_header(e);
 	
+	        memcpy(e->ether_dhost, &myvid, 6);
+	        memcpy(e->ether_shost, &myvid, 6);
+	        e->ether_type = htons(ETHERTYPE_VEIL);
+	
+	        veil_sub_header *vheader = (veil_sub_header*) (e+1);
+	        memcpy(&vheader->dvid, &dstvid, 6);
+	        memcpy(&vheader->svid, &srcvid, 6);
+	        vheader->veil_type = htons(VEIL_ENCAP_ARP);
+	        vheader->ttl = MAX_TTL;
+	
+	        click_ether_arp *arp_payload = (click_ether_arp *) (vheader + 1);
+	        arp_payload->ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
+	        arp_payload->ea_hdr.ar_pro = htons(ETHERTYPE_IP);
+	        arp_payload->ea_hdr.ar_hln = 6;
+	        arp_payload->ea_hdr.ar_pln = 4;
+	        arp_payload->ea_hdr.ar_op = htons(ARPOP_REPLY);
+	        memcpy(arp_payload->arp_sha, &srcvid, 6);
+	        memcpy(arp_payload->arp_spa, &srcip, 4);
+	        memcpy(arp_payload->arp_tha, &dstvid, 6);
+	        memcpy(arp_payload->arp_tpa, &dstip, 4);
+
+		return q;
+	}
+
 	inline
 	WritablePacket * create_veil_encap_arp_query_packet(IPAddress dstip, IPAddress srcip, VID srcvid, VID myvid){
 	        VID accvid = calculate_access_switch(&dstip);
@@ -600,6 +645,127 @@ FROM UTILITIES.HH
 
 		return q;
 	
-	}	
+	}
+
+	inline
+	Packet* create_an_encapsulated_packet_to_access_switch(Packet *p){
+	        // We will encapsualte and send this packet to the access switch. 
+	
+	        // first extract the header info.
+	        IPAddress srcip, dstip;
+	        VID srcvid, dstvid;
+	        uint16_t veil_type;
+	        EtherAddress smac, dmac;
+	        uint8_t ttl;
+	
+	        click_ether *eth = (click_ether*) p->data();
+	        memcpy(&smac, eth->ether_shost,6);
+	        memcpy(&dmac, eth->ether_dhost,6);
+	
+	        // Assumes that ether_type on the packet is ETHER_VEIL
+	        assert(ntohs(eth->ether_type) == ETHERTYPE_VEIL);
+	
+	        veil_sub_header *vheader = (veil_sub_header*) (eth+1);
+	        memcpy(&srcvid, &vheader->svid, 6);
+	        memcpy(&dstvid, &vheader->dvid, 6);
+	        veil_type = ntohs(vheader->veil_type);
+	        ttl = vheader->ttl;
+	
+	        // veil_type must be either VEIL_ENCAP_IP or VEIL_MULTIPATH_IP
+	        assert(veil_type == VEIL_ENCAP_IP || veil_type == VEIL_ENCAP_MULTIPATH_IP);
+	        click_ip * ip_header; veil_payload_multipath* veil_payload;
+	        if(veil_type == VEIL_ENCAP_MULTIPATH_IP){
+	                veil_payload = (veil_payload_multipath*) (vheader+1);
+	                memcpy(&dstvid, &veil_payload->final_dvid, 6);
+	
+	                ip_header = (click_ip*) (veil_payload+1);
+	        }else{
+	                ip_header = (click_ip*) (vheader+1);
+	        }
+	
+	        srcip = IPAddress(ip_header->ip_src);
+		dstip = IPAddress(ip_header->ip_dst);
+	
+	        //calculate access switch VID
+	        VID accvid = calculate_access_switch(&dstip);
+	        if(veil_type == VEIL_ENCAP_MULTIPATH_IP){
+			
+	                // we do not need to push any new data on the packet in this case
+	                // first overwrite the dstvid on the packet by the accvid.
+	                memcpy(&vheader->dvid, &accvid, 6);
+	
+	                // change the packet type to NO_VID_TO_ACCESS_SWITCH
+	                vheader->veil_type = htons(NO_VID_TO_ACCESS_SWITCH);
+	
+	                // packet is ready now.
+			veil_chatter_new(true, "CLICK_VEIL in create_an_encapulated_packet_to_access_switch: VEIL_ENCAP_MULTIPATH_IP", "sip %s srcvid %s => dip %s dstvid %s via accvid %s", srcip.s().c_str(), srcvid.vid_string().c_str(), dstip.s().c_str(), dstvid.vid_string().c_str(), accvid.vid_string().c_str());
+	                return p;
+	        }
+	
+	        // we will have to insert a 6 byte long payload in this case.
+	        Packet * q = p->push(sizeof(veil_payload_no_vid_to_access_switch));
+	        click_ether *q_eth = (click_ether*)(q->data());
+	        veil_sub_header * q_vheader = (veil_sub_header*)(q_eth+1);
+	        veil_payload_no_vid_to_access_switch* q_veil_payload = (veil_payload_no_vid_to_access_switch*)(q_vheader+1);
+	
+	        //shift the ethernet header
+	        memcpy(q_eth, eth, sizeof(click_ether));
+	
+	        // shift the veil header.
+	        memcpy(q_vheader, vheader, sizeof(veil_sub_header));
+	
+	        // now update the values.
+	        q_vheader->veil_type = htons(NO_VID_TO_ACCESS_SWITCH);
+	        memcpy(&q_vheader->dvid, &accvid, 6);
+	        memcpy(&q_veil_payload->current_dvid, &dstvid, 6);
+
+		veil_chatter_new(true, "CLICK_VEIL in create_an_encapulated_packet_to_access_switch: VEIL_ENCAP_IP", "sip %s srcvid %s => dip %s dstvid %s via accvid %s", srcip.s().c_str(), srcvid.vid_string().c_str(), dstip.s().c_str(), dstvid.vid_string().c_str());
+	        return q;
+	}
+
+	inline
+	Packet * update_vid_on_no_vid_to_access_switch_packet(Packet* p, VID mydstvid){
+		// constructs a VEIL_ENCAP_IP type of packet using the initial embedded packet
+		// and the updated destination VID.
+		click_ether* eth = (click_ether*) p->data();
+		veil_sub_header* vheader = (veil_sub_header*) (eth+1);
+		veil_payload_no_vid_to_access_switch* veil_payload = (veil_payload_no_vid_to_access_switch*) (vheader+1);
+
+		//now modify the destination vid and the packet type
+		memcpy(&vheader->dvid, &mydstvid, 6);
+		vheader->veil_type = htons(VEIL_ENCAP_IP);
+
+		// now shift the header by 6 bytes. starting from the veil_sub_header, and then eth.
+		// memcpy((char*)(vheader) + sizeof(veil_payload_no_vid_to_access_switch), vheader, sizeof(veil_sub_header));
+		// shift the eth header by size(...) bytes.
+		// memcpy((char*)(eth) + sizeof(veil_payload_no_vid_to_access_switch), eth, sizeof(click_ether));
+		int totalBytesToShift = sizeof(veil_sub_header) + sizeof(click_ether);
+		int offset = sizeof(veil_payload_no_vid_to_access_switch);
+		char * dataptr = (char*) p->data();
+		for (int i = totalBytesToShift-1; i >= 0; i--){
+			dataptr[i+offset] = dataptr[i];
+		}
+
+		// now pull out the initial sizeof(..) bytes.
+		p->pull(sizeof(veil_payload_no_vid_to_access_switch));
+
+		// doing some checking to make sure that everything is correct.
+		eth = (click_ether*) p->data();
+		vheader = (veil_sub_header*) (eth+1);
+		uint16_t veil_type = ntohs(vheader->veil_type);
+		if(veil_type != VEIL_ENCAP_IP){
+			// something went wrong.
+			veil_chatter_new(true, "CLICK_VEIL","ERROR: Packet should have veil_type = %d(VEIL_ENCAP_IP), but found %d", VEIL_ENCAP_IP, veil_type);
+		}
+
+		VID tvid;
+		memcpy(&tvid, &vheader->dvid,6);
+		if(tvid != mydstvid){
+			//error
+			veil_chatter_new(true,"CLICK_VEIL", "ERROR: Packet should have dstvid = %s, but found %s", mydstvid.vid_string().c_str(), tvid.vid_string().c_str());
+		}
+		return p;
+	}
+
 CLICK_ENDDECLS
 #endif

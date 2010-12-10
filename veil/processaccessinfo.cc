@@ -74,6 +74,87 @@ VEILProcessAccessInfo::smaction(Packet* p)
 			return p;
 		}
 	}
+
+	if (veil_type == NO_VID_TO_ACCESS_SWITCH){
+		veil_chatter_new(printDebugMessages, class_name(), "smaction | Receivd a VEIL_MAP_UDPATE packet");
+		// see if I am the destination.
+		if(interfaces->lookupVidEntry(&dvid, &interface)){
+		// we have to do two things here.
+		// 1. decapsulate the packet to extract the ip packet.
+		// see if the dstvid has changed for the current ip address
+		// if it has then send the packet to the updated vid.
+		// 2. Send the ARP reply to srcip with the updated vid for the dstip.
+                // We will encapsualte and send this packet to the access switch. 
+	
+               // first extract the header info.
+			veil_chatter_new(printDebugMessages, class_name(), "Received a packet of type NO_VID_TO_ACCESS_SWITCH");
+	                IPAddress srcip, dstip;
+        	        VID srcvid, dstvid;
+                	uint16_t veil_type;
+	                EtherAddress smac, dmac;
+        	        uint8_t ttl;
+
+                	click_ether *eth = (click_ether*) p->data();
+	                memcpy(&smac, eth->ether_shost,6);
+	                memcpy(&dmac, eth->ether_dhost,6);
+
+	                // Assumes that ether_type on the packet is ETHER_VEIL
+	                assert(ntohs(eth->ether_type) == ETHERTYPE_VEIL);
+
+        	        veil_sub_header *vheader = (veil_sub_header*) (eth+1);
+                	memcpy(&srcvid, &vheader->svid, 6);
+	                memcpy(&dstvid, &vheader->dvid,6);
+        	        veil_type = ntohs(vheader->veil_type);
+                	ttl = vheader->ttl;
+	
+	                click_ip * ip_header; 
+			veil_payload_no_vid_to_access_switch* veil_payload;
+                	veil_payload = (veil_payload_no_vid_to_access_switch*) (vheader+1);
+	                memcpy(&dstvid, &veil_payload->current_dvid, 6);
+
+        	        ip_header = (click_ip*) (veil_payload+1);
+                	srcip = IPAddress(ip_header->ip_src);
+	                dstip = IPAddress(ip_header->ip_dst);
+
+			veil_chatter_new(printDebugMessages, class_name(), "NO_VID_TO_ACCESS_SWITCH From (%s, %s) to (%s) via (vid: %s)", srcip.s().c_str(), srcvid.vid_string().c_str(),  dstip.s().c_str(), dstvid.vid_string().c_str() );
+		
+			// lookup the vid for the dstip, and see if the vid is different from
+			// what was on the packet.
+			VID mydstvid; EtherAddress mydmac; VID myvid;
+			bool isthere = map->lookupIP(&dstip, &mydstvid, &myvid, &mydmac);
+			// no mapping found for the dstip.
+			if (!isthere){
+				veil_chatter_new(printDebugMessages, class_name(), "No VID for ip %s!", dstip.s().c_str());
+				p->kill();return NULL;
+			}	
+
+			// check if the dstvid is same or not.
+			if(mydstvid == dstvid){
+				veil_chatter_new(printDebugMessages, class_name(), "VID (%s) is still the same for ip %s!", dstvid.vid_string().c_str(), dstip.s().c_str());
+				p->kill(); return NULL;
+			}
+
+			// Now update the packet, because there is an updated VID for the 
+			// destination.
+
+			veil_chatter_new(printDebugMessages, class_name(), "VID (%s -> %s) has changed for the ip %s!", dstvid.vid_string().c_str(), mydstvid.vid_string().c_str(), dstip.s().c_str());
+
+			p = update_vid_on_no_vid_to_access_switch_packet(p, mydstvid);
+
+			// also create an arp reply packet to srcip for vid of dstip.
+			veil_chatter_new(printDebugMessages, class_name(), "Informing %s,%s of %s,%s using an ARP reply packet", srcip.s().c_str(),srcvid.vid_string().c_str(), dstip.s().c_str(), mydstvid.vid_string().c_str());
+
+			memcpy(&smac, &srcvid,6); memcpy(&dmac, &mydstvid, 6);
+			Packet *q = create_veil_encap_arp_reply_packet(srcip, dstip, mydstvid, srcvid, myVid);
+			output(0).push(q);
+		
+			veil_chatter_new(printDebugMessages, class_name(), "Sending the decapsulated packet to %s,%s", dstip.s().c_str(), mydstvid.vid_string().c_str());
+			return p;
+		}else{
+			//I am not the destination. route the packet.
+			return p;
+		}
+	}	
 	// Am I the final destination?
 	if(interfaces->lookupVidEntry(&dvid, &interface))
 	{

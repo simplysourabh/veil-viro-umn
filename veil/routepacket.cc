@@ -29,7 +29,7 @@ VEILRoutePacket::configure (
 }
 
 int  
-VEILRoutePacket::smaction(Packet* p){
+VEILRoutePacket::smaction(Packet*& p){
 	//numinterfaces is backroute and numinterfaces+1 is for error pkts
 	uint8_t numinterfaces = interfaces->numInterfaces();
 	
@@ -115,7 +115,7 @@ VEILRoutePacket::smaction(Packet* p){
 		//printf("E here 6.0 \n");
 		port = getPort(dstvid, p,k, nextvid, myVid);
 		//printf("E here 6 \n");
-		while(('r' == REROUTE_ANNO(p) || veil_type  == VEIL_RDV_QUERY || veil_type  == VEIL_RDV_PUBLISH || veil_type == VEIL_MAP_PUBLISH) && port < 0){
+		while(('r' == REROUTE_ANNO(p) || veil_type  == VEIL_RDV_QUERY || veil_type  == VEIL_RDV_PUBLISH || veil_type == VEIL_MAP_PUBLISH || veil_type == NO_VID_TO_ACCESS_SWITCH) && port < 0){
 			dstvid.flip_bit(k);
 			//veil_chatter_new(printDebugMessages, class_name()," Destination after %dth bit flip: |%s| ",k, dstvid.switchVIDString().c_str());
 			veil_chatter_new(printDebugMessages, class_name()," Destination after %dth bit flip: |%s| port was %d",k, dstvid.switchVIDString().c_str(), port);
@@ -164,9 +164,11 @@ VEILRoutePacket::smaction(Packet* p){
 			IPAddress dstip = IPAddress(ip_header->ip_dst);
 			VID svid;
 			memcpy(&svid, &vheader->svid, 6);
-			veil_chatter_new(true, class_name(), " No route to Destination VID(%s)! Sending the ARP request on the senders behalf. (%s, %s) => (%s)", dstvid.vid_string().c_str(), srcip.s().c_str(), svid.vid_string().c_str(), dstip.s().c_str()); 
-			WritablePacket* q =  create_veil_encap_arp_query_packet(dstip, srcip, svid, myVid);
-			if (q) {output(numinterfaces).push(q);}
+			veil_chatter_new(true, class_name(), " No route to Destination VID(%s)! Sending the ARP request on the senders behalf. (%s, %s) => (%s). Encapsulate the packet and send it to access switch.", dstvid.vid_string().c_str(), srcip.s().c_str(), svid.vid_string().c_str(), dstip.s().c_str()); 
+			//Packet* q =  create_veil_encap_arp_query_packet(dstip, srcip, svid, myVid);
+			p = create_an_encapsulated_packet_to_access_switch(p);
+			//if (p != NULL) {output(numinterfaces).push(p);}
+			port = numinterfaces;
 		}
 		return port;
 		// returns the port number if found, else to the ERROR outputport given by numinterfaces + 1

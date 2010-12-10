@@ -40,20 +40,21 @@ hellogen[1]->q1;
 hellogen[2]->q2;
 hellogen[3]->q3;
 
-c::Classifier(12/9876 26/0000, // 0. VEIL_HELLO
-	      12/9876 26/0403, // 1. VEIL_RDV_PUBLISH
-	      12/9876 26/0404, // 2. VEIL_RDV_QUERY
-              12/9876 26/0402, // 3. VEIL_RDV_REPLY
-              12/9876 26/0602, // 4. VEIL_ENCAP_ARP
-              12/9876 26/0201, // 5. VEIL_MAP_PUBLISH
-              12/9876 26/0202, // 6. VEIL_MAP_UPDATE
-              12/9876 26/0601, // 7. VEIL_ENCAP_IP
-              12/9876 26/0801, // 8. VEIL_ENCAP_MULTIPATH_IP
-              12/9878,	       // 9. ETHERTYPE_VEIL_IP
-	      12/0806,         //10. ETHERTYPE_ARP
-	      12/0800,         //11. ETHERTYPE_IP
-	      12/9876 26/0100%FF00, // 12. VCC Packets.
-	      -);    	       //13. Everything Else (DISCARD)
+c::Classifier(12/9876 26/0000, 		// 0. VEIL_HELLO
+	      12/9876 26/0403, 		// 1. VEIL_RDV_PUBLISH
+	      12/9876 26/0404, 		// 2. VEIL_RDV_QUERY
+              12/9876 26/0402, 		// 3. VEIL_RDV_REPLY
+              12/9876 26/0602, 		// 4. VEIL_ENCAP_ARP
+              12/9876 26/0201, 		// 5. VEIL_MAP_PUBLISH
+              12/9876 26/0202, 		// 6. VEIL_MAP_UPDATE
+              12/9876 26/0203, 		// 7. NO_VID_TO_ACCESS_SWITCH (should go to ProcessAccessInfo.cc)
+              12/9876 26/0601, 		// 8. VEIL_ENCAP_IP
+              12/9876 26/0801, 		// 9. VEIL_ENCAP_MULTIPATH_IP
+              12/9878,	       		// 10. ETHERTYPE_VEIL_IP
+	      12/0806,         		// 11. ETHERTYPE_ARP
+	      12/0800,         		// 12. ETHERTYPE_IP
+	      12/9876 26/0100%FF00, 	// 13. VCC Packets.
+	      -);    	       		//14. Everything Else (DISCARD)
 
 
 in0 -> VEILSetPortAnnotation(0) -> c;
@@ -86,7 +87,7 @@ vccprocessor[1] -> q1;
 vccprocessor[2] -> q2;
 vccprocessor[3] -> q3;
 
-c[12] -> vccprocessor;
+c[13] -> vccprocessor;
 
 c[0] -> VEILProcessHello(neighbors, interfaces,PRINTDEBUG false);
 
@@ -99,25 +100,26 @@ c[3] -> prdv;
 parp::VEILProcessARP(hosts, mapping, interfaces,PRINTDEBUG true) ->  router;
 
 c[4]  -> Print (ETHERARP) ->  parp;
-c[10] -> Print (VEIL_ARP) ->  parp;
+c[11] -> Print (VEIL_ARP) ->  parp;
 
 paci::VEILProcessAccessInfo(mapping, interfaces,PRINTDEBUG true) -> router;
 c[5] -> paci;
 c[6] -> paci; 
+c[7] -> paci;
 
 pip::VEILProcessIP(hosts, mapping, interfaces,FORWARDING_TYPE 2, PRINTDEBUG true)-> router;
 
-c[7]  -> pip;
 c[8]  -> pip;
 c[9]  -> pip;
-c[11] -> pip;
+c[10]  -> pip;
+c[12] -> pip;
 
 
 VEILBuildRouteTable(neighbors, routes, interfaces,PRINTDEBUG true) -> router;
 
 VEILPublishAccessInfo(hosts, PRINTDEBUG true) -> router;
 
-c[13] -> Discard;
+c[14] -> Discard;
 
 
 Script(wait 0s, print interfaces.table, wait 20s, loop);
