@@ -72,6 +72,7 @@ CLICK_DECLS
 // Source and destination fields correspond to "Unique ID" for each interface
 // (just like MAC address), the uniqueness is with in the "veil network".
 #define VEIL_HELLO				0x0000
+#define VEIL_HELLO_REPLY			0x0002
 #define VEIL_PHELLO				0x0001
 
 //[VEIL-Type = 0x0101] SP_AD (Spanning Tree Advertisement) : This is the packet
