@@ -37,4 +37,7 @@ sudo make
 sudo make install
 
 cd ~/veil-viro-umn 
+
+## now run the python script to generate the configuration click file
+python generateClickConf.py <fill vccmac HERE::IMPORANT::> <OPTIONAL:: write the output click file name>
 #
