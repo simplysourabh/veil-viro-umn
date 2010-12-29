@@ -58,6 +58,14 @@ print "Interfaces: ", interfaces
 print "Reverse interfaces: ", rinterfaces
 print "Total Interfaces: ", ninterfaces
 
+# bring up all the interfaces and put them into the promisc mode.
+for intname in interfaces:
+	cmd = ['ifconfig', intname, 'up', 'promisc']
+	p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+	p.wait()
+	print 'set up the interface', intname, 'in promisc mode.', cmd
+
+
 # first initialize the interface element.
 print>>fout,"interfaces::VEILInterfaceTable("
 for hwaddr in rinterfaces:
@@ -209,3 +217,4 @@ print>>fout,'Script(wait 7s, print topo.table, wait 53s, loop);'
 
 
 fout.close()
+
