@@ -31,6 +31,7 @@ VEILNetworkTopoVIDAssignment::cp_an_edge(String s, ErrorHandler* errh){
 			return errh->error(" From EtherAddress is not in expected format!");
 
 		addAnEdge(from, to);
+		lastNodeUpdateTime[from] = time(NULL); // put the current time as the last update time.
 	}else if(type.lower() == "ether2vid"){
 		EtherAddress mac;
 		VID vid;
@@ -49,7 +50,7 @@ VEILNetworkTopoVIDAssignment::cp_an_edge(String s, ErrorHandler* errh){
 			if(!cp_ethernet_address(mac_str, &vccmac))
 				return errh->error(" in VCCMAC EtherAddress is not in expected format!");
 
-		}
+	}
 	return 0;
 }
 
@@ -73,6 +74,7 @@ VEILNetworkTopoVIDAssignment::configure(Vector<String> &conf, ErrorHandler *errh
 
 int
 VEILNetworkTopoVIDAssignment::removeNode(EtherAddress mac){
+	lastNodeUpdateTime.erase(mac);
 	return networktopo.erase(mac);
 }
 
@@ -97,6 +99,10 @@ VEILNetworkTopoVIDAssignment::addAnEdge(EtherAddress fromMac, EtherAddress toMac
 	return added;
 }
 
+void 
+VEILNetworkTopoVIDAssignment::lastUpdateTimeForNode(EtherAddress mac){
+	lastNodeUpdateTime[mac] = time(NULL); // put the current time as the last update time for the node.
+}
 bool
 VEILNetworkTopoVIDAssignment::addAMap(VID vid, EtherAddress mac){ // adds a mapping from vid to mac and reverse mapping
 	bool added = false;
@@ -135,8 +141,43 @@ VEILNetworkTopoVIDAssignment::performVIDAssignment(){
 
 	int node_n = 0;
 	int n_cluster = 0;
-
+	
 	NetworkTopo::iterator iter;
+	
+	veil_chatter_new(printDebugMessages, class_name()," in performVIDAssignment: Removing the outdated NODE entries from the database.");
+	for (iter = networktopo.begin(); iter; iter++){
+		EtherAddress node = static_cast<EtherAddress>(iter.key());
+		if (lastNodeUpdateTime.get_pointer(node) == NULL){
+			// remove this node from the topology.
+			networktopo.erase(node);
+			// remove this node from the mappings.
+			if (ether2vid.get_pointer(node) != NULL){
+				VID vid = ether2vid[node];
+				vid2ether.erase(vid);
+				ether2vid.erase(node);
+			}
+			veil_chatter_new(true, class_name(),"Node %s is not in the lastNodeUpdateTime, removing it from other tables too.", node.s().c_str());
+			continue;
+		}
+
+		// else if we have an entry for the node.
+		time_t timelastupdated = lastNodeUpdateTime[node];
+		time_t diff = time(NULL) - timelastupdated;
+		diff = diff*1000; // difference in milliseconds
+		if (diff > 2*VEIL_SPANNING_TREE_COST_BROADCAST){
+			// we should delete this node, since the entry is outdated.
+			networktopo.erase(node);
+			// remove this node from the mappings.
+			if (ether2vid.get_pointer(node) != NULL){
+				VID vid = ether2vid[node];
+				vid2ether.erase(vid);
+				ether2vid.erase(node);
+			}
+			veil_chatter_new(true, class_name(),"Node %s not updated since %dms, removing it from other tables too.", node.s().c_str(), diff);
+			lastNodeUpdateTime.erase(node);
+		}	
+	}
+	
 	veil_chatter_new(printDebugMessages, class_name()," in performVIDAssignment: Generating the duplicate topo map.");
 
 	if (networktopo.size() <= 1){

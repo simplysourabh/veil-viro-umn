@@ -141,7 +141,7 @@ if vccmac in rinterfaces:
 	print>>fout,'\n//I am the VCC'
 	print>>fout,'\n//Writing the initial advertisement generator.'
 	vccstr = vccmac.replace(':','')
-	print>>fout,'\ndatasAd::TimedSource(DATA \<ffffffffffff '+vccstr+' ' + vccstr+' 9876 '+vccstr+' 000000000000 0101 0200 '+vccstr+' 0000>, INTERVAL 5) -> c;'
+	print>>fout,'\ndatasAd::TimedSource(DATA \<ffffffffffff '+vccstr +' 9876 '+vccstr+' 000000000000 0101 0200 '+vccstr+' 0000>, INTERVAL 5) -> c;'
 	print>>fout,'vccstate::VEILSpanningTreeState('+vccmac+' '+vccmac+' 0, PRINTDEBUG false);'
 else:
 	print>>fout,'vccstate::VEILSpanningTreeState(PRINTDEBUG false);'

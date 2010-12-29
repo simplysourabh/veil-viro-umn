@@ -16,6 +16,7 @@ class VEILNetworkTopoVIDAssignment : public Element {
 		typedef HashTable<EtherAddress, Vector<EtherAddress> > NetworkTopo;
 		typedef HashTable<EtherAddress, VID> EtherToVID;
 		typedef HashTable<VID, EtherAddress> VIDtoEther;
+		typedef HashTable<EtherAddress, time_t> LastNodeUpdateTime;
 
 		VEILNetworkTopoVIDAssignment();
 		~VEILNetworkTopoVIDAssignment();
@@ -30,7 +31,7 @@ class VEILNetworkTopoVIDAssignment : public Element {
 		bool addAnEdge(EtherAddress fromMac, EtherAddress toMac); // adds a directed edge frommac -> tomac
 		bool addAMap(VID vid, EtherAddress mac); // adds a mapping from vid to mac and reverse mapping
 		int removeNode(EtherAddress mac); //removes a node from the topology.
-
+		void lastUpdateTimeForNode(EtherAddress mac); // updates and records the last update time for the node.
 		bool performVIDAssignment(); // performs the vid assignment, and return true or false
 		// if the assignment has changed from the existing assignment.
 
@@ -41,6 +42,7 @@ class VEILNetworkTopoVIDAssignment : public Element {
 		// however, in future we'd like to make it a private member.
 		EtherToVID ether2vid;
 		VIDtoEther vid2ether;
+		LastNodeUpdateTime lastNodeUpdateTime;
 		EtherAddress vccmac;
 	private:		
 		bool printDebugMessages;

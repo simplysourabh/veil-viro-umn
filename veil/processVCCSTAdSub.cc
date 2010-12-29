@@ -197,7 +197,7 @@ VEILProcessVCCSTAdSub::processLocalTopo(Packet*p){
 			topo->addAnEdge(srcmac, neighmac);
 			topo->addAnEdge(neighmac,srcmac); // assumes that its a symmetric
 		}
-
+		topo->lastUpdateTimeForNode(srcmac);
 		return -1;
 	}
 	// else part when this node is not the vcc.
