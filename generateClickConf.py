@@ -63,7 +63,7 @@ for intname in interfaces:
 	cmd = ['ifconfig', intname, 'up', 'promisc']
 	p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 	p.wait()
-	print 'set up the interface', intname, 'in promisc mode.', cmd
+	print 'setting up the interface', intname, 'in promisc mode.', cmd
 
 
 # first initialize the interface element.
