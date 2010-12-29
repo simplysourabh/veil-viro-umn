@@ -66,6 +66,24 @@ VEILProcessVCCSTAdSub::smaction(Packet* p){
 	veil_sub_header *veil_sub = (veil_sub_header *) (e+1);
 	uint16_t  veiltype = ntohs(veil_sub->veil_type);
 	veil_chatter_new(printDebugMessages, class_name(),"Processing the packet type: %s", get_packet_type_str(veiltype));
+
+	// except if the packet if of type VEIL_VCC_SPANNING_TREE_AD
+	// make sure that packet is destined to me.
+	if (veiltype != VEIL_VCC_SPANNING_TREE_AD){
+		EtherAddress dmac;
+		memcpy(dmac.data(), e->ether_dhost, 6);
+		// see if dmac is one of my interfaces address or not.
+		if (interfaces->etheraddToInterfaceIndex.get_pointer(dmac) == NULL){
+			// it is not destined to me, therefore, I should not handle this packet.
+			// lets kill this packet.
+			veil_chatter_new(true, class_name(), "Packet is destined to %s, which is not my MAC address.", dmac.s().c_str());
+			p->kill();
+			p=NULL;
+			return -1;
+		}
+		
+	}
+
 	switch(veiltype){
 		case VEIL_VCC_SPANNING_TREE_AD:
 			processAD(p);
