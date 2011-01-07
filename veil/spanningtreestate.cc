@@ -200,7 +200,7 @@ VEILSpanningTreeState::read_handler(Element *e, void *thunk)
 		sa << vccmac <<"\t"<<parentmac<<"\t"<<pe.hopsToVcc<<"\t"<<t->expiry().sec() - time(NULL) << " Sec\n";
 	}
 	sa <<"\n";
-	sa << "Child MAC\t\t\tVCC MAC\t\tTTL\n";
+	sa << "VCC MAC\t\t\tChild MAC\t\tTTL\n";
 	for (iterFrom = st->forwardingTableFromVCC.begin(); iterFrom; ++iterFrom){
 		String childmac = static_cast <EtherAddress> (iterFrom.key()).s();
 		ChildEntry ce = iterFrom.value();
