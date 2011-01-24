@@ -66,6 +66,14 @@ for intname in interfaces:
 	print 'setting up the interface', intname, 'in promisc mode.', cmd
 
 
+# update the mtu for all the interfaces.
+for intname in interfaces:
+	cmd = ['ifconfig', intname, 'mtu', '1600']
+	p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+	p.wait()
+	print 'setting up the mtu for interface', intname, 'as 1600 bytes!'
+
+
 # first initialize the interface element.
 print>>fout,"interfaces::VEILInterfaceTable("
 for hwaddr in rinterfaces:
