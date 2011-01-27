@@ -76,8 +76,8 @@ for intname in interfaces:
 
 # first initialize the interface element.
 print>>fout,"interfaces::VEILInterfaceTable("
-for hwaddr in rinterfaces:
-	print>>fout,"                   000000000000, "+hwaddr+", "
+for eth in interfaces:
+	print>>fout,"                   000000000000, "+interfaces[eth]+", "
 
 print>>fout, '                   UseStatic false,\n                   PRINTDEBUG false\n);\n'
 print>>fout, 'hosts::VEILHostTable(PRINTDEBUG true);'
