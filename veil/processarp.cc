@@ -25,6 +25,7 @@ VEILProcessARP::configure (
 		ErrorHandler *errh)
 {
 	printDebugMessages = true;
+	veil_chatter_new(printDebugMessages, class_name(), "configure | WARNING: currently disards the ARP packets which has the source address as 0.0.0.0\n This is done to avoid the \"IP CONFLICT\" detection forced by certain operating systems in the network");
 	return cp_va_kparse(conf, this, errh,
 			"HOSTTABLE", cpkM+cpkP, cpElementCast, "VEILHostTable", &host_table,
 			"MAPPINGTABLE", cpkM+cpkP, cpElementCast, "VEILMappingTable", &map,
@@ -52,7 +53,14 @@ VEILProcessARP::smaction(Packet* p){
 		const click_ether_arp *ap = (const click_ether_arp *) (eth+1);
 		IPAddress src = IPAddress(ap->arp_spa);
 		IPAddress dst = IPAddress(ap->arp_tpa);
-
+		IPAddress zeroip;
+		memset(&zeroip, 0, 4);
+		if (zeroip == src){
+			// Discard the ARP packets with source IP as 0.0.0.0 to by-pass the IP conflict check.
+			veil_chatter_new(true, class_name(), "configure | WARNING: Discarding the ARP query packet from 0.0.0.0,%s to %s,%s", esrc.s().c_str(), dst.s().c_str(), edest.s().c_str());
+			p->kill();
+			return NULL;
+		}
 		//host_table->generate_host_vid(src, esrc, myport, myVid, &hvid);
 		bool isNew = host_table->generate_host_vid(src, esrc, myport, myVid, &hvid);
 		if (isNew){
