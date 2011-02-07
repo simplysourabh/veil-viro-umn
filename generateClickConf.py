@@ -80,9 +80,9 @@ for eth in interfaces:
 	print>>fout,"                   000000000000, "+interfaces[eth]+", "
 
 print>>fout, '                   UseStatic false,\n                   PRINTDEBUG false\n);\n'
-print>>fout, 'hosts::VEILHostTable(PRINTDEBUG true);'
+print>>fout, 'hosts::VEILHostTable(PRINTDEBUG false);'
 print>>fout, 'neighbors::VEILNeighborTable(PRINTDEBUG false);'
-print>>fout, 'mapping::VEILMappingTable(PRINTDEBUG true);'
+print>>fout, 'mapping::VEILMappingTable(PRINTDEBUG false);'
 print>>fout, 'rendezvouspoints::VEILRendezvousTable(PRINTDEBUG false);'
 print>>fout, 'routes::VEILRouteTable(INTERFACETABLE interfaces, PRINTDEBUG false);'
 
@@ -175,7 +175,7 @@ for i in range(0, ninterfaces):
 
 print>>fout,'\nc[13] -> vccprocessor;'
 
-print>>fout,'\nphello::VEILProcessHelloNew(neighbors, interfaces,PRINTDEBUG true);'
+print>>fout,'\nphello::VEILProcessHelloNew(neighbors, interfaces,PRINTDEBUG false);'
 print>>fout,'c[0] -> phello;'
 
 
@@ -189,17 +189,17 @@ print>>fout,'c[1] -> prdv;'
 print>>fout,'c[2] -> prdv;'
 print>>fout,'c[3] -> prdv;\n'
 
-print>>fout,'parp::VEILProcessARP(hosts, mapping, interfaces,PRINTDEBUG true) ->  router;\n'
+print>>fout,'parp::VEILProcessARP(hosts, mapping, interfaces,PRINTDEBUG false) ->  router;\n'
 
 print>>fout,'c[11]  -> ARPPrint ->  parp;'
 print>>fout,'c[4]   -> Print (VEIL_ARP, MAXLENGTH 100) ->  parp;\n'
 
-print>>fout,'paci::VEILProcessAccessInfo(hosts,mapping, interfaces,PRINTDEBUG true) -> router;'
+print>>fout,'paci::VEILProcessAccessInfo(hosts,mapping, interfaces,PRINTDEBUG false) -> router;'
 print>>fout,'c[5] -> paci;'
 print>>fout,'c[6] -> paci;'
 print>>fout,'c[7] -> paci;\n'
 
-print>>fout,'pip::VEILProcessIP(hosts, mapping, interfaces,FORWARDING_TYPE 2, PRINTDEBUG true)-> router;'
+print>>fout,'pip::VEILProcessIP(hosts, mapping, interfaces,FORWARDING_TYPE 2, PRINTDEBUG false)-> router;'
 
 print>>fout,'c[8]  -> pip;'
 print>>fout,'c[9]  -> pip;'
@@ -209,7 +209,7 @@ print>>fout,'c[12] -> pip;\n'
 
 print>>fout,'VEILBuildRouteTable(neighbors, routes, interfaces,PRINTDEBUG false) -> router;\n'
 
-print>>fout,'VEILPublishAccessInfo(hosts, PRINTDEBUG true) -> router;\n'
+print>>fout,'VEILPublishAccessInfo(hosts, PRINTDEBUG false) -> router;\n'
 
 print>>fout,'c[14] -> Discard;\n'
 
