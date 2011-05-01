@@ -12,8 +12,8 @@ import sys,time, subprocess
 scriptfile = "temp.click"
 vccmac = ""
 exclude_interfaces = []
-if len(sys.argv) < 3:
-	print 'Usage: ', sys.argv[0], '<VCC MAC Address>  <Output File name> <EXCLUDE interfaces as a comma sep list.e.g. eth0,eth1 (no spaces)>'
+if len(sys.argv) < 4:
+	print 'Usage: ', sys.argv[0], '<VCC MAC Address>  <Output File name> <speed per link e.g. 1000KBps> <EXCLUDE interfaces as a comma sep list.e.g. eth0,eth1 (no spaces)>'
 	sys.exit()
 
 if len(sys.argv) >= 2:
@@ -21,9 +21,11 @@ if len(sys.argv) >= 2:
 
 if len(sys.argv) >= 3:
 	scriptfile = sys.argv[2]
+linespeed = sys.argv[3].strip()
 
-if len(sys.argv) >= 4:
-	exclude_interfaces = sys.argv[3].split(',')
+if len(sys.argv) >= 5:
+	exclude_interfaces = sys.argv[4].split(',')
+
 
 print "Output click configuration file: ", scriptfile
 print "Excluding the interfaces: ", exclude_interfaces
@@ -94,7 +96,7 @@ print>>fout, '// output devices'
 i = 0
 for eth in interfaces:
 	print>>fout, 'out'+str(i)+'::ToDevice('+eth+');'
-	print>>fout, 'q'+str(i)+'::Queue -> out'+str(i)+';'
+	print>>fout, 'q'+str(i)+'::Queue -> BandwidthShaper('+linespeed+')-> out'+str(i)+';'
 	i = i +1
 i = 0
 print>>fout, '\n'
