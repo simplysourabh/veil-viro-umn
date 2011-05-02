@@ -84,46 +84,49 @@ VEILRoutePacket::smaction(Packet*& p){
 		int port;
 		//printf("E here 1 \n");
 		if (veil_type == VEIL_ENCAP_MULTIPATH_IP){
+			// see if there is a route to this destination otherwise can't do anything.
 			port = getPort(dstvid, p,k, nextvid, myVid);
+			veil_payload_multipath *veil_payload = (veil_payload_multipath *)(vheader+1);
+			
+			// if dstvid is same as one of my own interfaces vid then
+			// change the dstvid to current final vid.
+			int intvid;
+			if (interfaces->lookupVidEntry(&dstvid, &intvid)){
+				memcpy(&vheader->dvid, &veil_payload->final_dvid, 6);
+				memcpy(&dstvid, &veil_payload->final_dvid, 6);
+			}
 
 			VID finalvid;
-			veil_payload_multipath *veil_payload = (veil_payload_multipath *)(vheader+1);
 			memcpy(&finalvid, &veil_payload->final_dvid, 6);
 			VID final_sw_vid, dst_sw_vid;
 			memset(&final_sw_vid, 0, 6); 
 			memset(&dst_sw_vid,0,6);
 			memcpy(&final_sw_vid, &finalvid,4);
 			memcpy(&dst_sw_vid, &dstvid, 4);
+			
+			
 			// Can I change the destination VID?
 			// 1. vheader->dvid == veil_payload->final_dvid and final destination is not one of my interfaces, I can change the intermediate destination.
 			if (final_sw_vid == dst_sw_vid && port <= numinterfaces && port >= 0 ){
-				// we can still do the multipath routing if the final destination is not my own interface.
-				if(port == numinterfaces && final_sw_vid != myVid){
-					VID newgw;
-					// Now choose an alternate gateway
-					//printf("E here 2 \n");
-					if(routes->getRoute(&dstvid,myVid, &nextvid, &newgw,false)){
-						veil_chatter_new(printDebugMessages, class_name(),"[VEIL_ENCAP_MULTIPATH_IP] New GW: %s to Destination %s at Bucket %d of ME %s ",newgw.switchVIDString().c_str(), final_sw_vid.switchVIDString().c_str(), k ,myVid.switchVIDString().c_str() );
-						if (newgw != myVid){ // if I am the new gateway then should not update the dvid on the packet. 
-							memcpy(&vheader->dvid, &newgw, 6);
-							//printf("E here 3 \n");
-							memcpy(&dstvid, &newgw, 6);
-						}
-					}else{
-						veil_chatter_new(true, class_name(),"[VEIL_ENCAP_MULTIPATH_IP] NO GW!! Dest %s at Bucket %d of ME %s ",final_sw_vid.switchVIDString().c_str(), k ,myVid.switchVIDString().c_str());
+				VID newgw;
+				// Now choose an alternate gateway
+				//printf("E here 2 \n");
+				if(routes->getRoute(&dstvid,myVid, &nextvid, &newgw,false)){
+					veil_chatter_new(true, class_name(),"[VEIL_ENCAP_MULTIPATH_IP] New GW: %s to Destination %s at Bucket %d of ME %s ",newgw.switchVIDString().c_str(), final_sw_vid.switchVIDString().c_str(), k ,myVid.switchVIDString().c_str() );
+					if (newgw != myVid){ // if I am the new gateway then should not update the dvid on the packet. 
+						memcpy(&vheader->dvid, &newgw, 6);
+						//printf("E here 3 \n");
+						memcpy(&dstvid, &newgw, 6);
+						port = getPort(dstvid, p,k, nextvid, myVid);
 					}
+				}else{
+					veil_chatter_new(true, class_name(),"[VEIL_ENCAP_MULTIPATH_IP] NO GW!! Dest %s at Bucket %d of ME %s ",final_sw_vid.switchVIDString().c_str(), k ,myVid.switchVIDString().c_str());
 				}
 				
-			}else{
+			} // either I can't change the destination or there is no possible route for the destination.
+			else{
 				veil_chatter_new(true, class_name(),"[VEIL_ENCAP_MULTIPATH_IP] CANT MULTIPATH Dest %s FinalVID %s at Bucket %d of ME %s port %d numInterfaces %d, nexthop %s",dst_sw_vid.switchVIDString().c_str(), final_sw_vid.switchVIDString().c_str(), k ,myVid.switchVIDString().c_str(),port,numinterfaces, nextvid.switchVIDString().c_str());
 			}
-			//printf("E here 4 \n");
-			// if dstvid == myvid then make the dstvid = finalvid
-			if (port == numinterfaces){
-				memcpy(&vheader->dvid, &veil_payload->final_dvid, 6);
-				memcpy(&dstvid, &veil_payload->final_dvid, 6);
-			}
-			//printf("E here 5 \n");
 		}
 
 		//printf("E here 6.0 \n");
