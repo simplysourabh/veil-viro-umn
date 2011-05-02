@@ -2,17 +2,17 @@
 cd ~/veil-viro-umn
 
 # now copy the vid.hh to include/click
-cp vid.hh /opt/click/include/click/
+#cp vid.hh /opt/click/include/click/
 
 
 # copy confparse.cc to click/lib
-cp confparse.cc /opt/click/lib/confparse.cc
+#cp confparse.cc /opt/click/lib/confparse.cc
 
 # copy confparse.hh to include/click/
-cp confparse.hh /opt/click/include/click/confparse.hh 
+#cp confparse.hh /opt/click/include/click/confparse.hh 
 
 # copy veil directory to click/elements/
-mkdir /opt/click/elements/veil
+#mkdir /opt/click/elements/veil
 cp veil/*.hh /opt/click/elements/veil/ 
 cp veil/*.cc /opt/click/elements/veil/
 

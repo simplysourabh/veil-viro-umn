@@ -89,19 +89,33 @@ VEILRoutePacket::smaction(Packet*& p){
 			VID finalvid;
 			veil_payload_multipath *veil_payload = (veil_payload_multipath *)(vheader+1);
 			memcpy(&finalvid, &veil_payload->final_dvid, 6);
-
+			VID final_sw_vid, dst_sw_vid;
+			memset(&final_sw_vid, 0, 6); 
+			memset(&dst_sw_vid,0,6);
+			memcpy(&final_sw_vid, &finalvid,4);
+			memcpy(&dst_sw_vid, &dstvid, 4);
 			// Can I change the destination VID?
 			// 1. vheader->dvid == veil_payload->final_dvid and final destination is not one of my interfaces, I can change the intermediate destination.
-			if (finalvid == dstvid && port < numinterfaces && port >= 0 ){
-				VID newgw;
-				// Now choose an alternate gateway
-				//printf("E here 2 \n");
-				if(routes->getRoute(&dstvid,myVid, &nextvid, &newgw,false)){
-					veil_chatter_new(printDebugMessages, class_name(),"[VEIL_ENCAP_MULTIPATH_IP] New GW: %s to Destination %s at Bucket %d of ME %s ",newgw.switchVIDString().c_str(), finalvid.switchVIDString().c_str(), k ,myVid.switchVIDString().c_str() );
-					memcpy(&vheader->dvid, &newgw, 6);
-					//printf("E here 3 \n");
-					memcpy(&dstvid, &newgw, 6);
+			if (final_sw_vid == dst_sw_vid && port <= numinterfaces && port >= 0 ){
+				// we can still do the multipath routing if the final destination is not my own interface.
+				if(port == numinterfaces && final_sw_vid != myVid){
+					VID newgw;
+					// Now choose an alternate gateway
+					//printf("E here 2 \n");
+					if(routes->getRoute(&dstvid,myVid, &nextvid, &newgw,false)){
+						veil_chatter_new(printDebugMessages, class_name(),"[VEIL_ENCAP_MULTIPATH_IP] New GW: %s to Destination %s at Bucket %d of ME %s ",newgw.switchVIDString().c_str(), final_sw_vid.switchVIDString().c_str(), k ,myVid.switchVIDString().c_str() );
+						if (newgw != myVid){ // if I am the new gateway then should not update the dvid on the packet. 
+							memcpy(&vheader->dvid, &newgw, 6);
+							//printf("E here 3 \n");
+							memcpy(&dstvid, &newgw, 6);
+						}
+					}else{
+						veil_chatter_new(true, class_name(),"[VEIL_ENCAP_MULTIPATH_IP] NO GW!! Dest %s at Bucket %d of ME %s ",final_sw_vid.switchVIDString().c_str(), k ,myVid.switchVIDString().c_str());
+					}
 				}
+				
+			}else{
+				veil_chatter_new(true, class_name(),"[VEIL_ENCAP_MULTIPATH_IP] CANT MULTIPATH Dest %s FinalVID %s at Bucket %d of ME %s port %d numInterfaces %d, nexthop %s",dst_sw_vid.switchVIDString().c_str(), final_sw_vid.switchVIDString().c_str(), k ,myVid.switchVIDString().c_str(),port,numinterfaces, nextvid.switchVIDString().c_str());
 			}
 			//printf("E here 4 \n");
 			// if dstvid == myvid then make the dstvid = finalvid
@@ -169,6 +183,9 @@ VEILRoutePacket::smaction(Packet*& p){
 			p = create_an_encapsulated_packet_to_access_switch(p);
 			//if (p != NULL) {output(numinterfaces).push(p);}
 			port = numinterfaces;
+		}
+		if(veil_type == VEIL_ENCAP_MULTIPATH_IP){
+				veil_chatter_new(printDebugMessages, class_name(),"[VEIL_ENCAP_MULTIPATH_IP] FINAL DECISION made by ROUTEPACKET Dest %s at Bucket %d of ME %s port %d numInterfaces %d, nexthop %s",dstvid.switchVIDString().c_str(), k ,myVid.switchVIDString().c_str(),port,numinterfaces, nextvid.switchVIDString().c_str());
 		}
 		return port;
 		// returns the port number if found, else to the ERROR outputport given by numinterfaces + 1
@@ -294,7 +311,7 @@ VEILRoutePacket::getPort(VID dstvid, Packet *p, uint8_t & k, VID &nexthop, VID &
 	VID gateway;
 	//return -1;
 	//printf("4 Myvid is %s\n", myVid.vid_string().c_str());
-	while(routes->getRoute(&dstvid,myVid, &nexthop, &gateway))
+	if(routes->getRoute(&dstvid,myVid, &nexthop, &gateway))
 	{
 		int temp;
 		//printf("getPort 9 \n");
@@ -302,6 +319,7 @@ VEILRoutePacket::getPort(VID dstvid, Packet *p, uint8_t & k, VID &nexthop, VID &
 		if (neighbors->lookupEntry(&nexthop, &myInterfacevid)){
 			//printf("getPort 10 \n");
 			interfaces->lookupVidEntry(&myInterfacevid, &port);
+			veil_chatter_new(printDebugMessages, class_name(), "Nexthop %s is connected to my interface %s at index %d", nexthop.switchVIDString().c_str(), myInterfacevid.switchVIDString().c_str(),port);
 			//printf("getPort 11 \n");
 			return port;
 		}

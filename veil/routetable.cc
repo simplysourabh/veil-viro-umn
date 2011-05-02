@@ -192,8 +192,11 @@ VEILRouteTable::getRoute(VID* dst, VID myinterface, VID *nh, VID *g,bool isDefau
 			}
 			return false;
 		}else{
-			srand(time(NULL));
+			//srand(time(NULL));
 			//printf("VEILRouteTable::getRoute 8\n");
+			if(entrytouse.get_pointer(b) == NULL){
+				entrytouse[b] = 0;
+			}
 			uint8_t totalValidEntries = 0;
 			uint8_t k = 0;
 
@@ -210,7 +213,8 @@ VEILRouteTable::getRoute(VID* dst, VID myinterface, VID *nh, VID *g,bool isDefau
 			if (totalValidEntries == 0){return false;}
 
 			// now pick one randomly
-			uint8_t pickj = rand() % totalValidEntries;
+			uint8_t pickj = (entrytouse[b]+1) % totalValidEntries;
+			entrytouse[b] = pickj;
 			uint8_t r = 0;
 			for (k = 0; k < MAX_GW_PER_BUCKET; k++){
 				//printf("VEILRouteTable::getRoute 11\n");
@@ -220,6 +224,7 @@ VEILRouteTable::getRoute(VID* dst, VID myinterface, VID *nh, VID *g,bool isDefau
 						//printf("VEILRouteTable::getRoute 13\n");
 						memcpy(nh, &(buck->buckets[pickj].nexthop), 6);
 						memcpy(g, &(buck->buckets[pickj].gateway), 6);
+						veil_chatter_new(printDebugMessages,class_name(), "%d options to reach dest %s. Chose %dth via nh %s, gw %s", totalValidEntries, dst->vid_string().c_str(), pickj, buck->buckets[pickj].nexthop.vid_string().c_str(),buck->buckets[pickj].gateway.vid_string().c_str() );
 						return true;
 					}
 					r++;

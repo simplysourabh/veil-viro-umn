@@ -33,6 +33,9 @@ class VEILRouteTable : public Element {
 		//typedef HashTable<uint8_t, InnerRouteTableEntry> InnerRouteTable;
 		typedef HashTable<uint8_t, Bucket> InnerRouteTable;
 		
+		// here is a hashtable to keep track of multiple entries in use.
+		typedef HashTable<uint8_t, uint8_t> EntryToUse;
+		
 		// Full Routing Table, a <key, value> pair
 		// Key = VID of the interface, Value = InnerRouteTable
 		// SJ Changing the OuterRouteTable to key = int and value = inner_route_table. on Nov 22.
@@ -61,6 +64,8 @@ class VEILRouteTable : public Element {
 		static String read_handler(Element*, void*);
 		void add_handlers();	
 		OuterRouteTable routes;
+		EntryToUse entrytouse;
+
 	private:	
 		bool printDebugMessages ;
 		VEILInterfaceTable *interfaces;
