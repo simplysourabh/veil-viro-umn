@@ -112,7 +112,7 @@ VEILRoutePacket::smaction(Packet*& p){
 				// Now choose an alternate gateway
 				//printf("E here 2 \n");
 				if(routes->getRoute(&dstvid,myVid, &nextvid, &newgw,false)){
-					veil_chatter_new(true, class_name(),"[VEIL_ENCAP_MULTIPATH_IP] New GW: %s to Destination %s at Bucket %d of ME %s ",newgw.switchVIDString().c_str(), final_sw_vid.switchVIDString().c_str(), k ,myVid.switchVIDString().c_str() );
+					veil_chatter_new(printDebugMessages, class_name(),"[VEIL_ENCAP_MULTIPATH_IP] New GW: %s to Destination %s at Bucket %d of ME %s ",newgw.switchVIDString().c_str(), final_sw_vid.switchVIDString().c_str(), k ,myVid.switchVIDString().c_str() );
 					if (newgw != myVid){ // if I am the new gateway then should not update the dvid on the packet. 
 						memcpy(&vheader->dvid, &newgw, 6);
 						//printf("E here 3 \n");
@@ -120,12 +120,12 @@ VEILRoutePacket::smaction(Packet*& p){
 						port = getPort(dstvid, p,k, nextvid, myVid);
 					}
 				}else{
-					veil_chatter_new(true, class_name(),"[VEIL_ENCAP_MULTIPATH_IP] NO GW!! Dest %s at Bucket %d of ME %s ",final_sw_vid.switchVIDString().c_str(), k ,myVid.switchVIDString().c_str());
+					veil_chatter_new(printDebugMessages, class_name(),"[VEIL_ENCAP_MULTIPATH_IP] NO GW!! Dest %s at Bucket %d of ME %s ",final_sw_vid.switchVIDString().c_str(), k ,myVid.switchVIDString().c_str());
 				}
 				
 			} // either I can't change the destination or there is no possible route for the destination.
 			else{
-				veil_chatter_new(true, class_name(),"[VEIL_ENCAP_MULTIPATH_IP] CANT MULTIPATH Dest %s FinalVID %s at Bucket %d of ME %s port %d numInterfaces %d, nexthop %s",dst_sw_vid.switchVIDString().c_str(), final_sw_vid.switchVIDString().c_str(), k ,myVid.switchVIDString().c_str(),port,numinterfaces, nextvid.switchVIDString().c_str());
+				veil_chatter_new(printDebugMessages, class_name(),"[VEIL_ENCAP_MULTIPATH_IP] CANT MULTIPATH Dest %s FinalVID %s at Bucket %d of ME %s port %d numInterfaces %d, nexthop %s",dst_sw_vid.switchVIDString().c_str(), final_sw_vid.switchVIDString().c_str(), k ,myVid.switchVIDString().c_str(),port,numinterfaces, nextvid.switchVIDString().c_str());
 			}
 		}
 
