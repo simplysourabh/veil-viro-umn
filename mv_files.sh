@@ -29,8 +29,8 @@ cd /opt/click/elements/veil
 
 # now go the click root directory run configure, make, make install
 cd /opt/click/
-sudo ./configure  --enable-analysis --enable-test --enable-userlevel --enable-local --enable-veil
-sudo make elemlist
+#sudo ./configure  --enable-analysis --enable-test --enable-userlevel --enable-local --enable-veil
+#sudo make elemlist
 sudo make 
 sudo make install
 

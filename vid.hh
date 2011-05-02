@@ -8,7 +8,7 @@
 
 #define VID_LEN 6
 #define HOST_LEN 2
-#define ACTIVE_VID_LEN 6
+#define ACTIVE_VID_LEN 4
 
  
 CLICK_DECLS
