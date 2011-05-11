@@ -1,3 +1,7 @@
+//LICENSE START
+// Developed by: Sourabh Jain (sourj@cs.umn.edu), Gowri CP, Zhi-Li Zhang
+// Copyright (c) 2010 All rights reserved by Regents of University of Minnesota
+//LICENSE END
 //run this script as: click test_buildroutetable.click >> brtpkts 2>&1
 //to be able to inspect generated pkts for correctness
 

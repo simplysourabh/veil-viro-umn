@@ -1,3 +1,7 @@
+//LICENSE START
+// Developed by: Sourabh Jain (sourj@cs.umn.edu), Gowri CP, Zhi-Li Zhang
+// Copyright (c) 2010 All rights reserved by Regents of University of Minnesota
+//LICENSE END
 // -*- c-basic-offset: 4; related-file-name: "../../lib/confparse.cc" -*-
 #ifndef CLICK_CONFPARSE_HH
 #define CLICK_CONFPARSE_HH

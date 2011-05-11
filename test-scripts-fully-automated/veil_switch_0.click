@@ -1,3 +1,7 @@
+//LICENSE START
+// Developed by: Sourabh Jain (sourj@cs.umn.edu), Gowri CP, Zhi-Li Zhang
+// Copyright (c) 2010 All rights reserved by Regents of University of Minnesota
+//LICENSE END
 require(veil);
 interfaces::VEILInterfaceTable(
 				000000000000,08:00:27:7b:bb:b3,
